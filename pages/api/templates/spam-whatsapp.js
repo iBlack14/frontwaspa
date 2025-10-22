@@ -173,21 +173,29 @@ export default async function handler(req, res) {
       // Limpiar archivo subido
       fs.unlinkSync(filePath);
     } else if (uploadMode === 'manual') {
-      // Parsear números manuales
+      // Parsear números manuales con validación mejorada
       const numbersArray = manualNumbers
         .split('\n')
         .map(line => line.trim())
         .filter(line => line.length > 0)
-        .map(numero => ({
-          numero: numero.replace(/[^0-9]/g, ''), // Limpiar caracteres no numéricos
-        }));
+        .map(line => {
+          // Limpiar: eliminar +, espacios, guiones, paréntesis, etc.
+          const cleaned = line.replace(/[^0-9]/g, '');
+          return { numero: cleaned };
+        })
+        .filter(item => {
+          // Validar longitud: entre 8 y 15 dígitos
+          const length = item.numero.length;
+          return length >= 8 && length <= 15;
+        });
       
       if (numbersArray.length === 0) {
         return res.status(400).json({ 
-          error: 'No se detectaron números válidos' 
+          error: 'No se detectaron números válidos. Verifica que tengan entre 8 y 15 dígitos.' 
         });
       }
       
+      console.log(`[SPAM-WHATSAPP] ${numbersArray.length} números válidos procesados`);
       data = numbersArray;
     }
 

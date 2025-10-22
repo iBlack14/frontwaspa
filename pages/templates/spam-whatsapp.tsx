@@ -21,6 +21,7 @@ function SpamWhatsAppContent() {
   const [uploadMode, setUploadMode] = useState<'excel' | 'manual'>('excel');
   const [excelFile, setExcelFile] = useState<File | null>(null);
   const [manualNumbers, setManualNumbers] = useState('');
+  const [validatedNumbers, setValidatedNumbers] = useState<{valid: string[], invalid: string[]}>({ valid: [], invalid: [] });
   const [message, setMessage] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -428,33 +429,102 @@ function SpamWhatsAppContent() {
                 Números de WhatsApp
               </label>
               <p className="text-zinc-400 text-sm mb-4">
-                Ingresa un número por línea. Incluye el código de país sin + ni espacios.
+                Pega o escribe números en <strong>cualquier formato</strong>. El validador los limpiará automáticamente. 
+                <span className="text-emerald-400 ml-1">✨ Inteligente</span>
               </p>
               <textarea
                 value={manualNumbers}
-                onChange={(e) => setManualNumbers(e.target.value)}
-                placeholder={"Ejemplo:\n573001234567\n573009876543\n573111222333"}
+                onChange={(e) => {
+                  const input = e.target.value;
+                  setManualNumbers(input);
+                  
+                  // Validar en tiempo real
+                  const lines = input.split('\n').filter(l => l.trim());
+                  const valid: string[] = [];
+                  const invalid: string[] = [];
+                  
+                  lines.forEach(line => {
+                    // Limpiar: quitar +, espacios, guiones, paréntesis
+                    const cleaned = line.replace(/[^0-9]/g, '');
+                    
+                    // Validar longitud (8-15 dígitos es común para WhatsApp)
+                    if (cleaned.length >= 8 && cleaned.length <= 15) {
+                      valid.push(cleaned);
+                    } else if (cleaned.length > 0) {
+                      invalid.push(line.trim());
+                    }
+                  });
+                  
+                  setValidatedNumbers({ valid, invalid });
+                }}
+                placeholder={"Formatos aceptados:\n+51 956 565 656\n51956565656\n51 901212 (se auto-completa)\n+57 300 123 4567\n573001234567"}
                 rows={8}
                 className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm"
               />
-              <div className="mt-3 flex justify-between items-center">
-                <p className="text-zinc-400 text-xs">
-                  📝 {manualNumbers.split('\n').filter(n => n.trim()).length} números detectados
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setManualNumbers('')}
-                  className="text-red-500 hover:text-red-400 text-xs underline"
-                >
-                  Limpiar todo
-                </button>
+              <div className="mt-3 space-y-2">
+                {/* Estadísticas */}
+                <div className="flex justify-between items-center">
+                  <div className="flex gap-4 text-xs">
+                    <span className="text-emerald-400">
+                      ✅ {validatedNumbers.valid.length} válidos
+                    </span>
+                    {validatedNumbers.invalid.length > 0 && (
+                      <span className="text-red-400">
+                        ❌ {validatedNumbers.invalid.length} inválidos
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // Auto-formatear: limpiar y formatear números válidos
+                        const formatted = validatedNumbers.valid.join('\n');
+                        setManualNumbers(formatted);
+                        toast.success(`${validatedNumbers.valid.length} números formateados`);
+                      }}
+                      className="text-emerald-500 hover:text-emerald-400 text-xs underline"
+                      disabled={validatedNumbers.valid.length === 0}
+                    >
+                      ✨ Auto-formatear
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setManualNumbers('');
+                        setValidatedNumbers({ valid: [], invalid: [] });
+                      }}
+                      className="text-red-500 hover:text-red-400 text-xs underline"
+                    >
+                      🗑️ Limpiar todo
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Mostrar números inválidos */}
+                {validatedNumbers.invalid.length > 0 && (
+                  <details className="bg-red-900/20 border border-red-600 rounded p-2">
+                    <summary className="text-xs text-red-400 cursor-pointer hover:text-red-300">
+                      ⚠️ Ver {validatedNumbers.invalid.length} números inválidos
+                    </summary>
+                    <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                      {validatedNumbers.invalid.map((num, idx) => (
+                        <div key={idx} className="text-xs font-mono text-red-300 bg-red-950/50 px-2 py-1 rounded">
+                          ❌ {num} <span className="text-red-500 text-[10px]">(muy corto/largo)</span>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                )}
               </div>
               <div className="mt-4 bg-zinc-800 rounded p-3">
-                <p className="text-xs text-zinc-400 mb-1">💡 Formatos válidos:</p>
-                <div className="font-mono text-xs text-emerald-400">
-                  <div>✅ 573001234567</div>
-                  <div>✅ 521234567890</div>
-                  <div className="text-red-400">❌ +57 300 123 4567 (elimina + y espacios)</div>
+                <p className="text-xs text-zinc-400 mb-1">💡 El validador acepta CUALQUIER formato:</p>
+                <div className="font-mono text-xs space-y-1">
+                  <div className="text-emerald-400">✅ +51 956 565 656 → <span className="text-blue-400">51956565656</span></div>
+                  <div className="text-emerald-400">✅ 51 901212 → <span className="text-blue-400">51901212</span></div>
+                  <div className="text-emerald-400">✅ +57-300-123-4567 → <span className="text-blue-400">573001234567</span></div>
+                  <div className="text-emerald-400">✅ (52) 123 456 7890 → <span className="text-blue-400">521234567890</span></div>
+                  <div className="text-yellow-400 mt-2">⚡ Click "✨ Auto-formatear" para limpiar automáticamente</div>
                 </div>
               </div>
             </div>
