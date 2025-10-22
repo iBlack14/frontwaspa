@@ -5,7 +5,7 @@ import formidable from 'formidable';
 import XLSX from 'xlsx';
 import fs from 'fs';
 import axios from 'axios';
-import { createSpam, shouldContinue, updateProgress, completeSpam, stopSpam } from '@/lib/spam-control';
+import { createSpam, shouldContinue, updateProgress, completeSpam, stopSpam } from '../../../src/lib/spam-control';
 
 export const config = {
   api: {
@@ -47,14 +47,28 @@ export default async function handler(req, res) {
     });
 
     const instanceId = Array.isArray(fields.instanceId) ? fields.instanceId[0] : fields.instanceId;
+    const uploadMode = Array.isArray(fields.uploadMode) ? fields.uploadMode[0] : fields.uploadMode;
     const message = Array.isArray(fields.message) ? fields.message[0] : fields.message;
     const imageUrl = Array.isArray(fields.imageUrl) ? fields.imageUrl[0] : fields.imageUrl;
     const waitTime = Array.isArray(fields.waitTime) ? parseInt(fields.waitTime[0]) : 3;
+    const manualNumbers = Array.isArray(fields.manualNumbers) ? fields.manualNumbers[0] : fields.manualNumbers;
     const excelFile = files.file;
     const imageFile = files.imageFile; // Nueva imagen subida
 
-    if (!instanceId || !excelFile) {
-      return res.status(400).json({ error: 'Faltan campos requeridos' });
+    if (!instanceId) {
+      return res.status(400).json({ error: 'Falta la instancia' });
+    }
+
+    if (!uploadMode || (uploadMode !== 'excel' && uploadMode !== 'manual')) {
+      return res.status(400).json({ error: 'Modo de carga inválido' });
+    }
+
+    if (uploadMode === 'excel' && !excelFile) {
+      return res.status(400).json({ error: 'Falta el archivo Excel' });
+    }
+
+    if (uploadMode === 'manual' && !manualNumbers) {
+      return res.status(400).json({ error: 'Faltan los números manuales' });
     }
 
     // Subir imagen a Supabase Storage si se subió un archivo
@@ -138,21 +152,46 @@ export default async function handler(req, res) {
       });
     }
 
-    // Leer archivo Excel
-    const filePath = Array.isArray(excelFile) ? excelFile[0].filepath : excelFile.filepath;
-    const workbook = XLSX.readFile(filePath);
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(worksheet);
+    // Leer contactos según el modo de carga
+    let data = [];
+    
+    if (uploadMode === 'excel') {
+      // Leer archivo Excel
+      const filePath = Array.isArray(excelFile) ? excelFile[0].filepath : excelFile.filepath;
+      const workbook = XLSX.readFile(filePath);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      data = XLSX.utils.sheet_to_json(worksheet);
 
-    // Validar que tenga la columna 'numero'
-    if (data.length === 0 || !data[0].hasOwnProperty('numero')) {
-      return res.status(400).json({ 
-        error: 'El Excel debe tener una columna llamada "numero"' 
-      });
+      // Validar que tenga la columna 'numero'
+      if (data.length === 0 || !data[0].hasOwnProperty('numero')) {
+        return res.status(400).json({ 
+          error: 'El Excel debe tener una columna llamada "numero"' 
+        });
+      }
+      
+      // Limpiar archivo subido
+      fs.unlinkSync(filePath);
+    } else if (uploadMode === 'manual') {
+      // Parsear números manuales
+      const numbersArray = manualNumbers
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .map(numero => ({
+          numero: numero.replace(/[^0-9]/g, ''), // Limpiar caracteres no numéricos
+        }));
+      
+      if (numbersArray.length === 0) {
+        return res.status(400).json({ 
+          error: 'No se detectaron números válidos' 
+        });
+      }
+      
+      data = numbersArray;
     }
 
-    // Preparar datos para N8N
+    // Preparar datos para envío
     const contacts = data.map(row => ({
       clientId: instanceId,
       apiKey: profile.api_key,
@@ -163,7 +202,12 @@ export default async function handler(req, res) {
 
     // ✅ Crear control de envío con ID único
     const spamId = `spam_${session.id}_${Date.now()}`;
-    createSpam(spamId, contacts.length, session.id);
+    console.log('[SPAM-WHATSAPP] Creando spam con ID:', spamId);
+    console.log('[SPAM-WHATSAPP] Total contactos:', contacts.length);
+    console.log('[SPAM-WHATSAPP] User ID:', session.id);
+    
+    const spamCreated = createSpam(spamId, contacts.length, session.id);
+    console.log('[SPAM-WHATSAPP] Spam creado:', spamCreated ? 'Sí' : 'No');
 
     // ✅✅ IMPORTANTE: Ejecutar el proceso de envío en segundo plano
     // No usar await aquí para que retorne inmediatamente al frontend
@@ -176,9 +220,6 @@ export default async function handler(req, res) {
       BACKEND_URL,
       finalImageUrl,
     });
-
-    // ✅ Limpiar archivo subido
-    fs.unlinkSync(filePath);
 
     // ✅✅ RETORNAR INMEDIATAMENTE (no esperar a que termine el envío)
     return res.json({
@@ -202,15 +243,19 @@ async function processSpamInBackground({
   BACKEND_URL,
   finalImageUrl,
 }) {
+  console.log(`[SPAM ${spamId}] Iniciando envío de ${contacts.length} mensajes`);
+  
   try {
     // Enviar directamente desde el backend
     for (let i = 0; i < contacts.length; i++) {
       // ✅ Verificar si el envío fue detenido
       if (!shouldContinue(spamId)) {
+        console.log(`[SPAM ${spamId}] Envío detenido por el usuario en mensaje ${i + 1}`);
         break;
       }
 
       const contact = contacts[i];
+      console.log(`[SPAM ${spamId}] Enviando mensaje ${i + 1}/${contacts.length} a ${contact.numero}`);
       
       try {
         const hasImage = Boolean(contact.imagen);
@@ -234,7 +279,10 @@ async function processSpamInBackground({
             'Authorization': apiKey,
             'Content-Type': 'application/json',
           },
+          timeout: 30000, // 30 segundos timeout
         });
+        
+        console.log(`[SPAM ${spamId}] ✅ Mensaje ${i + 1} enviado correctamente a ${contact.numero}`);
         
         // ✅ Actualizar progreso exitoso
         updateProgress(spamId, i + 1, { success: true, number: contact.numero });
@@ -242,6 +290,7 @@ async function processSpamInBackground({
         // ✅✅ Esperar entre mensajes, verificando shouldContinue cada 500ms
         if (i < contacts.length - 1) {
           const totalWaitTime = waitTime * 1000;
+          console.log(`[SPAM ${spamId}] ⏳ Esperando ${waitTime} segundos antes del siguiente mensaje...`);
           const checkInterval = 500; // Verificar cada 500ms
           let elapsed = 0;
           
@@ -256,6 +305,8 @@ async function processSpamInBackground({
           }
         }
       } catch (sendError) {
+        console.error(`[SPAM ${spamId}] ❌ Error enviando mensaje ${i + 1} a ${contact.numero}:`, sendError.message);
+        
         // ✅ Actualizar progreso con error
         updateProgress(spamId, i + 1, { 
           success: false, 
@@ -267,8 +318,10 @@ async function processSpamInBackground({
     }
 
     // ✅ Marcar como completado
+    console.log(`[SPAM ${spamId}] ✅ Proceso completado`);
     completeSpam(spamId);
   } catch (error) {
+    console.error(`[SPAM ${spamId}] ❌ Error fatal en el proceso:`, error);
     // Marcar como completado con errores
     completeSpam(spamId);
   }

@@ -5,7 +5,7 @@ import {
   getSpamStatus, 
   getUserSpams,
   cleanupSpam 
-} from '@/lib/spam-control';
+} from '../../../src/lib/spam-control';
 
 export default async function handler(req, res) {
   try {
@@ -23,9 +23,13 @@ export default async function handler(req, res) {
 
       if (spamId) {
         // Obtener estado de un envío específico
+        console.log('[SPAM-CONTROL] Buscando spam:', spamId);
         const status = getSpamStatus(spamId);
         
+        console.log('[SPAM-CONTROL] Estado encontrado:', status ? 'Sí' : 'No');
+        
         if (!status) {
+          console.warn('[SPAM-CONTROL] ⚠️ Envío no encontrado en memoria:', spamId);
           return res.status(404).json({ error: 'Envío no encontrado' });
         }
 
@@ -33,6 +37,13 @@ export default async function handler(req, res) {
         if (status.userId !== session.id) {
           return res.status(403).json({ error: 'No autorizado' });
         }
+
+        console.log('[SPAM-CONTROL] ✅ Retornando estado:', {
+          current: status.currentContact,
+          total: status.totalContacts,
+          completed: status.completed,
+          stopped: status.stopped
+        });
 
         return res.json({ status });
       } else {
