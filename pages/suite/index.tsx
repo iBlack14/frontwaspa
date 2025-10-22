@@ -163,8 +163,8 @@ function DashboardContent() {
     }
     try {
       const res = await axios.post('/api/suite/usage', {
-        token: typedSession.jwt,
-        name_service: selectedWorkspace.name,
+        token: typedSession!.jwt,
+        name_service: selectedWorkspace!.name,
       }, {
         headers: { 'Content-Type': 'application/json' },
       });
