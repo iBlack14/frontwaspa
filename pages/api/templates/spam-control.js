@@ -24,7 +24,7 @@ export default async function handler(req, res) {
       if (spamId) {
         // Obtener estado de un envío específico
         console.log('[SPAM-CONTROL] Buscando spam:', spamId);
-        const status = getSpamStatus(spamId);
+        const status = await getSpamStatus(spamId);
         
         console.log('[SPAM-CONTROL] Estado encontrado:', status ? 'Sí' : 'No');
         
@@ -61,7 +61,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'spamId es requerido' });
       }
 
-      const status = getSpamStatus(spamId);
+      const status = await getSpamStatus(spamId);
       
       if (!status) {
         return res.status(404).json({ error: 'Envío no encontrado' });
@@ -73,11 +73,12 @@ export default async function handler(req, res) {
       }
 
       if (action === 'stop') {
-        stopSpam(spamId);
+        await stopSpam(spamId);
+        const updatedStatus = await getSpamStatus(spamId);
         return res.json({ 
           success: true, 
           message: 'Envío detenido',
-          status: getSpamStatus(spamId)
+          status: updatedStatus
         });
       }
 
@@ -100,7 +101,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'spamId es requerido' });
       }
 
-      const status = getSpamStatus(spamId);
+      const status = await getSpamStatus(spamId);
       
       if (status && status.userId !== session.id) {
         return res.status(403).json({ error: 'No autorizado' });

@@ -27,6 +27,7 @@ function SpamWhatsAppContent() {
   const [imageOption, setImageOption] = useState<'url' | 'upload' | 'none'>('none');
   const [waitTime, setWaitTime] = useState(3);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Prevenir doble click
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [spamId, setSpamId] = useState<string | null>(null);
   const [spamStatus, setSpamStatus] = useState<any>(null);
@@ -148,6 +149,12 @@ function SpamWhatsAppContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // ✅ Prevenir doble click
+    if (isSubmitting || isLoading) {
+      toast.warning('Ya hay un envío en proceso');
+      return;
+    }
+
     if (!selectedInstance) {
       toast.error('Selecciona una instancia conectada');
       return;
@@ -163,6 +170,7 @@ function SpamWhatsAppContent() {
       return;
     }
 
+    setIsSubmitting(true); // Bloquear botón
     setIsLoading(true);
 
     try {
@@ -214,6 +222,7 @@ function SpamWhatsAppContent() {
       console.error('Error:', error);
       toast.error(error.response?.data?.error || 'Error al enviar mensajes');
       setIsLoading(false);
+      setIsSubmitting(false); // ✅ Desbloquear en caso de error
       setSpamId(null);
     }
   };
@@ -591,10 +600,10 @@ function SpamWhatsAppContent() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isLoading || instances.length === 0 || (uploadMode === 'excel' && !excelFile) || (uploadMode === 'manual' && !manualNumbers.trim())}
+                  disabled={isSubmitting || isLoading || instances.length === 0 || (uploadMode === 'excel' && !excelFile) || (uploadMode === 'manual' && !manualNumbers.trim())}
                   className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-6 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Iniciar Envío 🚀
+                  {isSubmitting ? 'Procesando...' : 'Iniciar Envío 🚀'}
                 </button>
               </>
             ) : (

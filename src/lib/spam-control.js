@@ -1,5 +1,7 @@
-// Sistema de control de envíos masivos en memoria
-// Almacena el estado de los envíos activos
+// Sistema de control de envíos masivos
+// Usa memoria para velocidad + Supabase para persistencia
+
+import { supabaseAdmin } from './supabase-admin.js';
 
 const activeSpams = new Map();
 
@@ -9,8 +11,8 @@ const activeSpams = new Map();
  * @param {number} totalContacts - Total de contactos a enviar
  * @param {string} userId - ID del usuario
  */
-export function createSpam(spamId, totalContacts, userId) {
-  activeSpams.set(spamId, {
+export async function createSpam(spamId, totalContacts, userId) {
+  const spamData = {
     id: spamId,
     userId,
     totalContacts,
@@ -20,7 +22,28 @@ export function createSpam(spamId, totalContacts, userId) {
     startedAt: new Date(),
     errors: [],
     success: [],
-  });
+  };
+  
+  // Guardar en memoria
+  activeSpams.set(spamId, spamData);
+  
+  // Guardar en Supabase
+  try {
+    await supabaseAdmin
+      .from('spam_progress')
+      .insert({
+        spam_id: spamId,
+        user_id: userId,
+        total_contacts: totalContacts,
+        current_contact: 0,
+        stopped: false,
+        completed: false,
+        success: [],
+        errors: [],
+      });
+  } catch (error) {
+    console.error('[SPAM-CONTROL] Error guardando en DB:', error);
+  }
   
   return activeSpams.get(spamId);
 }
@@ -40,11 +63,24 @@ export function shouldContinue(spamId) {
  * Detiene un envío
  * @param {string} spamId - ID del envío
  */
-export function stopSpam(spamId) {
+export async function stopSpam(spamId) {
   const spam = activeSpams.get(spamId);
   if (spam) {
     spam.stopped = true;
     spam.stoppedAt = new Date();
+    
+    // Actualizar en Supabase
+    try {
+      await supabaseAdmin
+        .from('spam_progress')
+        .update({
+          stopped: true,
+          stopped_at: new Date().toISOString(),
+        })
+        .eq('spam_id', spamId);
+    } catch (error) {
+      console.error('[SPAM-CONTROL] Error deteniendo en DB:', error);
+    }
   }
 }
 
@@ -54,7 +90,7 @@ export function stopSpam(spamId) {
  * @param {number} currentContact - Contacto actual
  * @param {object} result - Resultado del envío (success/error)
  */
-export function updateProgress(spamId, currentContact, result = null) {
+export async function updateProgress(spamId, currentContact, result = null) {
   const spam = activeSpams.get(spamId);
   if (spam) {
     spam.currentContact = currentContact;
@@ -67,6 +103,20 @@ export function updateProgress(spamId, currentContact, result = null) {
         spam.errors.push({ number: result.number, error: result.error });
       }
     }
+    
+    // Actualizar en Supabase (sin await para no bloquear)
+    supabaseAdmin
+      .from('spam_progress')
+      .update({
+        current_contact: currentContact,
+        success: spam.success,
+        errors: spam.errors,
+        last_update: new Date().toISOString(),
+      })
+      .eq('spam_id', spamId)
+      .then(({ error }) => {
+        if (error) console.error('[SPAM-CONTROL] Error actualizando DB:', error);
+      });
   }
 }
 
@@ -74,13 +124,26 @@ export function updateProgress(spamId, currentContact, result = null) {
  * Marca el envío como completado
  * @param {string} spamId - ID del envío
  */
-export function completeSpam(spamId) {
+export async function completeSpam(spamId) {
   const spam = activeSpams.get(spamId);
   if (spam) {
     spam.completed = true;
     spam.completedAt = new Date();
     
-    // Limpiar después de 5 minutos
+    // Actualizar en Supabase
+    try {
+      await supabaseAdmin
+        .from('spam_progress')
+        .update({
+          completed: true,
+          completed_at: new Date().toISOString(),
+        })
+        .eq('spam_id', spamId);
+    } catch (error) {
+      console.error('[SPAM-CONTROL] Error completando en DB:', error);
+    }
+    
+    // Limpiar de memoria después de 5 minutos
     setTimeout(() => {
       activeSpams.delete(spamId);
     }, 5 * 60 * 1000);
@@ -92,8 +155,45 @@ export function completeSpam(spamId) {
  * @param {string} spamId - ID del envío
  * @returns {object|null}
  */
-export function getSpamStatus(spamId) {
-  return activeSpams.get(spamId) || null;
+export async function getSpamStatus(spamId) {
+  // Intentar obtener de memoria primero (más rápido)
+  let spam = activeSpams.get(spamId);
+  
+  // Si no está en memoria, buscar en Supabase
+  if (!spam) {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('spam_progress')
+        .select('*')
+        .eq('spam_id', spamId)
+        .single();
+      
+      if (!error && data) {
+        // Reconstruir objeto desde DB
+        spam = {
+          id: data.spam_id,
+          userId: data.user_id,
+          totalContacts: data.total_contacts,
+          currentContact: data.current_contact,
+          stopped: data.stopped,
+          completed: data.completed,
+          startedAt: new Date(data.started_at),
+          completedAt: data.completed_at ? new Date(data.completed_at) : null,
+          stoppedAt: data.stopped_at ? new Date(data.stopped_at) : null,
+          lastUpdate: new Date(data.last_update),
+          errors: data.errors || [],
+          success: data.success || [],
+        };
+        
+        // Guardar en memoria para próximas consultas
+        activeSpams.set(spamId, spam);
+      }
+    } catch (error) {
+      console.error('[SPAM-CONTROL] Error obteniendo de DB:', error);
+    }
+  }
+  
+  return spam || null;
 }
 
 /**
