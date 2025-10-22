@@ -1,0 +1,1 @@
+self.__REACT_LOADABLE_MANIFEST='{"pages\\\\home\\\\index.tsx -> ./ChartComponent":{"id":5654,"files":["static/chunks/ee8b1517-ca93544f3e6fadac.js","static/chunks/92-ea03e70f329b8a4e.js","static/chunks/654.6e8f3d3a3301c8e7.js"]}}';

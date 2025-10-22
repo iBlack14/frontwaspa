@@ -1,0 +1,525 @@
+import { SessionProvider, useSession } from 'next-auth/react';
+import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import axios from 'axios';
+import { toast, Toaster } from 'sonner';
+import Sidebard from '../components/dashboard/index';
+
+interface Instance {
+  documentId: string;
+  state: string;
+  phoneNumber?: string;
+  name?: string;
+}
+
+function SpamWhatsAppContent() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [instances, setInstances] = useState<Instance[]>([]);
+  const [selectedInstance, setSelectedInstance] = useState('');
+  const [excelFile, setExcelFile] = useState<File | null>(null);
+  const [message, setMessage] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageOption, setImageOption] = useState<'url' | 'upload' | 'none'>('none');
+  const [waitTime, setWaitTime] = useState(3);
+  const [isLoading, setIsLoading] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [spamId, setSpamId] = useState<string | null>(null);
+  const [spamStatus, setSpamStatus] = useState<any>(null);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    }
+  }, [status, router]);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetchInstances();
+    }
+  }, [status]);
+
+  // Polling para actualizar el progreso en tiempo real
+  useEffect(() => {
+    if (!spamId || !isLoading) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await axios.get(`/api/templates/spam-control?spamId=${spamId}`);
+        const status = res.data.status;
+        
+        if (status) {
+          setSpamStatus(status);
+          setProgress({
+            current: status.currentContact,
+            total: status.totalContacts,
+          });
+
+          // Si el envío terminó (detenido o completado)
+          if (status.stopped || status.completed) {
+            clearInterval(pollInterval);
+            setIsLoading(false);
+            
+            if (status.stopped) {
+              toast.warning(`Envío detenido. ${status.success.length} enviados, ${status.errors.length} errores`);
+            } else {
+              toast.success(`¡Completado! ${status.success.length} enviados, ${status.errors.length} errores`);
+            }
+            
+            // Redirigir después de 3 segundos
+            setTimeout(() => {
+              router.push('/templates');
+            }, 3000);
+          }
+        }
+      } catch (error) {
+        console.error('Error polling spam status:', error);
+      }
+    }, 1000); // Actualizar cada segundo
+
+    return () => clearInterval(pollInterval);
+  }, [spamId, isLoading, router]);
+
+  const fetchInstances = async () => {
+    try {
+      const res = await axios.get('/api/instances');
+      
+      // Mapear correctamente los datos desde Supabase
+      const mappedInstances = res.data.instances.map((item: any) => ({
+        documentId: item.document_id || item.documentId,
+        state: item.state,
+        phoneNumber: item.phone_number || item.phoneNumber,
+        name: item.profile_name || item.name || 'Instancia',
+      }));
+      
+      const connectedInstances = mappedInstances.filter(
+        (i: Instance) => i.state === 'Connected'
+      );
+      
+      setInstances(connectedInstances);
+      if (connectedInstances.length > 0) {
+        setSelectedInstance(connectedInstances[0].documentId);
+      }
+    } catch (error) {
+      console.error('Error fetching instances:', error);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+        setExcelFile(file);
+      } else {
+        toast.error('Por favor sube un archivo Excel (.xlsx o .xls)');
+      }
+    }
+  };
+
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      
+      if (validTypes.includes(file.type)) {
+        if (file.size <= 5 * 1024 * 1024) { // Max 5MB
+          setImageFile(file);
+          setImageUrl(''); // Limpiar URL si había
+        } else {
+          toast.error('La imagen debe ser menor a 5MB');
+        }
+      } else {
+        toast.error('Formato de imagen no válido. Usa JPG, PNG, GIF o WebP');
+      }
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!selectedInstance) {
+      toast.error('Selecciona una instancia conectada');
+      return;
+    }
+
+    if (!excelFile) {
+      toast.error('Sube un archivo Excel');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', excelFile);
+      formData.append('instanceId', selectedInstance);
+      formData.append('message', message);
+      
+      // Agregar imagen (URL o archivo)
+      if (imageOption === 'url' && imageUrl) {
+        formData.append('imageUrl', imageUrl);
+      } else if (imageOption === 'upload' && imageFile) {
+        formData.append('imageFile', imageFile);
+      }
+      
+      formData.append('waitTime', waitTime.toString());
+
+      const res = await axios.post('/api/templates/spam-whatsapp', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percentCompleted = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total
+            );
+          }
+        },
+      });
+
+      // Guardar spamId y configurar progreso inicial
+      const receivedSpamId = res.data.spamId;
+      setSpamId(receivedSpamId);
+      setProgress({ current: 0, total: res.data.totalContacts });
+      toast.success(`Enviando mensajes a ${res.data.totalContacts} contactos...`);
+      
+      // El polling se encargará de actualizar el progreso
+    } catch (error: any) {
+      console.error('Error:', error);
+      toast.error(error.response?.data?.error || 'Error al enviar mensajes');
+      setIsLoading(false);
+      setSpamId(null);
+    }
+  };
+
+  const handleStopSpam = async () => {
+    if (!spamId) return;
+
+    try {
+      await axios.post('/api/templates/spam-control', {
+        action: 'stop',
+        spamId,
+      });
+      
+      toast.info('Deteniendo envío...');
+    } catch (error: any) {
+      console.error('Error stopping spam:', error);
+      toast.error('Error al detener el envío');
+    }
+  };
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="text-white">Cargando...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-zinc-950 text-white">
+      {/* Header */}
+      <div className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-sm sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-4">
+              <Link
+                href="/templates"
+                className="text-emerald-500 hover:text-emerald-400 transition"
+              >
+                ← Volver
+              </Link>
+              <h1 className="text-2xl font-bold">📨 SPAM WhatsApp</h1>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Seleccionar Instancia */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
+            <label className="block text-sm font-medium mb-2">
+              Selecciona tu instancia de WhatsApp
+            </label>
+            {instances.length === 0 ? (
+              <div className="text-zinc-400 text-sm">
+                No tienes instancias conectadas.{' '}
+                <Link href="/instances" className="text-emerald-500 hover:underline">
+                  Conecta una instancia
+                </Link>
+              </div>
+            ) : (
+              <select
+                value={selectedInstance}
+                onChange={(e) => setSelectedInstance(e.target.value)}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              >
+                {instances.map((instance) => (
+                  <option key={instance.documentId} value={instance.documentId}>
+                    {instance.name || 'Instancia'} - {instance.phoneNumber || 'Sin número'}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {/* Subir Excel */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
+            <label className="block text-sm font-medium mb-2">
+              Sube tu archivo Excel
+            </label>
+            <p className="text-zinc-400 text-sm mb-4">
+              El Excel debe tener una columna llamada <code className="bg-zinc-800 px-2 py-1 rounded">numero</code>
+            </p>
+            <div className="border-2 border-dashed border-zinc-700 rounded-lg p-8 text-center hover:border-emerald-500 transition">
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileChange}
+                className="hidden"
+                id="excel-upload"
+              />
+              <label htmlFor="excel-upload" className="cursor-pointer">
+                <div className="text-4xl mb-2">📎</div>
+                {excelFile ? (
+                  <p className="text-emerald-500">{excelFile.name}</p>
+                ) : (
+                  <p className="text-zinc-400">Click para subir o arrastra aquí</p>
+                )}
+              </label>
+            </div>
+          </div>
+
+          {/* Mensaje */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
+            <label className="block text-sm font-medium mb-2">
+              Mensaje (opcional)
+            </label>
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Escribe tu mensaje aquí..."
+              rows={4}
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+
+          {/* Imagen */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
+            <label className="block text-sm font-medium mb-4">
+              Imagen (opcional)
+            </label>
+            
+            {/* Selector de tipo de imagen */}
+            <div className="flex gap-4 mb-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setImageOption('none');
+                  setImageUrl('');
+                  setImageFile(null);
+                }}
+                className={`flex-1 py-2 px-4 rounded-md transition ${
+                  imageOption === 'none'
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                }`}
+              >
+                Sin imagen
+              </button>
+              <button
+                type="button"
+                onClick={() => setImageOption('url')}
+                className={`flex-1 py-2 px-4 rounded-md transition ${
+                  imageOption === 'url'
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                }`}
+              >
+                URL
+              </button>
+              <button
+                type="button"
+                onClick={() => setImageOption('upload')}
+                className={`flex-1 py-2 px-4 rounded-md transition ${
+                  imageOption === 'upload'
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                }`}
+              >
+                Subir archivo
+              </button>
+            </div>
+
+            {/* Input URL */}
+            {imageOption === 'url' && (
+              <div>
+                <input
+                  type="url"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="https://ejemplo.com/imagen.png"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+            )}
+
+            {/* Upload File */}
+            {imageOption === 'upload' && (
+              <div className="border-2 border-dashed border-zinc-700 rounded-lg p-6 text-center hover:border-emerald-500 transition">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  onChange={handleImageFileChange}
+                  className="hidden"
+                  id="image-upload"
+                />
+                <label htmlFor="image-upload" className="cursor-pointer">
+                  <div className="text-4xl mb-2">🖼️</div>
+                  {imageFile ? (
+                    <div>
+                      <p className="text-emerald-500 mb-1">{imageFile.name}</p>
+                      <p className="text-zinc-400 text-xs">
+                        {(imageFile.size / 1024).toFixed(2)} KB
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-zinc-400">Click para subir o arrastra aquí</p>
+                      <p className="text-zinc-500 text-xs mt-1">
+                        JPG, PNG, GIF, WebP (máx. 5MB)
+                      </p>
+                    </div>
+                  )}
+                </label>
+              </div>
+            )}
+          </div>
+
+          {/* Configuración Avanzada */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
+            <h3 className="text-lg font-semibold mb-4">⚙️ Configuración Avanzada</h3>
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Espera entre mensajes (segundos)
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="60"
+                value={waitTime}
+                onChange={(e) => setWaitTime(parseInt(e.target.value))}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+              <p className="text-zinc-400 text-xs mt-1">
+                Recomendado: 3-5 segundos para evitar bloqueos
+              </p>
+            </div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-4">
+            {!isLoading ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => router.push('/templates')}
+                  className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white py-3 px-6 rounded-md transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading || !excelFile || instances.length === 0}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-6 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Iniciar Envío 🚀
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={handleStopSpam}
+                className="w-full bg-red-600 hover:bg-red-700 text-white py-3 px-6 rounded-md transition font-bold flex items-center justify-center gap-2"
+              >
+                🛑 DETENER ENVÍO
+              </button>
+            )}
+          </div>
+
+          {/* Progress */}
+          {isLoading && progress.total > 0 && (
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
+              <div className="flex justify-between mb-2">
+                <span className="font-semibold">Progreso del Envío</span>
+                <span className="font-mono">
+                  {progress.current} / {progress.total}
+                </span>
+              </div>
+              
+              {/* Barra de progreso */}
+              <div className="w-full bg-zinc-800 rounded-full h-4 mb-4 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-emerald-500 to-emerald-600 h-4 rounded-full transition-all duration-500 flex items-center justify-center text-xs text-white font-bold"
+                  style={{
+                    width: `${progress.total > 0 ? (progress.current / progress.total) * 100 : 0}%`,
+                  }}
+                >
+                  {progress.total > 0 && Math.round((progress.current / progress.total) * 100)}%
+                </div>
+              </div>
+
+              {/* Estadísticas detalladas */}
+              {spamStatus && (
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div className="bg-zinc-800 p-3 rounded">
+                    <div className="text-2xl font-bold text-emerald-500">
+                      {spamStatus.success.length}
+                    </div>
+                    <div className="text-xs text-zinc-400">Exitosos</div>
+                  </div>
+                  <div className="bg-zinc-800 p-3 rounded">
+                    <div className="text-2xl font-bold text-red-500">
+                      {spamStatus.errors.length}
+                    </div>
+                    <div className="text-xs text-zinc-400">Errores</div>
+                  </div>
+                  <div className="bg-zinc-800 p-3 rounded">
+                    <div className="text-2xl font-bold text-blue-500">
+                      {progress.total - progress.current}
+                    </div>
+                    <div className="text-xs text-zinc-400">Pendientes</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Estado */}
+              <div className="mt-4 text-center">
+                <p className="text-zinc-400 text-sm">
+                  {spamStatus?.stopped 
+                    ? '🛑 Envío detenido por el usuario' 
+                    : spamStatus?.completed
+                    ? '✅ Envío completado'
+                    : '⏳ Enviando mensajes...'}
+                </p>
+              </div>
+            </div>
+          )}
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export default function SpamWhatsApp() {
+  return (
+    <Sidebard>
+      <SpamWhatsAppContent />
+      <Toaster position="top-right" />
+    </Sidebard>
+  );
+}

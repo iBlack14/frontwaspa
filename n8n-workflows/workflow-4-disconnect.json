@@ -1,0 +1,121 @@
+{
+  "name": "Disconnect Instance",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "disconnect-instance",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "id": "webhook-disconnect",
+      "name": "Webhook",
+      "webhookId": "disconnect-webhook"
+    },
+    {
+      "parameters": {
+        "url": "=http://localhost:4000/api/disconnect/{{ $json.body.documentId }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 0],
+      "id": "http-disconnect",
+      "name": "Disconnect Backend"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "instances",
+        "filterType": "manual",
+        "matchingColumns": [
+          {
+            "column": "document_id",
+            "value": "={{ $json.body.documentId }}"
+          }
+        ],
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "state",
+              "fieldValue": "Disconnected"
+            },
+            {
+              "fieldId": "is_active",
+              "fieldValue": "false"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [440, 0],
+      "id": "supabase-disconnect",
+      "name": "Update to Disconnected",
+      "credentials": {
+        "supabaseApi": {
+          "id": "ysios5mnoCtsjxKf",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Instancia desconectada correctamente\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [660, 0],
+      "id": "respond-disconnect",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Disconnect Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Disconnect Backend": {
+      "main": [
+        [
+          {
+            "node": "Update to Disconnected",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update to Disconnected": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
