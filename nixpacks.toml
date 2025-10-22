@@ -1,20 +1,11 @@
-[build]
-  baseImage = "node:18"
-  buildCommand = "npm install --legacy-peer-deps && npm run build"
-  startCommand = "npm start"
-  nodeVersion = "18"
-
 [phases.setup]
-  nixPkgs = ["nodejs-18_x", "python3", "gcc", "make", "g++"]
+  nixPkgs = ["nodejs-18_x"]
 
 [phases.install]
-  nixPkgs = ["nodejs-18_x"]
-  cacheDirectories = ["/app/node_modules"]
+  cmds = ["npm install --legacy-peer-deps"]
 
 [phases.build]
-  nixPkgs = ["nodejs-18_x"]
-  cacheDirectories = ["/app/.next/cache"]
+  cmds = ["npm run build"]
 
-[phases.start]
-  nixPkgs = ["nodejs-18_x"]
-  command = "npm start"
+[start]
+  cmd = "npm start"
