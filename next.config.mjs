@@ -3,9 +3,6 @@ const nextConfig = {
   // ✅ Optimizaciones de rendimiento
   reactStrictMode: true,
   
-  // ✅ Output standalone para Docker (reduce tamaño de imagen)
-  output: 'standalone',
-  
   // ✅ Optimización de compilación
   experimental: {
     optimizePackageImports: ['@heroicons/react', 'chart.js', 'react-chartjs-2'],
