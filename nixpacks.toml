@@ -1,8 +1,11 @@
 [phases.install]
-  cmds = ["npm install --legacy-peer-deps --no-optional"]
+  cmds = ["npm ci --legacy-peer-deps --omit=optional || npm install --legacy-peer-deps --omit=optional"]
 
 [phases.build]
   cmds = ["npm run build"]
+
+[variables]
+  NODE_ENV = "production"
 
 [start]
   cmd = "npm start"
