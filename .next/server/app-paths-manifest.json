@@ -1,9 +1,0 @@
-{
-  "/_not-found/page": "app/_not-found/page.js",
-  "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/forgot-password/page": "app/forgot-password/page.js",
-  "/email-confirmation/page": "app/email-confirmation/page.js",
-  "/login/page": "app/login/page.js",
-  "/register/page": "app/register/page.js",
-  "/reset-password/page": "app/reset-password/page.js"
-}
