@@ -144,7 +144,6 @@ export default async function handler(req, res) {
     // Add other methods (DELETE, etc.) as needed
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
     return res.status(error.response?.status || 500).json({
       error: error.response?.data?.message || error.response?.data?.error || error.message || 'Internal Server Error',
       details: error.response?.data

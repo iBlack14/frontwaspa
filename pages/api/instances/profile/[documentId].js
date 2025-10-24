@@ -31,9 +31,12 @@ export default async function handler(req, res) {
     );
     return res.status(200).json(response.data);
   } catch (error) {
-    console.error('Error fetching profile:', error.response?.data || error.message);
+    // Solo loggear errores que no sean 404 (sesión no encontrada es normal)
+    if (error.response?.status !== 404) {
+      console.error('Error fetching profile:', error.response?.data || error.message);
+    }
     return res.status(error.response?.status || 500).json({
-      error: error.response?.data?.error || 'Internal Server Error',
+      error: error.response?.data?.error || error.response?.data?.message || 'Session not found',
     });
   }
 }

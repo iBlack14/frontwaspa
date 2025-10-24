@@ -1,7 +1,7 @@
 // Sistema de control de envíos masivos
 // Usa memoria para velocidad + Supabase para persistencia
 
-import { supabaseAdmin } from './supabase-admin.js';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 const activeSpams = new Map();
 
