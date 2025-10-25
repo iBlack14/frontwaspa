@@ -91,14 +91,50 @@ function DashboardContent() {
         number: item.phone_number || null,
       }));
 
-      setInstances(fetchedSessions);
+      // 🔄 Inicializar datos históricos si alguna instancia no tiene datos
+      const instancesWithoutData = fetchedSessions.filter(
+        (instance) => !instance.historycal_data || instance.historycal_data.length === 0
+      );
 
-      // ✅ Los datos del perfil ya vienen en fetchedSessions, no necesitamos hacer más llamadas
-
-      // Set default selected instance
-      if (fetchedSessions.length > 0) {
-        setSelectedInstanceId(fetchedSessions[0].documentId);
-        setHistoryData(fetchedSessions[0].historycal_data || []);
+      if (instancesWithoutData.length > 0) {
+        try {
+          await axios.post('/api/instances/initialize-stats', {});
+          // Recargar datos después de inicializar
+          const updatedRes = await axios.get('/api/instances');
+          const updatedSessions: WhatsAppSession[] = updatedRes.data.instances.map((item: any) => ({
+            id: item.id,
+            documentId: item.document_id || item.documentId,
+            webhook_url: item.webhook_url || null,
+            state: item.state,
+            is_active: item.is_active,
+            historycal_data: item.historycal_data || [],
+            name: item.profile_name || null,
+            profilePicUrl: item.profile_pic_url || null,
+            number: item.phone_number || null,
+          }));
+          setInstances(updatedSessions);
+          
+          // Set default selected instance
+          if (updatedSessions.length > 0) {
+            setSelectedInstanceId(updatedSessions[0].documentId);
+            setHistoryData(updatedSessions[0].historycal_data || []);
+          }
+        } catch (initError) {
+          console.error('Error initializing stats:', initError);
+          // Si falla la inicialización, usar los datos originales
+          setInstances(fetchedSessions);
+          if (fetchedSessions.length > 0) {
+            setSelectedInstanceId(fetchedSessions[0].documentId);
+            setHistoryData(fetchedSessions[0].historycal_data || []);
+          }
+        }
+      } else {
+        setInstances(fetchedSessions);
+        // Set default selected instance
+        if (fetchedSessions.length > 0) {
+          setSelectedInstanceId(fetchedSessions[0].documentId);
+          setHistoryData(fetchedSessions[0].historycal_data || []);
+        }
       }
     } catch (error) {
       console.error('Error fetching user sessions:', error);
