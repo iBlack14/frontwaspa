@@ -20,8 +20,8 @@ export default function DebugStats() {
     try {
       const res = await axios.get('/api/debug/check-stats');
       setData(res.data);
-    } catch (err) {
-      setError(err.response?.data?.error || err.message);
+    } catch (err: any) {
+      setError(err.response?.data?.error || err.message || 'Error desconocido');
     } finally {
       setLoading(false);
     }
