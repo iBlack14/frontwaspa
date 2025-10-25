@@ -3,11 +3,25 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import axios from 'axios';
 
+interface InstanceData {
+  name: string;
+  documentId: string;
+  state: string;
+  hasData: boolean;
+  dataCount: number;
+  data: any;
+}
+
+interface DebugData {
+  totalInstances: number;
+  instances: InstanceData[];
+}
+
 export default function DebugStats() {
   const { data: session } = useSession();
-  const [data, setData] = useState(null);
+  const [data, setData] = useState<DebugData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (session) {
