@@ -13,6 +13,68 @@ export const config = {
   },
 };
 
+// ✅ Función helper para actualizar estadísticas de instancia
+async function updateInstanceStats(documentId, stats) {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Obtener datos actuales
+    const { data: instance, error: fetchError } = await supabaseAdmin
+      .from('instances')
+      .select('historycal_data')
+      .eq('document_id', documentId)
+      .single();
+    
+    if (fetchError) {
+      console.error('[UPDATE-STATS] Error fetching instance:', fetchError);
+      return;
+    }
+    
+    // Obtener o inicializar datos históricos
+    let historycalData = instance.historycal_data || [];
+    
+    // Buscar registro de hoy
+    const todayIndex = historycalData.findIndex(item => item.date === today);
+    
+    if (todayIndex >= 0) {
+      // Actualizar registro existente
+      historycalData[todayIndex] = {
+        date: today,
+        message_sent: (historycalData[todayIndex].message_sent || 0) + (stats.message_sent || 0),
+        api_message_sent: (historycalData[todayIndex].api_message_sent || 0) + (stats.api_message_sent || 0),
+        message_received: (historycalData[todayIndex].message_received || 0) + (stats.message_received || 0),
+      };
+    } else {
+      // Crear nuevo registro para hoy
+      historycalData.push({
+        date: today,
+        message_sent: stats.message_sent || 0,
+        api_message_sent: stats.api_message_sent || 0,
+        message_received: stats.message_received || 0,
+      });
+    }
+    
+    // Mantener solo los últimos 30 días
+    if (historycalData.length > 30) {
+      historycalData = historycalData.slice(-30);
+    }
+    
+    // Actualizar en la base de datos
+    const { error: updateError } = await supabaseAdmin
+      .from('instances')
+      .update({ historycal_data: historycalData })
+      .eq('document_id', documentId);
+    
+    if (updateError) {
+      console.error('[UPDATE-STATS] Error updating instance:', updateError);
+    } else {
+      console.log(`[UPDATE-STATS] ✅ Estadísticas actualizadas para ${documentId}`);
+    }
+  } catch (error) {
+    console.error('[UPDATE-STATS] Error:', error);
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -294,6 +356,17 @@ async function processSpamInBackground({
         
         // ✅ Actualizar progreso exitoso
         updateProgress(spamId, i + 1, { success: true, number: contact.numero });
+        
+        // ✅✅ Actualizar estadísticas en historycal_data (llamada interna)
+        try {
+          await updateInstanceStats(instanceId, {
+            message_sent: 1,
+            api_message_sent: 1,
+            message_received: 0,
+          });
+        } catch (statsError) {
+          console.error(`[SPAM ${spamId}] Error actualizando estadísticas:`, statsError.message);
+        }
         
         // ✅✅ Esperar entre mensajes, verificando shouldContinue cada 500ms
         if (i < contacts.length - 1) {
