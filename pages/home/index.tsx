@@ -130,7 +130,6 @@ function DashboardContent() {
         }
       } else {
         setInstances(fetchedSessions);
-        // Set default selected instance
         if (fetchedSessions.length > 0) {
           setSelectedInstanceId(fetchedSessions[0].documentId);
           setHistoryData(fetchedSessions[0].historycal_data || []);
@@ -150,21 +149,6 @@ function DashboardContent() {
     const selectedInstance = instances.find((instance) => instance.documentId === documentId);
     setHistoryData(selectedInstance?.historycal_data || []);
     setIsDropdownOpen(false);
-  };
-
-  // 🧪 Función temporal para generar datos de prueba
-  const generateTestData = async (documentId: string) => {
-    try {
-      const res = await axios.post('/api/instances/generate-test-data', {
-        documentId
-      });
-      toast.success('Datos de prueba generados correctamente');
-      // Recargar datos
-      await fetchUserSessions();
-    } catch (error: any) {
-      console.error('Error generando datos de prueba:', error);
-      toast.error('Error al generar datos de prueba');
-    }
   };
 
   // Get the selected instance (los datos del perfil ya están en la instancia)
@@ -192,28 +176,58 @@ function DashboardContent() {
   const totalInstances = instances.length;
 
   const chartData = {
-    labels: (historyData || []).map((data) => data.date),
+    labels: (historyData || []).map((data) => {
+      const date = new Date(data.date);
+      return date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+    }),
     datasets: [
       {
-        label: 'Messages Sent',
+        label: 'Mensajes Enviados',
         data: (historyData || []).map((data) => data.message_sent),
-        borderColor: 'rgba(75, 192, 192, 1)',
-        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        borderColor: 'rgb(16, 185, 129)',
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        borderWidth: 3,
         tension: 0.4,
+        fill: true,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: 'rgb(16, 185, 129)',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: 'rgb(16, 185, 129)',
       },
       {
-        label: 'API Messages Sent',
+        label: 'Mensajes API',
         data: (historyData || []).map((data) => data.api_message_sent),
-        borderColor: 'rgba(153, 102, 255, 1)',
-        backgroundColor: 'rgba(153, 102, 255, 0.2)',
+        borderColor: 'rgb(168, 85, 247)',
+        backgroundColor: 'rgba(168, 85, 247, 0.1)',
+        borderWidth: 3,
         tension: 0.4,
+        fill: true,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: 'rgb(168, 85, 247)',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: 'rgb(168, 85, 247)',
       },
       {
-        label: 'Messages Received',
+        label: 'Mensajes Recibidos',
         data: (historyData || []).map((data) => data.message_received),
-        borderColor: 'rgba(255, 159, 64, 1)',
-        backgroundColor: 'rgba(255, 159, 64, 0.2)',
+        borderColor: 'rgb(249, 115, 22)',
+        backgroundColor: 'rgba(249, 115, 22, 0.1)',
+        borderWidth: 3,
         tension: 0.4,
+        fill: true,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: 'rgb(249, 115, 22)',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: 'rgb(249, 115, 22)',
       },
     ],
   };
@@ -221,75 +235,116 @@ function DashboardContent() {
   const chartOptions: ChartOptions<'line'> = {
     responsive: true,
     maintainAspectRatio: true,
-    aspectRatio: 2,
+    aspectRatio: 2.5,
     interaction: {
-      mode: 'nearest',
-      intersect: true,
+      mode: 'index',
+      intersect: false,
     },
     plugins: {
       legend: {
-        position: 'top' as const,
+        display: false,
       },
       title: {
-        display: true,
-        text: 'Historical Data',
+        display: false,
       },
       tooltip: {
         enabled: true,
+        backgroundColor: 'rgba(24, 24, 27, 0.95)',
+        titleColor: '#fff',
+        bodyColor: '#a1a1aa',
+        borderColor: 'rgba(63, 63, 70, 0.5)',
+        borderWidth: 1,
+        padding: 12,
+        displayColors: true,
+        boxWidth: 8,
+        boxHeight: 8,
+        usePointStyle: true,
         callbacks: {
           label: (context: any) => {
             const datasetLabel = context.dataset.label || '';
             const value = context.parsed.y;
-            return `${datasetLabel}: ${value}`;
+            return ` ${datasetLabel}: ${value} mensajes`;
           },
         },
       },
       datalabels: {
-        display: true,
+        display: (context: any) => {
+          const value = context.dataset.data[context.dataIndex];
+          return value > 0;
+        },
         align: 'top' as const,
-        formatter: (value: number) => `${value}`,
-        color: '#ffff',
+        offset: 8,
+        formatter: (value: number) => value > 0 ? value : '',
+        color: '#fff',
         font: {
           weight: 'bold' as const,
-          size: 12,
+          size: 11,
+        },
+        backgroundColor: 'rgba(24, 24, 27, 0.8)',
+        borderRadius: 4,
+        padding: {
+          top: 4,
+          bottom: 4,
+          left: 6,
+          right: 6,
         },
       },
     },
     scales: {
       x: {
-        min: 0,
-        max: historyData.length > 0 ? historyData.length - 1 : 0,
+        grid: {
+          display: true,
+          color: 'rgba(63, 63, 70, 0.3)',
+        },
+        ticks: {
+          color: '#a1a1aa',
+          font: {
+            size: 11,
+          },
+          padding: 8,
+        },
+        border: {
+          display: false,
+        },
       },
       y: {
-        min: 0,
-        max: historyData.length > 0
-          ? Math.max(...historyData.flatMap((data) => [
-              data.message_sent,
-              data.api_message_sent,
-              data.message_received,
-            ])) * 1.2
-          : 100,
+        beginAtZero: true,
+        grid: {
+          display: true,
+          color: 'rgba(63, 63, 70, 0.3)',
+        },
+        ticks: {
+          color: '#a1a1aa',
+          font: {
+            size: 11,
+          },
+          padding: 8,
+          stepSize: 5,
+        },
+        border: {
+          display: false,
+        },
       },
     },
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 bg-gray-50 dark:bg-transparent min-h-screen">
       <Toaster richColors position="top-right" />
       
       {loading ? (
         <div className="flex items-center justify-center h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-emerald-500 mx-auto mb-4"></div>
-            <p className="text-zinc-400 text-lg">Cargando instancias...</p>
+            <p className="text-gray-600 dark:text-zinc-400 text-lg">Cargando instancias...</p>
           </div>
         </div>
       ) : instances.length === 0 ? (
         <div className="flex items-center justify-center h-[400px]">
-          <div className="text-center bg-zinc-800/50 p-12 rounded-2xl border border-zinc-700">
-            <ServerIcon className="w-20 h-20 mx-auto text-zinc-600 mb-4" />
-            <p className="text-zinc-300 text-xl mb-2">No tienes instancias disponibles</p>
-            <p className="text-zinc-500">Crea una nueva instancia para comenzar</p>
+          <div className="text-center bg-white dark:bg-zinc-800/50 p-12 rounded-2xl border border-gray-200 dark:border-zinc-700 shadow-lg dark:shadow-none">
+            <ServerIcon className="w-20 h-20 mx-auto text-gray-400 dark:text-zinc-600 mb-4" />
+            <p className="text-gray-800 dark:text-zinc-300 text-xl mb-2">No tienes instancias disponibles</p>
+            <p className="text-gray-500 dark:text-zinc-500">Crea una nueva instancia para comenzar</p>
           </div>
         </div>
       ) : (
@@ -297,81 +352,70 @@ function DashboardContent() {
           {/* Header with metrics cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Total Instances Card */}
-            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-6 shadow-xl transform transition-transform hover:scale-105">
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 rounded-xl p-6 shadow-lg dark:shadow-xl transform transition-transform hover:scale-105">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-blue-100 text-sm font-medium mb-1">Total Instancias</p>
+                  <p className="text-blue-50 dark:text-blue-100 text-sm font-medium mb-1">Total Instancias</p>
                   <p className="text-white text-3xl font-bold">{totalInstances}</p>
-                  <p className="text-blue-200 text-xs mt-1">{activeInstances} activas</p>
+                  <p className="text-blue-100 dark:text-blue-200 text-xs mt-1">{activeInstances} activas</p>
                 </div>
-                <ServerIcon className="w-12 h-12 text-blue-200 opacity-80" />
+                <ServerIcon className="w-12 h-12 text-blue-100 dark:text-blue-200 opacity-80" />
               </div>
             </div>
 
             {/* Messages Sent Card */}
-            <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-xl p-6 shadow-xl transform transition-transform hover:scale-105">
+            <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-700 rounded-xl p-6 shadow-lg dark:shadow-xl transform transition-transform hover:scale-105">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-emerald-100 text-sm font-medium mb-1">Mensajes Enviados</p>
+                  <p className="text-emerald-50 dark:text-emerald-100 text-sm font-medium mb-1">Mensajes Enviados</p>
                   <p className="text-white text-3xl font-bold">{metrics.totalSent.toLocaleString()}</p>
-                  <p className="text-emerald-200 text-xs mt-1">Total acumulado</p>
+                  <p className="text-emerald-100 dark:text-emerald-200 text-xs mt-1">Total acumulado</p>
                 </div>
-                <PaperAirplaneIcon className="w-12 h-12 text-emerald-200 opacity-80" />
+                <PaperAirplaneIcon className="w-12 h-12 text-emerald-100 dark:text-emerald-200 opacity-80" />
               </div>
             </div>
 
             {/* API Messages Card */}
-            <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl p-6 shadow-xl transform transition-transform hover:scale-105">
+            <div className="bg-gradient-to-br from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 rounded-xl p-6 shadow-lg dark:shadow-xl transform transition-transform hover:scale-105">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-purple-100 text-sm font-medium mb-1">Mensajes API</p>
+                  <p className="text-purple-50 dark:text-purple-100 text-sm font-medium mb-1">Mensajes API</p>
                   <p className="text-white text-3xl font-bold">{metrics.totalApiSent.toLocaleString()}</p>
-                  <p className="text-purple-200 text-xs mt-1">Vía API</p>
+                  <p className="text-purple-100 dark:text-purple-200 text-xs mt-1">Vía API</p>
                 </div>
-                <ChatBubbleBottomCenterTextIcon className="w-12 h-12 text-purple-200 opacity-80" />
+                <ChatBubbleBottomCenterTextIcon className="w-12 h-12 text-purple-100 dark:text-purple-200 opacity-80" />
               </div>
             </div>
 
             {/* Messages Received Card */}
-            <div className="bg-gradient-to-br from-orange-600 to-orange-700 rounded-xl p-6 shadow-xl transform transition-transform hover:scale-105">
+            <div className="bg-gradient-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700 rounded-xl p-6 shadow-lg dark:shadow-xl transform transition-transform hover:scale-105">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-orange-100 text-sm font-medium mb-1">Mensajes Recibidos</p>
+                  <p className="text-orange-50 dark:text-orange-100 text-sm font-medium mb-1">Mensajes Recibidos</p>
                   <p className="text-white text-3xl font-bold">{metrics.totalReceived.toLocaleString()}</p>
-                  <p className="text-orange-200 text-xs mt-1">Total recibidos</p>
+                  <p className="text-orange-100 dark:text-orange-200 text-xs mt-1">Total recibidos</p>
                 </div>
-                <InboxArrowDownIcon className="w-12 h-12 text-orange-200 opacity-80" />
+                <InboxArrowDownIcon className="w-12 h-12 text-orange-100 dark:text-orange-200 opacity-80" />
               </div>
             </div>
           </div>
 
           {/* Instance Selector with Profile */}
-          <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
+          <div className="bg-white dark:bg-zinc-800/50 rounded-xl p-6 border border-gray-200 dark:border-zinc-700 shadow-md dark:shadow-none">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-white text-xl font-bold flex items-center gap-2">
+              <h2 className="text-gray-900 dark:text-white text-xl font-bold flex items-center gap-2">
                 <ServerIcon className="w-6 h-6 text-emerald-500" />
                 Seleccionar Instancia
               </h2>
-              <div className="flex items-center gap-3">
-                {selectedInstanceId && (
-                  <button
-                    onClick={() => generateTestData(selectedInstanceId)}
-                    className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors flex items-center gap-2"
-                    title="Generar datos de prueba para esta instancia"
-                  >
-                    🧪 Generar Datos de Prueba
-                  </button>
-                )}
-                <span className="text-zinc-400 text-sm">
-                  {activeInstances}/{totalInstances} conectadas
-                </span>
-              </div>
+              <span className="text-gray-500 dark:text-zinc-400 text-sm">
+                {activeInstances}/{totalInstances} conectadas
+              </span>
             </div>
 
             <div className="relative" ref={dropdownRef}>
               {/* Enhanced Dropdown Trigger */}
               <div
-                className="flex items-center justify-between p-4 bg-zinc-900 border-2 border-zinc-700 rounded-xl cursor-pointer hover:border-emerald-500 transition-all group"
+                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-zinc-900 border-2 border-gray-300 dark:border-zinc-700 rounded-xl cursor-pointer hover:border-emerald-500 transition-all group"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               >
                 <div className="flex items-center gap-4">
@@ -383,17 +427,17 @@ function DashboardContent() {
                       onError={(e) => (e.currentTarget.src = '/logo/profile.png')}
                     />
                   ) : (
-                    <div className="w-12 h-12 rounded-full bg-zinc-700 flex items-center justify-center">
-                      <ServerIcon className="w-6 h-6 text-zinc-400" />
+                    <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center">
+                      <ServerIcon className="w-6 h-6 text-gray-500 dark:text-zinc-400" />
                     </div>
                   )}
                   <div>
-                    <p className="text-white font-semibold text-lg">
+                    <p className="text-gray-900 dark:text-white font-semibold text-lg">
                       {selectedInstance?.name || selectedInstance?.documentId || 'Selecciona una instancia'}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
                       {selectedInstance?.number && (
-                        <span className="text-zinc-400 text-sm">{selectedInstance.number}</span>
+                        <span className="text-gray-600 dark:text-zinc-400 text-sm">{selectedInstance.number}</span>
                       )}
                       {selectedInstance && (
                         <span className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
@@ -413,7 +457,7 @@ function DashboardContent() {
                   </div>
                 </div>
                 <ChevronDownIcon
-                  className={`w-6 h-6 text-zinc-400 group-hover:text-emerald-500 transition-all ${
+                  className={`w-6 h-6 text-gray-500 dark:text-zinc-400 group-hover:text-emerald-500 transition-all ${
                     isDropdownOpen ? 'rotate-180' : ''
                   }`}
                 />
@@ -421,7 +465,7 @@ function DashboardContent() {
 
               {/* Enhanced Dropdown Menu */}
               {isDropdownOpen && (
-                <div className="absolute z-10 mt-2 w-full bg-zinc-900 border-2 border-zinc-700 rounded-xl shadow-2xl max-h-80 overflow-y-auto">
+                <div className="absolute z-10 mt-2 w-full bg-white dark:bg-zinc-900 border-2 border-gray-200 dark:border-zinc-700 rounded-xl shadow-2xl max-h-80 overflow-y-auto">
                   {instances.map((instance) => {
                     const isSelected = instance.documentId === selectedInstanceId;
                     return (
@@ -477,33 +521,88 @@ function DashboardContent() {
           </div>
 
           {/* Chart Section */}
-          <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700">
-            <h2 className="text-white text-xl font-bold mb-6 flex items-center gap-2">
-              <ChatBubbleBottomCenterTextIcon className="w-6 h-6 text-emerald-500" />
-              Historial de Mensajes
-            </h2>
-            {historyData.length > 0 ? (
-              <Suspense
-                fallback={
-                  <div className="flex items-center justify-center h-[500px]">
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-emerald-500 mx-auto mb-4"></div>
-                      <div className="text-zinc-400">Cargando gráfico...</div>
+          <div className="relative overflow-hidden bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-zinc-900 dark:via-zinc-900 dark:to-black rounded-3xl border border-gray-200 dark:border-zinc-800 shadow-xl dark:shadow-2xl">
+            {/* Decorative gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-purple-500/5 pointer-events-none"></div>
+            
+            <div className="relative z-10 p-8">
+              {/* Header */}
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-emerald-500/20 blur-xl rounded-full"></div>
+                    <div className="relative bg-gradient-to-br from-emerald-500 to-emerald-600 p-3 rounded-2xl shadow-lg">
+                      <ChatBubbleBottomCenterTextIcon className="w-7 h-7 text-white" />
                     </div>
                   </div>
-                }
-              >
-                <LazyChart data={chartData} options={chartOptions} />
-              </Suspense>
-            ) : (
-              <div className="flex items-center justify-center h-[300px] bg-zinc-900/50 rounded-xl border-2 border-dashed border-zinc-700">
-                <div className="text-center">
-                  <ChatBubbleBottomCenterTextIcon className="w-16 h-16 mx-auto text-zinc-600 mb-4" />
-                  <p className="text-zinc-400 text-lg">No hay datos históricos disponibles</p>
-                  <p className="text-zinc-500 text-sm mt-2">Los datos aparecerán una vez que comiences a enviar mensajes</p>
+                  <div>
+                    <h2 className="text-gray-900 dark:text-white text-2xl font-bold tracking-tight">Historial de Mensajes</h2>
+                    <p className="text-gray-600 dark:text-zinc-400 text-sm mt-1">Estadísticas de los últimos 30 días</p>
+                  </div>
                 </div>
+                
+                {historyData.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2 bg-gradient-to-r from-emerald-500/10 to-emerald-600/10 border border-emerald-500/20 px-4 py-2.5 rounded-xl backdrop-blur-sm">
+                      <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-lg shadow-emerald-500/50"></div>
+                      <span className="text-emerald-600 dark:text-emerald-400 text-sm font-medium">Enviados</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-gradient-to-r from-purple-500/10 to-purple-600/10 border border-purple-500/20 px-4 py-2.5 rounded-xl backdrop-blur-sm">
+                      <div className="w-2.5 h-2.5 bg-purple-500 rounded-full animate-pulse shadow-lg shadow-purple-500/50"></div>
+                      <span className="text-purple-600 dark:text-purple-400 text-sm font-medium">API</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-gradient-to-r from-orange-500/10 to-orange-600/10 border border-orange-500/20 px-4 py-2.5 rounded-xl backdrop-blur-sm">
+                      <div className="w-2.5 h-2.5 bg-orange-500 rounded-full animate-pulse shadow-lg shadow-orange-500/50"></div>
+                      <span className="text-orange-600 dark:text-orange-400 text-sm font-medium">Recibidos</span>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+
+              {/* Chart Container */}
+              {historyData.length > 0 ? (
+                <div className="relative bg-white/50 dark:bg-black/20 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 dark:border-zinc-800/50">
+                  {/* Grid pattern overlay */}
+                  <div className="absolute inset-0 opacity-5" style={{
+                    backgroundImage: 'linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px)',
+                    backgroundSize: '20px 20px'
+                  }}></div>
+                  
+                  <div className="relative z-10">
+                    <Suspense
+                      fallback={
+                        <div className="flex items-center justify-center h-[500px]">
+                          <div className="text-center">
+                            <div className="relative">
+                              <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full"></div>
+                              <div className="relative animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-emerald-500 mx-auto mb-4"></div>
+                            </div>
+                            <div className="text-gray-600 dark:text-zinc-400 font-medium">Cargando estadísticas...</div>
+                          </div>
+                        </div>
+                      }
+                    >
+                      <LazyChart data={chartData} options={chartOptions} />
+                    </Suspense>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-[450px] bg-gray-100/50 dark:bg-black/20 backdrop-blur-sm rounded-2xl border-2 border-dashed border-gray-300 dark:border-zinc-800/50">
+                  <div className="text-center max-w-md">
+                    <div className="relative inline-block mb-6">
+                      <div className="absolute inset-0 bg-gray-300/20 dark:bg-zinc-700/20 blur-3xl rounded-full"></div>
+                      <div className="relative bg-gray-200/50 dark:bg-zinc-800/50 p-6 rounded-3xl border border-gray-300 dark:border-zinc-700/50">
+                        <ChatBubbleBottomCenterTextIcon className="w-20 h-20 text-gray-400 dark:text-zinc-600" />
+                      </div>
+                    </div>
+                    <h3 className="text-gray-800 dark:text-zinc-300 text-xl font-semibold mb-2">No hay datos históricos</h3>
+                    <p className="text-gray-600 dark:text-zinc-500 text-sm leading-relaxed">
+                      Las estadísticas aparecerán automáticamente cuando comiences a enviar y recibir mensajes
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </>
       )}

@@ -97,46 +97,46 @@ const handleSave = async () => {
   return (
     <div className="p-5 max-w-md mx-auto">
       <Toaster richColors /> {/* Add Toaster component */}
-      <h1 className="text-2xl font-bold text-white mb-6">Actualizar Información del Usuario</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Actualizar Información del Usuario</h1>
 
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       <div className="space-y-4">
         <div>
-          <label className="block text-zinc-400 font-medium mb-1">Correo Electrónico</label>
+          <label className="block text-gray-700 dark:text-zinc-400 font-medium mb-1">Correo Electrónico</label>
           <input
             type="email"
             value={email}
             readOnly
-            className="p-2 w-full text-zinc-400 bg-zinc-900 border border-zinc-700 rounded-md focus:outline-none"
+            className="p-2 w-full text-gray-600 dark:text-zinc-400 bg-gray-100 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-md focus:outline-none"
           />
         </div>
 
         <div>
-          <label className="block text-zinc-400 font-medium mb-1">Nombre de Usuario</label>
+          <label className="block text-gray-700 dark:text-zinc-400 font-medium mb-1">Nombre de Usuario</label>
           <input
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="Nuevo nombre de usuario"
-            className="p-2 w-full text-zinc-400 bg-zinc-900 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="p-2 w-full text-gray-900 dark:text-zinc-400 bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
         </div>
 
         <div>
-          <label className="block text-zinc-400 font-medium mb-1">Secret key</label>
+          <label className="block text-gray-700 dark:text-zinc-400 font-medium mb-1">Secret key</label>
           <div className="flex items-center space-x-2">
             <div className="relative w-full">
               <input
                 type={isKeyVisible ? 'text' : 'password'}
                 value={key}
                 readOnly
-                className="p-2 w-full text-zinc-400 bg-zinc-900 border border-zinc-700 rounded-md focus:outline-none pr-10"
+                className="p-2 w-full text-gray-600 dark:text-zinc-400 bg-gray-100 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-md focus:outline-none pr-10"
               />
               <div className="absolute inset-y-0 right-2 flex items-center">
                 <button
                   onClick={() => setIsKeyVisible(!isKeyVisible)}
-                  className="text-zinc-400 hover:text-white"
+                  className="text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white"
                 >
                   {isKeyVisible ? (
                     <EyeSlashIcon className="w-5 h-5" />

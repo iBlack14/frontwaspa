@@ -17,8 +17,27 @@ export default async function handler(req, res) {
         .from('products')
         .select('*')
 
-      if (error) {
-        return res.status(500).json({ error: error.message })
+      // Si hay error o no hay productos, devolver productos por defecto
+      if (error || !products || products.length === 0) {
+        console.warn('No products found in database, returning default products');
+        
+        // Productos por defecto
+        const defaultProducts = [
+          {
+            id: 1,
+            name: 'N8N',
+            fields: [
+              {
+                service_name: ''
+              }
+            ],
+            img: 'https://n8n.io/favicon.ico',
+            price: '0',
+            description: 'Plataforma de automatización de flujos de trabajo'
+          }
+        ];
+        
+        return res.status(200).json(defaultProducts);
       }
 
       // Formatear respuesta

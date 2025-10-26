@@ -71,16 +71,16 @@ function TemplatesContent() {
 
   if (status === 'loading' || isCheckingInstances) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="text-white">Cargando...</div>
+      <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 flex items-center justify-center">
+        <div className="text-gray-900 dark:text-white">Cargando...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
+    <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-white">
       {/* Header */}
-      <div className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-sm sticky top-0 z-10">
+      <div className="border-b border-gray-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
@@ -90,7 +90,7 @@ function TemplatesContent() {
               <h1 className="text-2xl font-bold">Plantillas de Automatización</h1>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-zinc-400">{session?.user?.email}</span>
+              <span className="text-gray-600 dark:text-zinc-400">{session?.user?.email}</span>
             </div>
           </div>
         </div>
@@ -100,21 +100,21 @@ function TemplatesContent() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h2 className="text-3xl font-bold mb-2">Automatiza tu WhatsApp</h2>
-          <p className="text-zinc-400">
+          <p className="text-gray-600 dark:text-zinc-400">
             Selecciona una plantilla y configúrala fácilmente sin necesidad de programar
           </p>
         </div>
 
         {/* Advertencia si no tiene instancias */}
         {!hasInstances && (
-          <div className="mb-8 bg-yellow-900/20 border border-yellow-600 rounded-lg p-6">
+          <div className="mb-8 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-400 dark:border-yellow-600 rounded-lg p-6">
             <div className="flex items-start gap-4">
               <div className="text-4xl">⚠️</div>
               <div className="flex-1">
-                <h3 className="text-xl font-bold text-yellow-500 mb-2">
+                <h3 className="text-xl font-bold text-yellow-700 dark:text-yellow-500 mb-2">
                   Necesitas una instancia conectada
                 </h3>
-                <p className="text-zinc-300 mb-4">
+                <p className="text-gray-700 dark:text-zinc-300 mb-4">
                   Para usar las plantillas, primero debes crear y conectar una instancia de WhatsApp.
                 </p>
                 <Link
@@ -134,7 +134,7 @@ function TemplatesContent() {
             <div
               key={template.id}
               className={`
-                relative bg-zinc-900 border border-zinc-800 rounded-lg p-6
+                relative bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg p-6 shadow-md dark:shadow-none
                 transition-all duration-200
                 ${template.available && hasInstances
                   ? 'hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/20 cursor-pointer' 
@@ -150,7 +150,7 @@ function TemplatesContent() {
               {/* Badge "Próximamente" */}
               {!template.available && (
                 <div className="absolute top-4 right-4">
-                  <span className="bg-zinc-800 text-zinc-400 text-xs px-2 py-1 rounded-full">
+                  <span className="bg-gray-200 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 text-xs px-2 py-1 rounded-full">
                     Próximamente
                   </span>
                 </div>
@@ -163,7 +163,7 @@ function TemplatesContent() {
               <h3 className="text-xl font-bold mb-2">{template.name}</h3>
 
               {/* Description */}
-              <p className="text-zinc-400 text-sm mb-4">{template.description}</p>
+              <p className="text-gray-600 dark:text-zinc-400 text-sm mb-4">{template.description}</p>
 
               {/* Button */}
               {template.available && (
@@ -172,7 +172,7 @@ function TemplatesContent() {
                   className={`w-full py-2 px-4 rounded-md transition ${
                     hasInstances
                       ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                      : 'bg-zinc-700 text-zinc-400 cursor-not-allowed'
+                      : 'bg-gray-300 dark:bg-zinc-700 text-gray-500 dark:text-zinc-400 cursor-not-allowed'
                   }`}
                 >
                   {hasInstances ? 'Usar Plantilla' : 'Requiere Instancia'}
@@ -183,27 +183,27 @@ function TemplatesContent() {
         </div>
 
         {/* Info Section */}
-        <div className="mt-12 bg-zinc-900 border border-zinc-800 rounded-lg p-6">
+        <div className="mt-12 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg p-6 shadow-md dark:shadow-none">
           <h3 className="text-xl font-bold mb-4">💡 ¿Cómo funciona?</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <div className="text-3xl mb-2">1️⃣</div>
               <h4 className="font-semibold mb-1">Selecciona una plantilla</h4>
-              <p className="text-zinc-400 text-sm">
+              <p className="text-gray-600 dark:text-zinc-400 text-sm">
                 Elige la automatización que necesitas
               </p>
             </div>
             <div>
               <div className="text-3xl mb-2">2️⃣</div>
               <h4 className="font-semibold mb-1">Configura los datos</h4>
-              <p className="text-zinc-400 text-sm">
+              <p className="text-gray-600 dark:text-zinc-400 text-sm">
                 Rellena un formulario simple con tus datos
               </p>
             </div>
             <div>
               <div className="text-3xl mb-2">3️⃣</div>
               <h4 className="font-semibold mb-1">¡Listo!</h4>
-              <p className="text-zinc-400 text-sm">
+              <p className="text-gray-600 dark:text-zinc-400 text-sm">
                 La automatización se ejecuta automáticamente
               </p>
             </div>
