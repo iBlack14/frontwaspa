@@ -101,16 +101,27 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'No autorizado' });
     }
 
-    // Verificar plan activo
+    // Verificar plan activo y obtener configuración de proxy
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('status_plan, api_key')
+      .select('status_plan, api_key, proxy_enabled, proxy_type, proxy_host, proxy_port, proxy_username, proxy_password, proxy_country')
       .eq('id', session.id)
       .single();
 
     if (!profile || !profile.status_plan) {
       return res.status(403).json({ error: 'No tienes un plan activo' });
     }
+    
+    // Extraer configuración de proxy
+    const proxyConfig = profile.proxy_enabled ? {
+      enabled: true,
+      type: profile.proxy_type,
+      host: profile.proxy_host,
+      port: profile.proxy_port,
+      username: profile.proxy_username,
+      password: profile.proxy_password,
+      country: profile.proxy_country,
+    } : null;
 
     // Parsear form-data
     const form = formidable({ multiples: false });
@@ -303,6 +314,7 @@ export default async function handler(req, res) {
       waitTime,
       BACKEND_URL,
       finalImageUrl,
+      proxyConfig, // Pasar configuración de proxy
     });
 
     // ✅✅ RETORNAR INMEDIATAMENTE (no esperar a que termine el envío)
@@ -326,9 +338,54 @@ async function processSpamInBackground({
   waitTime,
   BACKEND_URL,
   finalImageUrl,
+  proxyConfig,
 }) {
   console.log(`[SPAM ${spamId}] 🚀 Iniciando envío con SISTEMA ANTI-BANEO`);
   console.log(`[SPAM ${spamId}] Total mensajes: ${contacts.length}`);
+  
+  // Configurar proxy si está habilitado
+  let axiosConfig = {
+    headers: {
+      'Authorization': apiKey,
+      'Content-Type': 'application/json',
+    },
+    timeout: 30000,
+  };
+  
+  if (proxyConfig && proxyConfig.enabled) {
+    console.log(`[SPAM ${spamId}] 🌐 Usando PROXY: ${proxyConfig.type}://${proxyConfig.host}:${proxyConfig.port}`);
+    
+    // Construir URL del proxy
+    let proxyUrl;
+    if (proxyConfig.username && proxyConfig.password) {
+      proxyUrl = `${proxyConfig.type}://${proxyConfig.username}:${proxyConfig.password}@${proxyConfig.host}:${proxyConfig.port}`;
+    } else {
+      proxyUrl = `${proxyConfig.type}://${proxyConfig.host}:${proxyConfig.port}`;
+    }
+    
+    // Configurar proxy en axios
+    try {
+      const { HttpsProxyAgent } = require('https-proxy-agent');
+      const { SocksProxyAgent } = require('socks-proxy-agent');
+      
+      let agent;
+      if (proxyConfig.type === 'socks4' || proxyConfig.type === 'socks5') {
+        agent = new SocksProxyAgent(proxyUrl);
+      } else {
+        agent = new HttpsProxyAgent(proxyUrl);
+      }
+      
+      axiosConfig.httpAgent = agent;
+      axiosConfig.httpsAgent = agent;
+      
+      console.log(`[SPAM ${spamId}] ✅ Proxy configurado correctamente`);
+    } catch (proxyError) {
+      console.error(`[SPAM ${spamId}] ⚠️  Error configurando proxy:`, proxyError.message);
+      console.log(`[SPAM ${spamId}] Continuando sin proxy...`);
+    }
+  } else {
+    console.log(`[SPAM ${spamId}] 📡 Enviando SIN proxy (IP directa)`);
+  }
   
   // Tipo de cuenta (puedes obtenerlo de la BD o configuración)
   const accountType = 'warm_account'; // warm_account, new_account, established_account
@@ -400,13 +457,8 @@ async function processSpamInBackground({
               message: contact.mensaje,
             };
         
-        const response = await axios.post(endpoint, payload, {
-          headers: {
-            'Authorization': apiKey,
-            'Content-Type': 'application/json',
-          },
-          timeout: 30000, // 30 segundos timeout
-        });
+        // Usar configuración con proxy si está disponible
+        const response = await axios.post(endpoint, payload, axiosConfig);
         
         console.log(`[SPAM ${spamId}] ✅ Mensaje ${i + 1} enviado correctamente a ${contact.numero}`);
         

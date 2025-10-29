@@ -22,6 +22,7 @@ import {
   ChevronRightIcon,
   ArrowLeftOnRectangleIcon,
   RectangleStackIcon,
+  ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 
 function SidebarLayout({ children }: { children: React.ReactNode }) {
