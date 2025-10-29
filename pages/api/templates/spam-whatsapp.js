@@ -6,6 +6,20 @@ import XLSX from 'xlsx';
 import fs from 'fs';
 import axios from 'axios';
 import { createSpam, shouldContinue, updateProgress, completeSpam, stopSpam } from '../../../src/lib/spam-control';
+import {
+  calculateAdaptiveDelay,
+  shouldTakeLongPause,
+  getLongPauseDuration,
+  hasReachedDailyLimit,
+  hasReachedHourlyLimit,
+  getTimeUntilNextHour,
+  incrementMessageCount,
+  recordError,
+  getCounters,
+  logAntiBanStatus,
+  isSafeHour,
+  isValidPhoneNumber,
+} from '../../../src/lib/anti-ban-system';
 
 export const config = {
   api: {
@@ -313,18 +327,60 @@ async function processSpamInBackground({
   BACKEND_URL,
   finalImageUrl,
 }) {
-  console.log(`[SPAM ${spamId}] Iniciando envío de ${contacts.length} mensajes`);
+  console.log(`[SPAM ${spamId}] 🚀 Iniciando envío con SISTEMA ANTI-BANEO`);
+  console.log(`[SPAM ${spamId}] Total mensajes: ${contacts.length}`);
+  
+  // Tipo de cuenta (puedes obtenerlo de la BD o configuración)
+  const accountType = 'warm_account'; // warm_account, new_account, established_account
+  
+  // Mostrar estado inicial
+  logAntiBanStatus(instanceId);
   
   try {
+    // Validar números antes de enviar
+    const validContacts = contacts.filter(contact => isValidPhoneNumber(contact.numero));
+    const invalidCount = contacts.length - validContacts.length;
+    
+    if (invalidCount > 0) {
+      console.log(`[SPAM ${spamId}] ⚠️  ${invalidCount} números inválidos fueron filtrados`);
+    }
+    
     // Enviar directamente desde el backend
-    for (let i = 0; i < contacts.length; i++) {
+    for (let i = 0; i < validContacts.length; i++) {
       // ✅ Verificar si el envío fue detenido
       if (!shouldContinue(spamId)) {
-        console.log(`[SPAM ${spamId}] Envío detenido por el usuario en mensaje ${i + 1}`);
+        console.log(`[SPAM ${spamId}] 🛑 Envío detenido por el usuario en mensaje ${i + 1}`);
         break;
       }
+      
+      // ✅ Verificar límites anti-baneo
+      const counters = getCounters(instanceId);
+      
+      // Límite diario alcanzado
+      if (hasReachedDailyLimit(counters.messagesSentToday, accountType)) {
+        console.log(`[SPAM ${spamId}] 🚫 LÍMITE DIARIO ALCANZADO. Deteniendo envío.`);
+        updateProgress(spamId, i + 1, { 
+          success: false, 
+          number: 'SYSTEM', 
+          error: 'Límite diario alcanzado para evitar baneo' 
+        });
+        break;
+      }
+      
+      // Límite por hora alcanzado
+      if (hasReachedHourlyLimit(counters.messagesSentThisHour, accountType)) {
+        const waitTime = getTimeUntilNextHour();
+        console.log(`[SPAM ${spamId}] ⏰ LÍMITE POR HORA ALCANZADO. Esperando ${Math.ceil(waitTime / 60000)} minutos...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        console.log(`[SPAM ${spamId}] ✅ Reanudando envío después de pausa por hora`);
+      }
+      
+      // Horario no seguro - advertencia
+      if (!isSafeHour()) {
+        console.log(`[SPAM ${spamId}] ⚠️  ADVERTENCIA: Enviando fuera de horario seguro (9 AM - 9 PM)`);
+      }
 
-      const contact = contacts[i];
+      const contact = validContacts[i];
       console.log(`[SPAM ${spamId}] Enviando mensaje ${i + 1}/${contacts.length} a ${contact.numero}`);
       
       try {
@@ -354,6 +410,9 @@ async function processSpamInBackground({
         
         console.log(`[SPAM ${spamId}] ✅ Mensaje ${i + 1} enviado correctamente a ${contact.numero}`);
         
+        // ✅ Incrementar contador de mensajes
+        const updatedCounters = incrementMessageCount(instanceId);
+        
         // ✅ Actualizar progreso exitoso
         updateProgress(spamId, i + 1, { success: true, number: contact.numero });
         
@@ -368,25 +427,52 @@ async function processSpamInBackground({
           console.error(`[SPAM ${spamId}] Error actualizando estadísticas:`, statsError.message);
         }
         
-        // ✅✅ Esperar entre mensajes, verificando shouldContinue cada 500ms
-        if (i < contacts.length - 1) {
-          const totalWaitTime = waitTime * 1000;
-          console.log(`[SPAM ${spamId}] ⏳ Esperando ${waitTime} segundos antes del siguiente mensaje...`);
+        // ✅ Verificar si necesita pausa larga
+        if (shouldTakeLongPause(i + 1, accountType)) {
+          const pauseDuration = getLongPauseDuration(accountType);
+          console.log(`[SPAM ${spamId}] ⏸️  PAUSA LARGA: ${pauseDuration / 1000} segundos (enviados ${i + 1} mensajes)`);
+          await new Promise(resolve => setTimeout(resolve, pauseDuration));
+          console.log(`[SPAM ${spamId}] ▶️  Reanudando envío después de pausa`);
+        }
+        
+        // ✅✅ Delay ADAPTATIVO e INTELIGENTE entre mensajes
+        if (i < validContacts.length - 1) {
+          // Calcular delay adaptativo basado en uso y condiciones
+          const adaptiveDelay = calculateAdaptiveDelay({
+            accountType,
+            messagesSentThisHour: updatedCounters.messagesSentThisHour,
+            messagesSentToday: updatedCounters.messagesSentToday,
+            recentErrors: updatedCounters.recentErrors,
+          });
+          
+          const delaySeconds = (adaptiveDelay / 1000).toFixed(1);
+          console.log(`[SPAM ${spamId}] ⏳ Delay adaptativo: ${delaySeconds}s (enviados hoy: ${updatedCounters.messagesSentToday})`);
+          
+          // Verificar shouldContinue mientras espera
           const checkInterval = 500; // Verificar cada 500ms
           let elapsed = 0;
           
-          while (elapsed < totalWaitTime) {
+          while (elapsed < adaptiveDelay) {
             // Verificar si fue detenido durante la espera
             if (!shouldContinue(spamId)) {
+              console.log(`[SPAM ${spamId}] 🛑 Envío detenido durante el delay`);
               return; // Salir completamente de la función
             }
             
-            await new Promise(resolve => setTimeout(resolve, Math.min(checkInterval, totalWaitTime - elapsed)));
+            await new Promise(resolve => setTimeout(resolve, Math.min(checkInterval, adaptiveDelay - elapsed)));
             elapsed += checkInterval;
+          }
+          
+          // Mostrar estado cada 10 mensajes
+          if ((i + 1) % 10 === 0) {
+            logAntiBanStatus(instanceId);
           }
         }
       } catch (sendError) {
         console.error(`[SPAM ${spamId}] ❌ Error enviando mensaje ${i + 1} a ${contact.numero}:`, sendError.message);
+        
+        // ✅ Registrar error para ajustar delays
+        recordError(instanceId);
         
         // ✅ Actualizar progreso con error
         updateProgress(spamId, i + 1, { 
@@ -394,6 +480,13 @@ async function processSpamInBackground({
           number: contact.numero, 
           error: sendError.message 
         });
+        
+        // Si es error de rate limit, esperar más tiempo
+        if (sendError.message.includes('429') || sendError.message.includes('rate') || sendError.message.includes('limit')) {
+          console.log(`[SPAM ${spamId}] 🚨 RATE LIMIT detectado. Pausa de 5 minutos...`);
+          await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000));
+        }
+        
         // Continuar con el siguiente
       }
     }
