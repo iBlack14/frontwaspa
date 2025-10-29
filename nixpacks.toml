@@ -1,6 +1,6 @@
 # Easypanel Nixpacks Configuration
 [phases.setup]
-  nixPkgs = ["nodejs-20_x", "npm-10_x"]
+  nixPkgs = ["nodejs_20", "npm"]
 
 [phases.install]
   cmds = [
@@ -17,6 +17,3 @@
 
 [start]
   cmd = "npm start"
-
-[staticAssets]
-  "public" = "./"
