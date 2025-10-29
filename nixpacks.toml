@@ -1,6 +1,5 @@
 # Easypanel Nixpacks Configuration
-[phases.setup]
-  nixPkgs = ["nodejs_20", "npm"]
+# NO especificar nixPkgs - Nixpacks lo detecta automáticamente
 
 [phases.install]
   cmds = [
@@ -13,7 +12,6 @@
 
 [variables]
   NODE_ENV = "production"
-  NPM_CONFIG_LOGLEVEL = "error"
 
 [start]
   cmd = "npm start"
