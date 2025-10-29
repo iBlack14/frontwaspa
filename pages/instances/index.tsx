@@ -378,14 +378,14 @@ function DashboardContent() {
 
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
-                        <p className="text-zinc-400">
-                          <span className="font-bold">ClientId:</span> {session.documentId}
+                        <p className="text-zinc-400 text-sm truncate max-w-md">
+                          <span className="font-bold">ID:</span> {session.documentId}
                         </p>
                         {session.state === 'Connected' && (
                           <button
                             onClick={() => ConfigInstance(session.documentId)}
                             className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-600 hover:bg-slate-700 text-white transition"
-                            title="Configura tu weebhook"
+                            title="Configurar webhook"
                           >
                             <Cog6ToothIcon className="w-5 h-5" />
                           </button>
