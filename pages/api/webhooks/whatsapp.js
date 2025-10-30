@@ -1,5 +1,6 @@
 // API para recibir webhooks del backend de WhatsApp
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { broadcastMessage } from '@/lib/websocket';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -57,7 +58,62 @@ export default async function handler(req, res) {
 
       case 'message.received':
         // Mensaje recibido
-        statsUpdate.message_received = 1;
+        if (data?.fromMe === false || data?.key?.fromMe === false) {
+          statsUpdate.message_received = 1;
+          shouldUpdate = true;
+          console.log(`[WEBHOOK] ✅ Mensaje recibido detectado`);
+          
+          // Guardar mensaje en la base de datos
+          try {
+            const sender = data?.pushName || data?.key?.remoteJid?.split('@')[0] || 'Desconocido';
+            const messageText = data?.message?.conversation || 
+                               data?.message?.extendedTextMessage?.text || 
+                               data?.message?.imageMessage?.caption || 
+                               data?.message?.videoMessage?.caption || null;
+            
+            const messageType = data?.message?.conversation ? 'text' :
+                               data?.message?.imageMessage ? 'image' :
+                               data?.message?.videoMessage ? 'video' :
+                               data?.message?.audioMessage ? 'audio' :
+                               data?.message?.documentMessage ? 'document' : 'other';
+
+            // Insertar mensaje en la base de datos
+            const { error: messageError } = await supabaseAdmin
+              .from('messages')
+              .insert({
+                instance_id: instanceId,
+                chat_id: data?.key?.remoteJid,
+                message_id: data?.key?.id,
+                sender_name: sender,
+                sender_phone: data?.key?.remoteJid?.split('@')[0],
+                message_text: messageText,
+                message_type: messageType,
+                from_me: false,
+                timestamp: new Date().toISOString(),
+                metadata: data
+              });
+
+            if (messageError) {
+              console.error('[DB] Error al guardar mensaje:', messageError);
+            } else {
+              console.log('[DB] Mensaje guardado correctamente');
+            }
+            
+            // Notificar a los clientes conectados
+            broadcastMessage({
+              type: 'new_message',
+              chatId: data?.key?.remoteJid,
+              sender: sender,
+              text: messageText || '[Mensaje multimedia]',
+              timestamp: new Date().toISOString(),
+              instanceId: instanceId
+            });
+            
+            console.log(`[WEBSOCKET] Notificación enviada para mensaje de ${sender}`);
+          } catch (wsError) {
+            console.error('[WEBSOCKET] Error al procesar mensaje:', wsError);
+          }
+        }
         shouldUpdate = true;
         console.log(`[WEBHOOK] 📥 Mensaje recibido`);
         break;
