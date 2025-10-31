@@ -39,9 +39,19 @@ const nextConfig = {
       },
     ];
   },
-  // Configuración de imágenes si es necesario
+  // Configuración de imágenes (actualizado para Next.js 14+)
   images: {
-    domains: ['localhost', 'tu-dominio.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+    ],
+    formats: ['image/avif', 'image/webp'],
   },
 };
 
