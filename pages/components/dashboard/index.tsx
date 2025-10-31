@@ -18,6 +18,8 @@ import {
   WrenchScrewdriverIcon,
   InboxIcon,
   DocumentTextIcon,
+  GlobeAltIcon,
+  ChatBubbleLeftRightIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ArrowLeftOnRectangleIcon,
@@ -78,6 +80,8 @@ function SidebarLayout({ children }: { children: React.ReactNode }) {
   const menuItems = [
     { name: 'Home', icon: <HomeIcon className="w-6 h-6" />, path: '/home', action: () => handleNavigation('/home') },
     { name: 'Instances', icon: <ServerIcon className="w-6 h-6" />, path: '/instances', action: () => handleNavigation('/instances') },
+    { name: 'Messages', icon: <ChatBubbleLeftRightIcon className="w-6 h-6" />, path: '/messages', action: () => handleNavigation('/messages') },
+    { name: 'Proxies', icon: <GlobeAltIcon className="w-6 h-6" />, path: '/proxies', action: () => handleNavigation('/proxies') },
     { name: 'Profile', icon: <UserIcon className="w-6 h-6" />, path: '/profile', action: () => handleNavigation('/profile') },
     { name: 'Templates', icon: <RectangleStackIcon className="w-6 h-6" />, path: '/templates', action: () => handleNavigation('/templates') },
     { name: 'Subscription', icon: <InboxIcon className="w-6 h-6" />, path: '/subscription', action: () => handleNavigation('/subscription') },

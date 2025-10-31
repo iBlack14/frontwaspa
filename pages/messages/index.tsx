@@ -1,7 +1,6 @@
-'use client';
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 import axios from 'axios';
 import { toast } from 'sonner';
 import Sidebar from '../components/dashboard/index';
