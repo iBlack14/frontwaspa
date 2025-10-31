@@ -17,7 +17,7 @@ import {
 import type { ChartOptions } from 'chart.js';
 
 // ✅ Lazy load Chart.js - Solo se carga cuando hay datos
-const LazyChart = lazy(() => import('./ChartComponent'));
+const LazyChart = lazy(() => import('@/components/ChartComponent'));
 
 interface CustomSession {
   id?: string;
