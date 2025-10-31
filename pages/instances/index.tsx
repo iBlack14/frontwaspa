@@ -97,7 +97,10 @@ function DashboardContent() {
       : null,
     (url) => fetcher(url, ''),
     {
-      refreshInterval: 5000, // 1 segundo
+      refreshInterval: 1000, // Actualizar cada 1 segundo para QR rápido
+      revalidateOnFocus: true, // Revalidar cuando la ventana obtiene foco
+      revalidateOnReconnect: true, // Revalidar cuando se reconecta
+      dedupingInterval: 500, // Evitar duplicados en 500ms
     }
   );
 
