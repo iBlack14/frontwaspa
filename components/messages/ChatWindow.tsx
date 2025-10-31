@@ -1,6 +1,35 @@
 import { useEffect, useRef } from 'react';
-import { Chat, Message } from '../../pages/messages';
-import { CheckIcon, CheckCheckIcon } from 'lucide-react';
+import { CheckIcon } from '@heroicons/react/24/outline';
+
+interface Chat {
+  id: string;
+  instance_id: string;
+  chat_id: string;
+  chat_name?: string;
+  chat_type: 'individual' | 'group';
+  profile_pic_url?: string;
+  last_message_text?: string;
+  last_message_at?: string;
+  unread_count: number;
+  is_archived: boolean;
+  is_pinned: boolean;
+}
+
+interface Message {
+  id: string;
+  instance_id: string;
+  chat_id: string;
+  message_id: string;
+  sender_name?: string;
+  sender_phone?: string;
+  message_text?: string;
+  message_caption?: string;
+  message_type: string;
+  media_url?: string;
+  from_me: boolean;
+  timestamp: string;
+  is_read: boolean;
+}
 
 interface ChatWindowProps {
   chat: Chat;
@@ -113,7 +142,10 @@ function MessageBubble({ message }: { message: Message }) {
           </span>
           {message.from_me && (
             message.is_read ? (
-              <CheckCheckIcon className="w-4 h-4 text-blue-400" />
+              <div className="flex">
+                <CheckIcon className="w-4 h-4 text-blue-400 -mr-2" />
+                <CheckIcon className="w-4 h-4 text-blue-400" />
+              </div>
             ) : (
               <CheckIcon className="w-4 h-4 text-white/70" />
             )

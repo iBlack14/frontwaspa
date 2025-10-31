@@ -1,5 +1,18 @@
-import { Chat } from '../../pages/messages';
 import { UserIcon, UserGroupIcon } from '@heroicons/react/24/outline';
+
+interface Chat {
+  id: string;
+  instance_id: string;
+  chat_id: string;
+  chat_name?: string;
+  chat_type: 'individual' | 'group';
+  profile_pic_url?: string;
+  last_message_text?: string;
+  last_message_at?: string;
+  unread_count: number;
+  is_archived: boolean;
+  is_pinned: boolean;
+}
 
 interface ChatListProps {
   chats: Chat[];
