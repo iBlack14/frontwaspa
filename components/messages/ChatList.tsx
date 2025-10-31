@@ -20,18 +20,20 @@ interface ChatListProps {
   onSelectChat: (chat: Chat) => void;
 }
 
+// Función helper fuera del componente para que sea accesible por ChatItem
+const formatTime = (timestamp?: string) => {
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  
+  if (diff < 86400000) { // Menos de 24 horas
+    return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  }
+  return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+};
+
 export default function ChatList({ chats, selectedChat, onSelectChat }: ChatListProps) {
-  const formatTime = (timestamp?: string) => {
-    if (!timestamp) return '';
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    
-    if (diff < 86400000) { // Menos de 24 horas
-      return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-    }
-    return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
-  };
 
   const pinnedChats = chats.filter(c => c.is_pinned && !c.is_archived);
   const regularChats = chats.filter(c => !c.is_pinned && !c.is_archived);
