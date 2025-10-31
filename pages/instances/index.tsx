@@ -90,17 +90,23 @@ function DashboardContent() {
     return fetchedSessions;
   };
 
+  // Determinar intervalo de actualización dinámico
+  const hasInitializingSessions = sessions.some(s => s.state === 'Initializing' || s.state === 'Disconnected');
+  const refreshInterval = hasInitializingSessions ? 500 : 3000; // 500ms si hay QR pendiente, 3s normal
+
   // Fetch user sessions using SWR
-  const { data: fetchedSessions, error, isLoading: loadingSessions } = useSWR(
+  const { data: fetchedSessions, error, isLoading: loadingSessions, mutate } = useSWR(
     typedSession?.id
       ? `/api/instances?token=${typedSession.jwt}`
       : null,
     (url) => fetcher(url, ''),
     {
-      refreshInterval: 1000, // Actualizar cada 1 segundo para QR rápido
-      revalidateOnFocus: true, // Revalidar cuando la ventana obtiene foco
-      revalidateOnReconnect: true, // Revalidar cuando se reconecta
-      dedupingInterval: 500, // Evitar duplicados en 500ms
+      refreshInterval, // Dinámico: 500ms para QR, 3s normal
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      dedupingInterval: 200, // Reducido para QR más rápido
+      refreshWhenHidden: true, // Actualizar aunque la pestaña esté oculta
+      refreshWhenOffline: false,
     }
   );
 
@@ -108,6 +114,15 @@ function DashboardContent() {
   useEffect(() => {
     if (fetchedSessions) {
       setSessions(fetchedSessions);
+
+      // Log QR updates para debugging
+      fetchedSessions.forEach(session => {
+        if (session.qr) {
+          console.log(`✅ QR recibido para ${session.documentId} (${session.qr.length} chars)`);
+        } else if (session.state === 'Initializing') {
+          console.log(`⏳ Esperando QR para ${session.documentId}...`);
+        }
+      });
 
       // Initialize webhook inputs
       const initialWebhooks = fetchedSessions.reduce(
@@ -161,6 +176,11 @@ function DashboardContent() {
     try {
       await axios.post('/api/instances');
       toast.success('Nueva instancia creada con éxito');
+      
+      // Forzar actualización inmediata para obtener el QR rápido
+      setTimeout(() => mutate(), 100);
+      setTimeout(() => mutate(), 500);
+      setTimeout(() => mutate(), 1000);
     } catch (error: any) {
       console.error('Error al crear nueva instancia:', error.response?.data || error.message);
       toast.error(error.response?.data?.message || error.response?.data?.error || 'Error al crear nueva instancia');
