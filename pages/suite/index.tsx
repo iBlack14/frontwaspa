@@ -1,7 +1,7 @@
 'use client';
 import { SessionProvider, useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 import Sidebard from '../components/dashboard/index';
 import { Toaster, toast } from 'sonner';
 import { ArrowTopRightOnSquareIcon, PlusIcon, ClipboardIcon, ArrowPathIcon, StopIcon, EyeIcon, EyeSlashIcon, PlayIcon, TrashIcon } from '@heroicons/react/24/outline';

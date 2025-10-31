@@ -2,7 +2,7 @@
 import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 import Sidebard from '../components/dashboard/index';
 import { CheckCircleIcon, XCircleIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { Toaster, toast } from 'sonner';

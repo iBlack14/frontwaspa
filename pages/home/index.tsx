@@ -2,7 +2,7 @@
 import { SessionProvider, useSession } from 'next-auth/react';
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import axios from 'axios';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 import Sidebar from '../components/dashboard/index';
 import { Toaster, toast } from 'sonner';
 import { 

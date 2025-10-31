@@ -6,7 +6,7 @@ const wazilrest_logo = '/logo/wazilrest_logo.png';
 
 import { useSession, signOut } from 'next-auth/react';
 import { useState, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/router';
 import { ReactNode } from 'react';
 import Breadcrumb from '../Breadcrumb';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -29,7 +29,7 @@ import {
 
 function SidebarLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = router.pathname;
   // ✅ Una sola llamada a useSession
   const { data: session, status } = useSession();
   const email = session?.user?.email;
