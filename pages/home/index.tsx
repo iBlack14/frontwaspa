@@ -617,3 +617,10 @@ export default function Dashboard() {
     </Sidebar>
   );
 }
+
+// Forzar SSR para evitar errores de pre-renderizado durante el build
+export async function getServerSideProps() {
+  return {
+    props: {},
+  };
+}
