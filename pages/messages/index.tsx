@@ -221,24 +221,91 @@ function MessagesContent() {
   }
 
   return (
-    <div className="h-screen flex flex-col">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Mensajes</h1>
-          <select
-            value={selectedInstance || ''}
-            onChange={(e) => setSelectedInstance(e.target.value)}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-          >
-            {instances
-              .filter((i) => i.state === 'Connected')
-              .map((instance) => (
-                <option key={instance.document_id} value={instance.document_id}>
-                  {instance.profile_name || instance.phone_number || instance.document_id}
-                </option>
-              ))}
-          </select>
+    <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+      {/* Header Mejorado */}
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Mensajes</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {instances.filter((i) => i.state === 'Connected').length} instancia(s) conectada(s)
+              </p>
+            </div>
+            
+            {/* Selector de Instancia Mejorado */}
+            <div className="w-full sm:w-auto">
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Seleccionar Instancia
+              </label>
+              <select
+                value={selectedInstance || ''}
+                onChange={(e) => setSelectedInstance(e.target.value)}
+                className="w-full sm:w-64 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 transition"
+              >
+                {instances
+                  .filter((i) => i.state === 'Connected')
+                  .map((instance) => (
+                    <option key={instance.document_id} value={instance.document_id}>
+                      {instance.profile_name || instance.phone_number || instance.document_id}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Estadísticas de Mensajes */}
+          {selectedInstance && (
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">Enviados</p>
+                    <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
+                      {messages.filter(m => m.from_me).length}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-xs text-purple-700 dark:text-purple-300 font-medium">API</p>
+                    <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                      {messages.filter(m => m.from_me && m.message_type === 'api').length}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-xs text-orange-700 dark:text-orange-300 font-medium">Recibidos</p>
+                    <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
+                      {messages.filter(m => !m.from_me).length}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
