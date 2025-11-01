@@ -118,9 +118,23 @@ export default async function handler(req, res) {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
     let dockerCredentials = null;
 
+    if (!backendUrl) {
+      console.error('❌ NEXT_PUBLIC_BACKEND_URL no está configurado');
+      return res.status(500).json({
+        error: 'Configuración incompleta: NEXT_PUBLIC_BACKEND_URL no está definido',
+        suite_created: true,
+        suite_id: newSuite.id,
+        note: 'La instancia fue registrada pero no se pudo crear el contenedor Docker'
+      });
+    }
+
     if (backendUrl) {
       try {
-        console.log('Calling backend to create N8N instance...');
+        console.log('🚀 Calling backend to create N8N instance...');
+        console.log('Backend URL:', backendUrl);
+        console.log('Service Name:', service_name);
+        console.log('Plan:', plan);
+        
         const dockerResponse = await axios.post(
           `${backendUrl}/api/suite/create-n8n`,
           {
@@ -131,7 +145,7 @@ export default async function handler(req, res) {
             plan: plan
           },
           {
-            timeout: 30000,
+            timeout: 120000, // Aumentado a 2 minutos
             headers: { 'Content-Type': 'application/json' }
           }
         );
@@ -158,7 +172,32 @@ export default async function handler(req, res) {
         }
 
       } catch (dockerError) {
-        console.error('Docker API call failed:', dockerError.message);
+        console.error('❌ Docker API call failed:', {
+          message: dockerError.message,
+          code: dockerError.code,
+          response_status: dockerError.response?.status,
+          response_data: dockerError.response?.data,
+          backend_url: backendUrl,
+          service_name: service_name
+        });
+        
+        // Determinar tipo de error
+        let errorType = 'UNKNOWN';
+        let userMessage = dockerError.message;
+        
+        if (dockerError.code === 'ECONNREFUSED') {
+          errorType = 'CONNECTION_REFUSED';
+          userMessage = 'No se pudo conectar al backend. Verifica que esté corriendo.';
+        } else if (dockerError.code === 'ETIMEDOUT' || dockerError.message.includes('timeout')) {
+          errorType = 'TIMEOUT';
+          userMessage = 'El backend tardó demasiado en responder. Intenta nuevamente.';
+        } else if (dockerError.code === 'ENOTFOUND') {
+          errorType = 'DNS_ERROR';
+          userMessage = 'No se pudo encontrar el backend. Verifica la URL.';
+        } else if (dockerError.response?.status === 500) {
+          errorType = 'BACKEND_ERROR';
+          userMessage = dockerError.response?.data?.error || 'Error interno del backend';
+        }
         
         // Actualizar con error pero no fallar la creación
         await supabaseAdmin
@@ -167,19 +206,23 @@ export default async function handler(req, res) {
             credencials: {
               ...credentials,
               status: 'error',
-              error: dockerError.message,
+              error: userMessage,
+              error_type: errorType,
+              error_details: dockerError.response?.data || dockerError.message,
               note: 'Error al crear contenedor Docker - Instancia registrada pero no activa'
             }
           })
           .eq('id', newSuite.id);
 
         // Retornar error específico con mejor mensaje
-        const errorMessage = dockerError.response?.data?.error || dockerError.message;
         return res.status(500).json({
-          error: errorMessage,
+          error: userMessage,
+          error_type: errorType,
           details: dockerError.response?.data || dockerError.message,
           suite_created: true,
-          suite_id: newSuite.id
+          suite_id: newSuite.id,
+          backend_url: backendUrl,
+          help: 'Verifica los logs del backend y que NEXT_PUBLIC_BACKEND_URL sea correcto'
         });
       }
     } else {
