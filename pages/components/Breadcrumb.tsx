@@ -38,10 +38,10 @@ export default function Breadcrumb() {
 
 
     return (
-        <nav className="bg-zinc-800  shadow-zinc-800">
-            <div className="px-12 py-8 flex items-center border-b-2 border-zinc-700">
-                <div className="flex items-center justify-between w-full">
-                    <ol className="flex items-center space-x-1 text-sm">
+        <nav className="bg-zinc-800 shadow-zinc-800">
+            <div className="px-4 sm:px-8 md:px-12 py-4 sm:py-6 md:py-8 flex items-center border-b-2 border-zinc-700">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-3 sm:gap-0">
+                    <ol className="flex items-center space-x-1 text-sm overflow-x-auto">
                         <li>
                             <Link
                                 href="/"
@@ -77,12 +77,12 @@ export default function Breadcrumb() {
                     {showButton && (
                         <button
                             onClick={toggleSidebar}
-                            className="mb-4 bg-red-600 text-white px-4 py-2 mr-18 rounded font-bold hover:bg-red-700 transition"
+                            className="w-full sm:w-auto bg-red-600 text-white px-3 sm:px-4 py-2 rounded font-bold hover:bg-red-700 transition text-sm sm:text-base whitespace-nowrap"
                         >
                             {isSidebarOpen
                                 ? 'Cerrar Tienda'
                                 : defaultFilter === 'plan'
-                                    ? '👑 Upgrade Instances 👑 '
+                                    ? '👑 Upgrade Instances 👑'
                                     : defaultFilter === 'no-plan'
                                         ? '👑 Buy Suite 👑'
                                         : ''}
