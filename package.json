@@ -16,7 +16,6 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
-    "@next/swc-win32-x64-msvc": "^14.2.5",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.76.0",
     "@whiskeysockets/baileys": "^6.17.16",
@@ -63,5 +62,8 @@
     "@types/react-dom": "^18.3.0",
     "@types/uuid": "^10.0.0",
     "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "@next/swc-win32-x64-msvc": "^14.2.5"
   }
 }
