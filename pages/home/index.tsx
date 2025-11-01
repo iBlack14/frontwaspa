@@ -400,67 +400,103 @@ function DashboardContent() {
             </div>
           </div>
 
-          {/* Instance Selector with Profile */}
-          <div className="bg-white dark:bg-zinc-800/50 rounded-xl p-6 border border-gray-200 dark:border-zinc-700 shadow-md dark:shadow-none">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-gray-900 dark:text-white text-xl font-bold flex items-center gap-2">
-                <ServerIcon className="w-6 h-6 text-emerald-500" />
-                Seleccionar Instancia
-              </h2>
-              <span className="text-gray-500 dark:text-zinc-400 text-sm">
-                {activeInstances}/{totalInstances} conectadas
-              </span>
+          {/* Instance Selector with Profile - MEJORADO */}
+          <div className="bg-gradient-to-br from-white to-gray-50 dark:from-zinc-800 dark:to-zinc-900 rounded-2xl p-6 border border-gray-200 dark:border-zinc-700 shadow-xl dark:shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-emerald-500/20 blur-lg rounded-full"></div>
+                  <div className="relative bg-gradient-to-br from-emerald-500 to-emerald-600 p-2.5 rounded-xl shadow-lg">
+                    <ServerIcon className="w-5 h-5 text-white" />
+                  </div>
+                </div>
+                <h2 className="text-gray-900 dark:text-white text-xl font-bold">
+                  Instancia Activa
+                </h2>
+              </div>
+              <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                <span className="text-emerald-700 dark:text-emerald-400 text-sm font-semibold">
+                  {activeInstances}/{totalInstances} conectadas
+                </span>
+              </div>
             </div>
 
             <div className="relative" ref={dropdownRef}>
               {/* Enhanced Dropdown Trigger */}
               <div
-                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-zinc-900 border-2 border-gray-300 dark:border-zinc-700 rounded-xl cursor-pointer hover:border-emerald-500 transition-all group"
+                className="flex items-center justify-between p-5 bg-white dark:bg-zinc-900 border-2 border-gray-200 dark:border-zinc-700 rounded-2xl cursor-pointer hover:border-emerald-500 hover:shadow-lg transition-all duration-300 group"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               >
                 <div className="flex items-center gap-4">
-                  {selectedInstance?.profilePicUrl ? (
-                    <img
-                      src={selectedInstance.profilePicUrl}
-                      alt="Profile"
-                      className="w-12 h-12 rounded-full object-cover border-3 border-emerald-500 shadow-lg"
-                      onError={(e) => (e.currentTarget.src = '/logo/profile.png')}
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center">
-                      <ServerIcon className="w-6 h-6 text-gray-500 dark:text-zinc-400" />
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-gray-900 dark:text-white font-semibold text-lg">
-                      {selectedInstance?.name || selectedInstance?.documentId || 'Selecciona una instancia'}
+                  <div className="relative">
+                    {selectedInstance?.profilePicUrl ? (
+                      <>
+                        <div className="absolute inset-0 bg-emerald-500/30 blur-md rounded-full"></div>
+                        <img
+                          src={selectedInstance.profilePicUrl}
+                          alt="Profile"
+                          className="relative w-16 h-16 rounded-full object-cover border-4 border-emerald-500 shadow-xl ring-2 ring-emerald-500/20"
+                          onError={(e) => (e.currentTarget.src = '/logo/profile.png')}
+                        />
+                      </>
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-zinc-700 dark:to-zinc-800 flex items-center justify-center border-4 border-gray-300 dark:border-zinc-600 shadow-lg">
+                        <ServerIcon className="w-8 h-8 text-gray-500 dark:text-zinc-400" />
+                      </div>
+                    )}
+                    {selectedInstance && (
+                      <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-3 border-white dark:border-zinc-900 ${
+                        selectedInstance.state === 'Connected' ? 'bg-emerald-500' : 'bg-red-500'
+                      } shadow-lg`}></div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-gray-900 dark:text-white font-bold text-xl mb-1">
+                      {selectedInstance?.name || 'Sin nombre'}
                     </p>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                       {selectedInstance?.number && (
-                        <span className="text-gray-600 dark:text-zinc-400 text-sm">{selectedInstance.number}</span>
+                        <span className="text-gray-600 dark:text-zinc-400 text-sm font-medium flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                          </svg>
+                          {selectedInstance.number}
+                        </span>
                       )}
                       {selectedInstance && (
-                        <span className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
+                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full ${
                           selectedInstance.state === 'Connected'
-                            ? 'bg-emerald-500/20 text-emerald-400'
-                            : 'bg-red-500/20 text-red-400'
+                            ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                            : 'bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30'
                         }`}>
                           {selectedInstance.state === 'Connected' ? (
-                            <CheckCircleIcon className="w-3 h-3" />
+                            <CheckCircleIcon className="w-4 h-4" />
                           ) : (
-                            <XCircleIcon className="w-3 h-3" />
+                            <XCircleIcon className="w-4 h-4" />
                           )}
                           {selectedInstance.state}
                         </span>
                       )}
                     </div>
+                    {selectedInstance?.documentId && (
+                      <p className="text-gray-500 dark:text-zinc-500 text-xs mt-1 font-mono">
+                        ID: {selectedInstance.documentId}
+                      </p>
+                    )}
                   </div>
                 </div>
-                <ChevronDownIcon
-                  className={`w-6 h-6 text-gray-500 dark:text-zinc-400 group-hover:text-emerald-500 transition-all ${
-                    isDropdownOpen ? 'rotate-180' : ''
-                  }`}
-                />
+                <div className="flex items-center gap-2">
+                  <div className="hidden sm:block text-right mr-2">
+                    <p className="text-xs text-gray-500 dark:text-zinc-500 font-medium">Cambiar</p>
+                    <p className="text-xs text-gray-400 dark:text-zinc-600">instancia</p>
+                  </div>
+                  <ChevronDownIcon
+                    className={`w-7 h-7 text-gray-400 dark:text-zinc-500 group-hover:text-emerald-500 transition-all duration-300 ${
+                      isDropdownOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </div>
               </div>
 
               {/* Enhanced Dropdown Menu */}
