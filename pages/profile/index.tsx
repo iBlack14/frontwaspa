@@ -213,15 +213,15 @@ function ProfilePage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
+    <div className="max-w-5xl mx-auto p-4 sm:p-6">
       <Toaster richColors position="top-right" />
 
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
           Mi Perfil
         </h1>
-        <p className="text-gray-600 dark:text-zinc-400">
+        <p className="text-sm sm:text-base text-gray-600 dark:text-zinc-400">
           Gestiona tu información personal y configuración de seguridad
         </p>
       </div>

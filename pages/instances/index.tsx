@@ -57,6 +57,12 @@ function DashboardContent() {
     message_sent: boolean;
   }>({ message_received: false, message_sent: false });
 
+  // Estados para proxy
+  const [showProxyModal, setShowProxyModal] = useState(false);
+  const [availableProxies, setAvailableProxies] = useState<any[]>([]);
+  const [selectedProxy, setSelectedProxy] = useState<string>('');
+  const [proxyInstanceId, setProxyInstanceId] = useState<string | null>(null);
+
   // Define the fetcher function for SWR
   const fetcher = async (url: string, token: string) => {
     const res = await fetch(url, {
@@ -173,9 +179,26 @@ function DashboardContent() {
 
 
   const createNewInstance = async () => {
+    // Cargar proxies disponibles
     try {
-      await axios.post('/api/instances');
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      const response = await axios.get(`${backendUrl}/api/proxies`);
+      setAvailableProxies(response.data.proxies || []);
+      setSelectedProxy('');
+      setProxyInstanceId(null);
+      setShowProxyModal(true);
+    } catch (error: any) {
+      console.error('Error al cargar proxies:', error);
+      // Si no hay proxies, crear instancia sin proxy
+      await createInstanceWithProxy(null);
+    }
+  };
+
+  const createInstanceWithProxy = async (proxyId: string | null) => {
+    try {
+      const response = await axios.post('/api/instances', { proxy_id: proxyId });
       toast.success('Nueva instancia creada con éxito');
+      setShowProxyModal(false);
       
       // Forzar actualización inmediata para obtener el QR rápido
       setTimeout(() => mutate(), 100);
@@ -294,17 +317,15 @@ function DashboardContent() {
   return (
     <div className="">
       <Toaster richColors position="top-right" />
-
-
       <div className="flex">
 
 
-        <div className="p-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Bienvenido, {username}</h1>
+        <div className="p-4 sm:p-6 w-full">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">Bienvenido, {username}</h1>
 
           <div className="mb-5">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Tus Sesiones ❤️❤️</h2>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-4">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">Tus Sesiones ❤️❤️</h2>
               {sessions.length === 0 ? (
                 <button
                   onClick={createNewInstance}
@@ -534,8 +555,8 @@ function DashboardContent() {
 
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/40 dark:bg-zinc/40 bg-opacity-50 shadow-md flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg p-6 w-full max-w-md shadow-2xl">
+        <div className="fixed inset-0 bg-black/40 dark:bg-zinc/40 bg-opacity-50 shadow-md flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg p-4 sm:p-6 w-full max-w-md shadow-2xl">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Configurar Webhook</h3>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white">
@@ -590,7 +611,60 @@ function DashboardContent() {
         </div>
       )}
 
-
+      {/* Modal de selección de proxy */}
+      {showProxyModal && (
+        <div className="fixed inset-0 bg-black/40 dark:bg-zinc/40 bg-opacity-50 shadow-md flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg p-4 sm:p-6 w-full max-w-md shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {proxyInstanceId ? 'Asignar Proxy a Instancia' : 'Crear Nueva Instancia'}
+              </h3>
+              <button onClick={() => setShowProxyModal(false)} className="text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white">
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  Seleccionar Proxy (Opcional)
+                </label>
+                <select
+                  value={selectedProxy}
+                  onChange={(e) => setSelectedProxy(e.target.value)}
+                  className="w-full p-3 bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="">Sin proxy</option>
+                  {availableProxies.filter(p => p.is_active && p.is_healthy).map((proxy) => (
+                    <option key={proxy.id} value={proxy.id}>
+                      {proxy.name} ({proxy.type}) - {proxy.host}:{proxy.port}
+                      {proxy.country ? ` [${proxy.country}]` : ''}
+                    </option>
+                  ))}
+                </select>
+                {availableProxies.length === 0 && (
+                  <p className="text-xs text-gray-500 dark:text-zinc-500 mt-1">
+                    No hay proxies disponibles. Puedes crear uno en la sección de Proxies.
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                onClick={() => setShowProxyModal(false)}
+                className="bg-zinc-600 text-white px-4 py-2 rounded-md hover:bg-zinc-700 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => createInstanceWithProxy(selectedProxy || null)}
+                className="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 transition"
+              >
+                {proxyInstanceId ? 'Asignar Proxy' : 'Crear Instancia'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
