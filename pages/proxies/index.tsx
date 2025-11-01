@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import axios from 'axios';
 import { toast } from 'sonner';
 import Sidebar from '../components/dashboard/index';
-import { PlusIcon, TrashIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, TrashIcon, CheckCircleIcon, XCircleIcon, LinkIcon } from '@heroicons/react/24/outline';
 
 interface Proxy {
   id: string;
@@ -30,6 +30,10 @@ function ProxiesContent() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingProxy, setEditingProxy] = useState<Proxy | null>(null);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedProxyForAssign, setSelectedProxyForAssign] = useState<Proxy | null>(null);
+  const [instances, setInstances] = useState<any[]>([]);
+  const [selectedInstances, setSelectedInstances] = useState<string[]>([]);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -51,6 +55,7 @@ function ProxiesContent() {
   useEffect(() => {
     if (status === 'authenticated') {
       fetchProxies();
+      fetchInstances();
     }
   }, [status]);
 
@@ -66,6 +71,55 @@ function ProxiesContent() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchInstances = async () => {
+    try {
+      const response = await axios.get('/api/instances');
+      setInstances(response.data.instances || []);
+    } catch (error: any) {
+      console.error('Error fetching instances:', error);
+    }
+  };
+
+  const openAssignModal = (proxy: Proxy) => {
+    setSelectedProxyForAssign(proxy);
+    setSelectedInstances([]);
+    setShowAssignModal(true);
+  };
+
+  const handleAssignProxy = async () => {
+    if (!selectedProxyForAssign || selectedInstances.length === 0) {
+      toast.error('Selecciona al menos una instancia');
+      return;
+    }
+
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      
+      for (const instanceId of selectedInstances) {
+        await axios.post(`${backendUrl}/api/instance-proxies`, {
+          instance_id: instanceId,
+          proxy_id: selectedProxyForAssign.id
+        });
+      }
+      
+      toast.success(`Proxy asignado a ${selectedInstances.length} instancia(s)`);
+      setShowAssignModal(false);
+      setSelectedProxyForAssign(null);
+      setSelectedInstances([]);
+      fetchProxies();
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Error al asignar proxy');
+    }
+  };
+
+  const toggleInstanceSelection = (instanceId: string) => {
+    setSelectedInstances(prev => 
+      prev.includes(instanceId)
+        ? prev.filter(id => id !== instanceId)
+        : [...prev, instanceId]
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -167,11 +221,11 @@ function ProxiesContent() {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gestión de Proxies</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Gestión de Proxies</h1>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
             Administra tus proxies para evitar bloqueos
           </p>
         </div>
@@ -234,7 +288,14 @@ function ProxiesContent() {
                 )}
               </div>
 
-              <div className="flex gap-2 mt-4">
+              <div className="flex flex-col sm:flex-row gap-2 mt-4">
+                <button
+                  onClick={() => openAssignModal(proxy)}
+                  className="flex items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-sm px-3 py-2 rounded transition"
+                >
+                  <LinkIcon className="w-4 h-4" />
+                  Asignar
+                </button>
                 <button
                   onClick={() => handleHealthCheck(proxy.id)}
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-2 rounded transition"
@@ -259,10 +320,83 @@ function ProxiesContent() {
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modal Asignar Proxy */}
+      {showAssignModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl sm:text-2xl font-bold mb-4 text-gray-900 dark:text-white">
+              Asignar Proxy: {selectedProxyForAssign?.name}
+            </h2>
+            
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Selecciona las instancias a las que deseas asignar este proxy:
+            </p>
+
+            {instances.length === 0 ? (
+              <div className="text-center py-8 text-gray-600 dark:text-gray-400">
+                No tienes instancias disponibles
+              </div>
+            ) : (
+              <div className="space-y-2 mb-6 max-h-96 overflow-y-auto">
+                {instances.map((instance) => (
+                  <label
+                    key={instance.document_id}
+                    className="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedInstances.includes(instance.document_id)}
+                      onChange={() => toggleInstanceSelection(instance.document_id)}
+                      className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                    />
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900 dark:text-white">
+                        {instance.profile_name || 'Instancia'}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {instance.phone_number || instance.document_id}
+                      </p>
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded ${
+                      instance.state === 'Connected' 
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                        : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                    }`}>
+                      {instance.state}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAssignModal(false);
+                  setSelectedProxyForAssign(null);
+                  setSelectedInstances([]);
+                }}
+                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleAssignProxy}
+                disabled={selectedInstances.length === 0}
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Asignar ({selectedInstances.length})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Crear/Editar */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
               {editingProxy ? 'Editar Proxy' : 'Nuevo Proxy'}
             </h2>
