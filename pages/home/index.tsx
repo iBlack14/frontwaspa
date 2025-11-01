@@ -422,7 +422,7 @@ function DashboardContent() {
               </div>
             </div>
 
-            <div className="relative" ref={dropdownRef}>
+            <div className="relative z-50" ref={dropdownRef}>
               {/* Enhanced Dropdown Trigger */}
               <div
                 className="flex items-center justify-between p-5 bg-white dark:bg-zinc-900 border-2 border-gray-200 dark:border-zinc-700 rounded-2xl cursor-pointer hover:border-emerald-500 hover:shadow-lg transition-all duration-300 group"
@@ -501,7 +501,7 @@ function DashboardContent() {
 
               {/* Enhanced Dropdown Menu */}
               {isDropdownOpen && (
-                <div className="absolute z-10 mt-2 w-full bg-white dark:bg-zinc-900 border-2 border-gray-200 dark:border-zinc-700 rounded-xl shadow-2xl max-h-80 overflow-y-auto">
+                <div className="absolute z-[100] mt-2 w-full bg-white dark:bg-zinc-900 border-2 border-gray-200 dark:border-zinc-700 rounded-xl shadow-2xl max-h-80 overflow-y-auto">
                   {instances.map((instance) => {
                     const isSelected = instance.documentId === selectedInstanceId;
                     return (
