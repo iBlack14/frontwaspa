@@ -223,7 +223,7 @@ function SidebarLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      <div className="flex-grow bg-gray-50 dark:bg-zinc-800 h-full overflow-y-auto">
+      <div className="flex-1 bg-gray-50 dark:bg-zinc-800 h-full overflow-y-auto">
         {status === 'loading' && (
           <div className="fixed inset-0 flex items-center justify-center bg-transparent z-50">
             <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-500"></div>
