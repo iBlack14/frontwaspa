@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import axios from 'axios';
-import { toast } from 'sonner';
+import { toast, Toaster } from 'sonner';
 import Sidebar from '../components/dashboard/index';
 import { PlusIcon, TrashIcon, CheckCircleIcon, XCircleIcon, LinkIcon } from '@heroicons/react/24/outline';
 
@@ -222,6 +222,7 @@ function ProxiesContent() {
 
   return (
     <div className="p-4 sm:p-6">
+      <Toaster richColors position="top-right" />
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Gestión de Proxies</h1>
