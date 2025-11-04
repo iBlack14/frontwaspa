@@ -67,10 +67,10 @@ export default function Home() {
         backgroundImage: `url(${fondo.src})`,
       }}
     >
-      <Toaster richColors position="top-right" /> {/* Add Sonner Toaster */}
+      <Toaster richColors position="top-right" expand={true} closeButton /> {/* Add Sonner Toaster */}
       <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black opacity-70"></div>
 
-      <div className="bg-opacity-90 shadow-2xl shadow-black w-full max-w-5xl flex flex-col lg:flex-row">
+      <div className="bg-opacity-90 shadow-2xl shadow-black w-full max-w-5xl flex flex-col lg:flex-row animate-fadeIn">
         <div className="hidden lg:flex lg:w-3/5 w-full items-center justify-center">
           <Image
             src={wazone}
@@ -81,7 +81,7 @@ export default function Home() {
           />
         </div>
 
-        <div className="lg:w-2/5 w-full p-8 backdrop-blur-md bg-slate-100/5 rounded-b-3xl lg:rounded-bl-none lg:rounded-tr-3xl">
+        <div className="lg:w-2/5 w-full p-8 backdrop-blur-xl bg-slate-100/5 rounded-b-3xl lg:rounded-bl-none lg:rounded-tr-3xl border-l border-white/10">
           <Image
             src={fondo_transparent}
             alt="Background Logo"
@@ -91,100 +91,102 @@ export default function Home() {
             priority
             className="mx-auto"
           />
-          <h1 className="text-2xl font-bold text-center text-slate-100 mb-2">Login</h1>
+          <h1 className="text-3xl font-bold text-center text-slate-100 mb-2 tracking-tight">Bienvenido</h1>
+          <p className="text-center text-slate-300 text-sm mb-4">Inicia sesión en tu cuenta</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-xl font-medium text-slate-100">
-                Email:
+              <label htmlFor="email" className="block text-lg font-semibold text-slate-100 mb-2">
+                Email
               </label>
-              <div className="relative">
+              <div className="relative group">
                 <input
                   type="text"
                   id="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="mt-1 w-full px-3 py-2 placeholder-zinc-400 bg-slate-100 text-lg bg-opacity-50 text-slate-600 border border-white border-opacity-30 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-opacity-70"
-                  placeholder="alguien@example.com"
+                  className="w-full px-4 py-3 placeholder-zinc-400 bg-white/10 text-lg text-slate-100 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent placeholder-opacity-70 backdrop-blur-sm transition-all duration-300 hover:bg-white/15"
+                  placeholder="tu@email.com"
                 />
-                <span className="absolute inset-y-0 right-3 flex items-center">
-                  <UserIcon className="h-5 w-5 text-slate-600 opacity-70" />
+                <span className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+                  <UserIcon className="h-5 w-5 text-slate-300 opacity-60 group-focus-within:text-green-400 group-focus-within:opacity-100 transition-all" />
                 </span>
               </div>
             </div>
             <div>
-              <label htmlFor="password" className="block text-xl font-medium text-slate-100">
-                Password:
+              <label htmlFor="password" className="block text-lg font-semibold text-slate-100 mb-2">
+                Contraseña
               </label>
-              <div className="relative">
+              <div className="relative group">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="mt-1 w-full px-3 py-2 placeholder-zinc-400 bg-slate-100 text-lg bg-opacity-50 text-slate-600 border border-white border-opacity-30 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-opacity-70"
+                  className="w-full px-4 py-3 placeholder-zinc-400 bg-white/10 text-lg text-slate-100 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent placeholder-opacity-70 backdrop-blur-sm transition-all duration-300 hover:bg-white/15"
                   placeholder="••••••••"
                 />
                 <span
-                  className="absolute inset-y-0 right-3 flex items-center cursor-pointer"
+                  className="absolute inset-y-0 right-4 flex items-center cursor-pointer group"
                   onClick={togglePasswordVisibility}
                 >
-                  <EyeIcon className="h-5 w-5 text-slate-600 opacity-70" />
+                  <EyeIcon className="h-5 w-5 text-slate-300 opacity-60 hover:text-green-400 hover:opacity-100 transition-all" />
                 </span>
               </div>
             </div>
             <div className="flex justify-between items-center">
-              <label className="flex items-center text-sm text-white">
+              <label className="flex items-center text-sm text-slate-200 cursor-pointer group">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="mr-2 h-4 w-4 text-green-500 focus:ring-green-500 border-white border-opacity-30 rounded"
+                  className="mr-2 h-4 w-4 text-green-400 focus:ring-green-400 border-white/30 rounded cursor-pointer"
                 />
-                Remember me
+                <span className="group-hover:text-white transition-colors">Recordarme</span>
               </label>
-              <Link href="/forgot-password" className="text-sm text-white hover:underline">
-                Forgot password?
+              <Link href="/forgot-password" className="text-sm text-slate-200 hover:text-green-400 transition-colors font-medium">
+                ¿Olvidaste tu contraseña?
               </Link>
             </div>
             <button
               type="submit"
-              className="w-full bg-green-400 hover:bg-green-300 text-white font-bold py-2 rounded-full hover:bg-opacity-90 transition-colors"
+              className="w-full bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-green-500/30 hover:shadow-green-500/50 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
             >
-              Login
+              Iniciar Sesión
             </button>
           </form>
 
-          <div className="flex items-center justify-center mt-4">
-            <div className="w-full h-px bg-white bg-opacity-30"></div>
-            <span className="mx-4 text-white text-sm">or</span>
-            <div className="w-full h-px bg-white bg-opacity-30"></div>
+          <div className="flex items-center justify-center mt-6">
+            <div className="w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+            <span className="mx-4 text-slate-300 text-sm font-medium">o</span>
+            <div className="w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
           </div>
 
           <div className="flex justify-center">
             <button
               onClick={handleGoogleSignIn}
-              className="mt-4 flex items-center justify-center text-white font-bold py-2 rounded-full transition-colors"
+              className="mt-4 flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 backdrop-blur-sm"
             >
-              <div className="p-1 bg-white rounded-full flex items-center justify-center mr-2">
+              <div className="p-1 bg-white rounded-full flex items-center justify-center mr-3">
                 <Image
                   src="/img/google.webp"
                   alt="Google Logo"
-                  width={32}
-                  height={32}
+                  width={24}
+                  height={24}
                 />
               </div>
+              <span>Continuar con Google</span>
             </button>
           </div>
 
-            <p className="text-center text-md text-white mt-4">
+          <p className="text-center text-sm text-slate-300 mt-6">
             ¿No tienes una cuenta?{' '}
-            <Link href="/register" className="text-green-400 hover:text-green-300 font-semibold hover:underline">
-              Regístrate
+            <Link href="/register" className="text-green-400 hover:text-green-300 font-bold hover:underline transition-colors">
+              Regístrate aquí
             </Link>
-            </p>
+          </p>
         </div>
       </div>
     </div>

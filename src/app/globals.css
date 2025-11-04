@@ -39,6 +39,127 @@ body {
   }
 }
 
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
 .animate-fadeIn {
   animation: fadeIn 0.5s ease-out;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.4s ease-out;
+}
+
+/* Estilos personalizados para Sonner Toasts (Popups) */
+[data-sonner-toast] {
+  backdrop-filter: blur(12px) !important;
+  border-radius: 16px !important;
+  padding: 16px 20px !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+[data-sonner-toast][data-type="success"] {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.95) 0%, rgba(22, 163, 74, 0.95) 100%) !important;
+  border-color: rgba(134, 239, 172, 0.3) !important;
+}
+
+[data-sonner-toast][data-type="error"] {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.95) 0%, rgba(220, 38, 38, 0.95) 100%) !important;
+  border-color: rgba(252, 165, 165, 0.3) !important;
+}
+
+[data-sonner-toast][data-type="info"] {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.95) 0%, rgba(37, 99, 235, 0.95) 100%) !important;
+  border-color: rgba(147, 197, 253, 0.3) !important;
+}
+
+[data-sonner-toast][data-type="warning"] {
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.95) 0%, rgba(249, 115, 22, 0.95) 100%) !important;
+  border-color: rgba(253, 186, 116, 0.3) !important;
+}
+
+[data-sonner-toast] [data-title] {
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  color: white !important;
+  letter-spacing: 0.01em !important;
+}
+
+[data-sonner-toast] [data-description] {
+  font-size: 13px !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  margin-top: 4px !important;
+}
+
+[data-sonner-toast] [data-icon] {
+  width: 20px !important;
+  height: 20px !important;
+  margin-right: 12px !important;
+}
+
+[data-sonner-toast] [data-close-button] {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 8px !important;
+  color: white !important;
+  transition: all 0.2s ease !important;
+}
+
+[data-sonner-toast] [data-close-button]:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+  transform: scale(1.05) !important;
+}
+
+/* Efecto de brillo para botones */
+.btn-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Mejoras para inputs con efecto glassmorphism */
+.glass-input {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.glass-input:focus {
+  backdrop-filter: blur(15px);
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
