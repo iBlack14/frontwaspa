@@ -222,33 +222,37 @@ export default function MessagesPage() {
 
 // Función para detectar el tipo de mensaje
 function getMessageType(message) {
-  // Detectar por tipo explícito si existe
-  if (message.type) {
+  // 1. Prioridad: usar el tipo que viene del backend
+  if (message.type && message.type !== 'text' && message.type !== 'unknown') {
     return message.type.toLowerCase();
   }
   
-  // Detectar por contenido del mensaje
+  // 2. Detectar por contenido del mensaje si no viene del backend
   if (message.hasMedia || message.media) {
     if (message.mediaType) {
       return message.mediaType.toLowerCase();
     }
   }
   
-  // Detectar por extensión o palabras clave
+  // 3. Detectar por el texto si dice [Mensaje multimedia]
   const text = message.text || '';
-  if (text.includes('sticker') || message.isSticker) return 'sticker';
-  if (text.includes('audio') || text.includes('.ogg') || text.includes('.mp3')) return 'audio';
-  if (text.includes('video') || text.includes('.mp4')) return 'video';
-  if (text.includes('image') || text.includes('.jpg') || text.includes('.png')) return 'image';
-  if (text.includes('document') || text.includes('.pdf') || text.includes('.docx')) return 'document';
-  if (text.includes('location') || text.includes('ubicación')) return 'location';
-  if (text.includes('contact') || text.includes('vcard')) return 'contact';
+  if (text === '[Mensaje multimedia]' || text.startsWith('[') && text.endsWith(']')) {
+    // Si el backend no envió tipo, intentar detectar
+    if (message.mediaUrl) {
+      const url = message.mediaUrl.toLowerCase();
+      if (url.includes('image') || url.includes('.jpg') || url.includes('.png')) return 'image';
+      if (url.includes('video') || url.includes('.mp4')) return 'video';
+      if (url.includes('audio') || url.includes('.ogg') || url.includes('.mp3')) return 'audio';
+      if (url.includes('document') || url.includes('.pdf')) return 'document';
+    }
+    return 'media';
+  }
   
-  // Si tiene texto, es texto
-  if (text && text.length > 0) return 'text';
+  // 4. Si tiene texto real, es texto
+  if (text && text.length > 0 && !text.startsWith('[')) return 'text';
   
-  // Por defecto, multimedia
-  return 'media';
+  // 5. Por defecto, texto
+  return 'text';
 }
 
 // Función para obtener icono y label por tipo de mensaje
