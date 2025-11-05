@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { toast } from 'sonner';
+import { toast, Toaster } from 'sonner';
 import { io } from 'socket.io-client';
+import { SparklesIcon, MagnifyingGlassIcon, FunnelIcon, ChatBubbleLeftRightIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 
 export default function MessagesPage() {
   const { data: session, status } = useSession();
@@ -86,23 +87,38 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-zinc-900 dark:to-zinc-800 p-6 sm:p-8">
+      <Toaster richColors position="top-right" expand={true} closeButton />
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Mensajes Recibidos</h1>
-          <p className="text-gray-600 mt-2">
-            Total: {filteredMessages.length} mensajes
-            {selectedInstance !== 'all' && ' (filtrados)'}
-          </p>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-emerald-600 to-cyan-600 bg-clip-text text-transparent">Mensajes Recibidos</h1>
+          <div className="flex items-center gap-3 mt-3">
+            <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-100 to-cyan-100 dark:from-emerald-900/30 dark:to-cyan-900/30 rounded-full">
+              <ChatBubbleLeftRightIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                {filteredMessages.length} mensajes
+              </span>
+            </div>
+            {selectedInstance !== 'all' && (
+              <span className="text-xs px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full font-medium">
+                Filtrado
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Filtros */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-700 p-6 mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <FunnelIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Filtros</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Filtro por instancia */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2 flex items-center gap-2">
+                <ChatBubbleLeftRightIcon className="w-4 h-4 text-emerald-500" />
                 Filtrar por instancia
               </label>
               <select
@@ -111,7 +127,7 @@ export default function MessagesPage() {
                   setSelectedInstance(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border-2 border-gray-300 dark:border-zinc-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white transition-all"
               >
                 <option value="all">Todas las instancias ({instances.length})</option>
                 {instances.map((instance) => (
@@ -124,31 +140,46 @@ export default function MessagesPage() {
 
             {/* Búsqueda */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2 flex items-center gap-2">
+                <MagnifyingGlassIcon className="w-4 h-4 text-emerald-500" />
                 Buscar mensajes
               </label>
-              <input
-                type="text"
-                placeholder="Buscar por remitente o texto..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Buscar por remitente o texto..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full px-4 py-3 pl-10 border-2 border-gray-300 dark:border-zinc-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white transition-all"
+                />
+                <MagnifyingGlassIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+              </div>
             </div>
           </div>
         </div>
 
         {/* Lista de mensajes */}
         {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-600 dark:text-zinc-400 font-semibold">Cargando mensajes...</p>
+            </div>
           </div>
         ) : currentMessages.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-            <p className="text-gray-500">No hay mensajes para mostrar</p>
+          <div className="text-center py-20">
+            <div className="p-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-800 dark:to-zinc-900 border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-2xl max-w-md mx-auto">
+              <ChatBubbleLeftRightIcon className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-zinc-500" />
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No hay mensajes</h3>
+              <p className="text-gray-600 dark:text-zinc-400 text-sm">
+                {searchTerm || selectedInstance !== 'all' 
+                  ? 'No se encontraron mensajes con los filtros aplicados'
+                  : 'Aún no has recibido mensajes'}
+              </p>
+            </div>
           </div>
         ) : (
           <>
@@ -160,23 +191,25 @@ export default function MessagesPage() {
 
             {/* Paginación */}
             {totalPages > 1 && (
-              <div className="mt-6 flex justify-center items-center space-x-2">
+              <div className="mt-8 flex justify-center items-center gap-4">
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-3 bg-white dark:bg-zinc-800 border-2 border-gray-300 dark:border-zinc-700 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-semibold text-gray-700 dark:text-white shadow-md hover:shadow-lg"
                 >
-                  Anterior
+                  ← Anterior
                 </button>
-                <span className="text-gray-700">
-                  Página {currentPage} de {totalPages}
-                </span>
+                <div className="px-6 py-3 bg-gradient-to-r from-emerald-100 to-cyan-100 dark:from-emerald-900/30 dark:to-cyan-900/30 rounded-xl">
+                  <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
+                    Página {currentPage} de {totalPages}
+                  </span>
+                </div>
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-3 bg-white dark:bg-zinc-800 border-2 border-gray-300 dark:border-zinc-700 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-semibold text-gray-700 dark:text-white shadow-md hover:shadow-lg"
                 >
-                  Siguiente
+                  Siguiente →
                 </button>
               </div>
             )}
@@ -195,29 +228,32 @@ function MessageCard({ message, instances }) {
   // Colores aleatorios basados en el instanceId para diferenciar visualmente
   const getInstanceColor = (id) => {
     const colors = [
-      'bg-blue-100 border-blue-300',
-      'bg-green-100 border-green-300',
-      'bg-purple-100 border-purple-300',
-      'bg-yellow-100 border-yellow-300',
-      'bg-pink-100 border-pink-300',
-      'bg-indigo-100 border-indigo-300',
+      { gradient: 'from-blue-500 to-cyan-500', border: 'border-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20' },
+      { gradient: 'from-emerald-500 to-green-500', border: 'border-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+      { gradient: 'from-purple-500 to-pink-500', border: 'border-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/20' },
+      { gradient: 'from-yellow-500 to-orange-500', border: 'border-yellow-400', bg: 'bg-yellow-50 dark:bg-yellow-900/20' },
+      { gradient: 'from-pink-500 to-rose-500', border: 'border-pink-400', bg: 'bg-pink-50 dark:bg-pink-900/20' },
+      { gradient: 'from-indigo-500 to-blue-500', border: 'border-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-900/20' },
     ];
     const hash = id?.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) || 0;
     return colors[hash % colors.length];
   };
 
+  const colorScheme = getInstanceColor(message.instanceId);
+
   return (
-    <div className={`bg-white rounded-lg shadow-sm border-l-4 p-4 ${getInstanceColor(message.instanceId)}`}>
-      <div className="flex items-start justify-between">
+    <div className={`group bg-white dark:bg-zinc-800 rounded-2xl shadow-lg hover:shadow-2xl border-l-4 ${colorScheme.border} p-6 transition-all duration-300 hover:scale-[1.02]`}>
+      <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
           {/* Header del mensaje */}
-          <div className="flex items-center space-x-3 mb-2">
-            <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+          <div className="flex items-center gap-4 mb-4">
+            <div className={`flex-shrink-0 w-14 h-14 bg-gradient-to-br ${colorScheme.gradient} rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg ring-4 ring-white dark:ring-zinc-800`}>
               {message.sender?.[0]?.toUpperCase() || '?'}
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">{message.sender || 'Desconocido'}</h3>
-              <p className="text-sm text-gray-500">
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">{message.sender || 'Desconocido'}</h3>
+              <p className="text-sm text-gray-500 dark:text-zinc-400 flex items-center gap-1">
+                <span>🕒</span>
                 {new Date(message.timestamp).toLocaleString('es-ES', {
                   day: '2-digit',
                   month: 'short',
@@ -230,30 +266,34 @@ function MessageCard({ message, instances }) {
           </div>
 
           {/* Contenido del mensaje */}
-          <div className="ml-13 mb-2">
-            <p className="text-gray-800">{message.text || '[Mensaje multimedia]'}</p>
+          <div className={`mb-4 p-4 ${colorScheme.bg} rounded-xl border border-gray-200 dark:border-zinc-700`}>
+            <p className="text-gray-800 dark:text-white leading-relaxed">
+              {message.text || '📎 [Mensaje multimedia]'}
+            </p>
           </div>
 
           {/* Info de la instancia */}
-          <div className="ml-13">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-              📱 Instancia: {instanceName}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-emerald-100 to-cyan-100 dark:from-emerald-900/30 dark:to-cyan-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+              <ChatBubbleLeftRightIcon className="w-3 h-3" />
+              {instanceName}
             </span>
             {message.chatId && (
-              <span className="ml-2 text-xs text-gray-500">
-                Chat: {message.chatId.split('@')[0]}
+              <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-zinc-300">
+                💬 {message.chatId.split('@')[0]}
               </span>
             )}
           </div>
         </div>
 
         {/* Acciones */}
-        <div className="flex-shrink-0 ml-4">
+        <div className="flex-shrink-0">
           <button
             onClick={() => window.location.href = `/chat/${message.chatId}?instance=${message.instanceId}`}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transform hover:scale-105 active:scale-95 font-bold whitespace-nowrap"
           >
             Ver Chat
+            <ArrowRightIcon className="w-4 h-4" />
           </button>
         </div>
       </div>
