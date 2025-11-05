@@ -315,69 +315,79 @@ function DashboardContent() {
 
 
   return (
-    <div className="">
-      <Toaster richColors position="top-right" />
+    <div className="min-h-screen">
+      <Toaster richColors position="top-right" expand={true} closeButton />
       <div className="flex">
 
 
-        <div className="p-4 sm:p-6 w-full">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">Bienvenido, {username}</h1>
+        <div className="p-6 sm:p-8 w-full bg-gradient-to-br from-gray-50 to-white dark:from-zinc-900 dark:to-zinc-800">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-emerald-600 to-cyan-600 bg-clip-text text-transparent">Bienvenido</h1>
+            <p className="text-lg text-gray-600 dark:text-zinc-400">{username} 👋</p>
+          </div>
 
-          <div className="mb-5">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-4">
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">Tus Sesiones ❤️❤️</h2>
-              {sessions.length === 0 ? (
-                <button
-                  onClick={createNewInstance}
-                  className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 transition"
-                >
-                  <SparklesIcon className="w-5 h-5" />
-                  Activa tu Prueba gratuita por 7 días aquí
-                </button>
-              ) : (
-                <button
-                  onClick={createNewInstance}
-                  className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 transition"
-                >
-                  <PlusIcon className="w-5 h-5" />
-
-                  Nueva Instancia
-                </button>
-              )}
-
+          <div className="mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <SparklesIcon className="w-7 h-7 text-emerald-500" />
+                Tus Instancias WhatsApp
+              </h2>
+              <button
+                onClick={createNewInstance}
+                className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-6 py-3 rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transform hover:scale-105 active:scale-95 font-semibold"
+              >
+                <PlusIcon className="w-5 h-5" />
+                {sessions.length === 0 ? 'Crear Primera Instancia' : 'Nueva Instancia'}
+              </button>
             </div>
 
 
-            {error && <p className="text-red-500 mb-4">{error.message || 'Error al cargar las sesiones.'}</p>}
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+                <p className="text-red-600 dark:text-red-400 text-sm">{error.message || 'Error al cargar las sesiones.'}</p>
+              </div>
+            )}
 
             {loadingSessions ? (
-              <p className="text-gray-600 dark:text-zinc-400">Cargando sesiones...</p>
+              <div className="flex items-center justify-center py-20">
+                <div className="text-center">
+                  <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-600 dark:text-zinc-400">Cargando instancias...</p>
+                </div>
+              </div>
             ) : sessions.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-6">
                 {sessions.map((session) => (
                   <div
                     key={session.documentId}
-                    className="bg-white dark:bg-zinc-900/50 rounded-lg shadow-lg dark:shadow-emerald-800 p-3 border border-gray-200 dark:border-zinc-700"
+                    className="group bg-white dark:bg-zinc-800 rounded-2xl shadow-lg hover:shadow-2xl dark:shadow-none border border-gray-200 dark:border-zinc-700 p-6 transition-all duration-300 hover:border-emerald-400 dark:hover:border-emerald-500"
                   >
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center justify-between mb-6">
                       <div className="flex items-center gap-4">
-                        <img
-                          src={session.profilePicUrl || profiles[session.documentId]?.profilePicUrl || '/logo/profile.png'}
-                          alt="Profile"
-                          className="w-16 h-16 border-4 border-emerald-500 rounded-full object-cover shadow-lg"
-                          onError={(e) => (e.currentTarget.src = '/logo/profile.png')}
-                        />
+                        <div className="relative">
+                          <img
+                            src={session.profilePicUrl || profiles[session.documentId]?.profilePicUrl || '/logo/profile.png'}
+                            alt="Profile"
+                            className="w-20 h-20 border-4 border-emerald-500 rounded-full object-cover shadow-lg ring-4 ring-emerald-500/20"
+                            onError={(e) => (e.currentTarget.src = '/logo/profile.png')}
+                          />
+                          {session.state === 'Connected' && (
+                            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full border-4 border-white dark:border-zinc-800 animate-pulse"></div>
+                          )}
+                        </div>
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                             {session.name || profiles[session.documentId]?.name || 'Instancia'}
                           </h3>
-                          <p className="text-sm text-gray-600 dark:text-zinc-400">
+                          <p className="text-sm text-gray-600 dark:text-zinc-400 flex items-center gap-1">
+                            <span>📞</span>
                             {session.phoneNumber || profiles[session.documentId]?.number || 'Número no disponible'}
                           </p>
                         </div>
-                      </div>                      <div className="flex items-center gap-2">
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
                         <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full ${{
+                          className={`px-3 py-1.5 text-xs font-semibold rounded-full ${{
                             Initializing: 'bg-yellow-100 text-yellow-800',
                             Connected: 'bg-emerald-100 text-emerald-800',
                             Failure: 'bg-orange-100 text-orange-800',
@@ -391,9 +401,9 @@ function DashboardContent() {
                           <div className="flex gap-2">
                             <button
                               onClick={() => toggleInstanceActive(session.documentId, session.is_active)}
-                              className={`flex items-center justify-center w-8 h-8 rounded-full transition ${session.is_active
-                                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                                : 'bg-gray-600 hover:bg-gray-700 text-white'
+                              className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300 shadow-lg transform hover:scale-110 active:scale-95 ${session.is_active
+                                ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-emerald-500/30'
+                                : 'bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white shadow-gray-500/30'
                                 }`}
                               title={session.is_active ? 'Pausar instancia' : 'Activar instancia'}
                             >
@@ -401,7 +411,7 @@ function DashboardContent() {
                             </button>
                             <button
                               onClick={() => DisconnectInstance(session.documentId)}
-                              className="flex items-center justify-center w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white transition"
+                              className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white transition-all duration-300 shadow-lg shadow-red-500/30 transform hover:scale-110 active:scale-95"
                               title="Desconectar instancia"
                             >
                               <PowerIcon className="w-5 h-5" />
@@ -428,7 +438,7 @@ function DashboardContent() {
                         {session.state === 'Connected' && (
                           <button
                             onClick={() => ConfigInstance(session.documentId)}
-                            className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-600 hover:bg-slate-700 text-white transition"
+                            className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white transition-all duration-300 shadow-lg shadow-cyan-500/30 transform hover:scale-110 active:scale-95"
                             title="Configurar webhook"
                           >
                             <Cog6ToothIcon className="w-5 h-5" />
@@ -437,18 +447,18 @@ function DashboardContent() {
                       </div>
 
                       <div>
-                        <label className="text-zinc-400 font-medium block mb-1">Webhook:</label>
+                        <label className="text-gray-700 dark:text-zinc-300 font-semibold block mb-2">Webhook URL:</label>
                         <div className="flex gap-2">
                           <input
                             type="text"
                             value={webhookInputs[session.documentId] || ''}
                             onChange={(e) => handleWebhookChange(session.documentId, e.target.value)}
                             placeholder="https://ejemplo.com/webhook"
-                            className="p-2 w-full text-gray-900 dark:text-zinc-400 bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            className="p-3 w-full text-gray-900 dark:text-white bg-white dark:bg-zinc-700 border-2 border-gray-300 dark:border-zinc-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
                           />
                           <button
                             onClick={() => updateWebhook(session.documentId)}
-                            className="bg-emerald-600 text-white px-3 py-2 rounded-md hover:bg-emerald-700 transition"
+                            className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-6 py-3 rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 shadow-lg shadow-emerald-500/30 font-semibold whitespace-nowrap"
                           >
                             Guardar
                           </button>
@@ -458,64 +468,47 @@ function DashboardContent() {
 
 
                       {(session.state === 'Disconnected' || session.state === 'Initializing') && (
-
-
-
-
-
-                        <div>
-
-
-
-
-
-
+                        <div className="mt-4">
                           {session.qr ? (
-                            <>
-                              <label className="text-zinc-400 font-medium block mb-1">Escanea este QR:</label>
-                              <Image
-
-                                width={400}
-                                height={400}
-                                src={session.qr}
-                                alt="WhatsApp QR"
-                                className="w-48 h-48 mx-auto"
-                                onError={(e) => console.error('Error al cargar QR:', e)}
-                              />
-
-
-                              <p className="text-xs text-zinc-400 mt-2 text-center">
-                                Escanea con WhatsApp / Ajustes / Dispositivos vinculados
+                            <div className="bg-gradient-to-br from-emerald-50 via-cyan-50 to-blue-50 dark:from-emerald-900/20 dark:via-cyan-900/20 dark:to-blue-900/20 p-6 rounded-2xl border-2 border-emerald-200 dark:border-emerald-800">
+                              <label className="text-gray-900 dark:text-white font-bold block mb-4 text-center flex items-center justify-center gap-2">
+                                <SparklesIcon className="w-5 h-5 text-emerald-500" />
+                                Escanea este QR con WhatsApp
+                              </label>
+                              <div className="bg-white p-4 rounded-xl shadow-lg mx-auto w-fit">
+                                <Image
+                                  width={400}
+                                  height={400}
+                                  src={session.qr}
+                                  alt="WhatsApp QR"
+                                  className="w-56 h-56"
+                                  onError={(e) => console.error('Error al cargar QR:', e)}
+                                />
+                              </div>
+                              <p className="text-xs text-gray-600 dark:text-zinc-400 mt-4 text-center">
+                                📱 WhatsApp → Ajustes → Dispositivos vinculados → Vincular dispositivo
                               </p>
-                            </>
+                            </div>
                           ) : session.qr_loading ? (
-                            <div className="flex justify-center items-center">
-                              <span className="text-zinc-400 text-sm">Generando QR...</span>
-                              {/* Puedes agregar un spinner animado si lo deseas */}
-                              <svg className="animate-spin h-5 w-5 ml-2 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                              </svg>
+                            <div className="flex flex-col justify-center items-center py-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-800 dark:to-zinc-900 rounded-2xl border-2 border-dashed border-gray-300 dark:border-zinc-700">
+                              <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                              <span className="text-gray-700 dark:text-zinc-300 text-sm font-semibold">Generando QR...</span>
+                              <span className="text-gray-500 dark:text-zinc-500 text-xs mt-1">Esto puede tomar unos segundos</span>
                             </div>
                           ) : (
-                            <div className="flex justify-center items-center">
+                            <div className="flex justify-center items-center py-8">
                               <button
                                 onClick={async () => {
                                   await fetchQrsForDisconnectedSessions(session.documentId);
                                 }}
-                                className="bg-emerald-600 text-white px-3 py-2 rounded-md hover:bg-emerald-700 transition"
+                                className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-6 py-3 rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transform hover:scale-105 active:scale-95 font-bold"
                               >
-                                Genera un nuevo QR
+                                <SparklesIcon className="w-5 h-5" />
+                                Generar Nuevo QR
                               </button>
                             </div>
                           )}
-
-
-
-
                         </div>
-
-
                       )}
 
 
@@ -525,7 +518,20 @@ function DashboardContent() {
                 ))}
               </div>
             ) : (
-              <p className="text-zinc-400">No tienes sesiones aún. Crea una nueva instancia.</p>
+              <div className="text-center py-20">
+                <div className="p-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-800 dark:to-zinc-900 border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-2xl max-w-md mx-auto">
+                  <SparklesIcon className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-zinc-500" />
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No tienes instancias aún</h3>
+                  <p className="text-gray-600 dark:text-zinc-400 text-sm mb-6">Crea tu primera instancia de WhatsApp para comenzar</p>
+                  <button
+                    onClick={createNewInstance}
+                    className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-6 py-3 rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transform hover:scale-105 active:scale-95 font-bold mx-auto"
+                  >
+                    <PlusIcon className="w-5 h-5" />
+                    Crear Primera Instancia
+                  </button>
+                </div>
+              </div>
             )}
 
 
