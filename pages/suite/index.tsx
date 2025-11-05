@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Sidebard from '../components/dashboard/index';
 import { Toaster, toast } from 'sonner';
-import { ArrowTopRightOnSquareIcon, PlusIcon, ClipboardIcon, ArrowPathIcon, StopIcon, EyeIcon, EyeSlashIcon, PlayIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { ArrowTopRightOnSquareIcon, PlusIcon, ClipboardIcon, ArrowPathIcon, StopIcon, EyeIcon, EyeSlashIcon, PlayIcon, TrashIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
 import Image from 'next/image';
 
@@ -424,56 +424,83 @@ function DashboardContent() {
   };
 
   return (
-    <div className="flex  ">
-      <Toaster richColors position="top-right" />
+    <div className="flex min-h-screen">
+      <Toaster richColors position="top-right" expand={true} closeButton />
 
       {/* Left Sidebar (Fixed Width) */}
-      <div className="w-64 p-5 text-gray-900 dark:text-white">
-        <h1 className="text-2xl font-bold mb-6">Bienvenido, {username}</h1>
+      <div className="w-80 p-6 text-gray-900 dark:text-white bg-gradient-to-b from-gray-50 to-white dark:from-zinc-900 dark:to-zinc-800 border-r border-gray-200 dark:border-zinc-700">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-emerald-600 to-cyan-600 bg-clip-text text-transparent">Bienvenido</h1>
+          <p className="text-lg text-gray-600 dark:text-zinc-400">{username} 👋</p>
+        </div>
 
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Tu Suite 😎😎</h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <SparklesIcon className="w-6 h-6 text-emerald-500" />
+            Tu Suite
+          </h2>
           <button
             onClick={() => setSelectedWorkspace(null)}
-            className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 transition"
+            className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-4 py-2.5 rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transform hover:scale-105 active:scale-95"
           >
             <PlusIcon className="w-5 h-5" />
-            {workspace.length === 0 && 'Prueba de n8n gratis por 7 días'}
+            {workspace.length === 0 ? 'Crear' : ''}
           </button>
         </div>
 
         <div className="mb-5">
-          {error && <p className="text-red-500 mb-4">{error}</p>}
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+              <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+            </div>
+          )}
           {workspace.length > 0 ? (
-            <div className="flex flex-col divide-y divide-gray-200 dark:divide-zinc-700">
+            <div className="flex flex-col gap-2">
               {workspace.map((workspaces) => (
                 <button
                   key={workspaces.documentId}
-                  className={`flex my-0.5 justify-between rounded-md items-center py-1 px-2 text-left transition ${selectedWorkspace?.documentId === workspaces.documentId
-                    ? 'bg-emerald-100 dark:bg-zinc-500/40 text-gray-900 dark:text-white'
-                    : 'hover:bg-gray-100 dark:hover:bg-zinc-500/40'
+                  className={`group flex justify-between items-center py-3 px-4 text-left transition-all duration-300 rounded-xl ${selectedWorkspace?.documentId === workspaces.documentId
+                    ? 'bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 dark:from-emerald-500/30 dark:to-cyan-500/30 border-2 border-emerald-500 dark:border-emerald-400 shadow-lg shadow-emerald-500/20'
+                    : 'bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 hover:border-emerald-300 dark:hover:border-emerald-600 hover:shadow-md'
                     }`}
                   onClick={() => setSelectedWorkspace(workspaces)}
                 >
-                  <span className="mr-2">
-                    <span
-                      className={`inline-block w-3 h-3 rounded-full ${workspaces.activo ? 'bg-emerald-500/70' : 'bg-red-500/70'
-                        }`}
-                      title={workspaces.activo ? 'Activo' : 'Inactivo'}
-                    />
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="relative">
+                      <span
+                        className={`inline-block w-3 h-3 rounded-full ${workspaces.activo ? 'bg-emerald-500' : 'bg-red-500'
+                        } animate-pulse`}
+                        title={workspaces.activo ? 'Activo' : 'Inactivo'}
+                      />
+                      {workspaces.activo && (
+                        <span className="absolute inset-0 w-3 h-3 rounded-full bg-emerald-500 animate-ping opacity-75"></span>
+                      )}
+                    </div>
+                    <span className="text-gray-900 dark:text-white font-medium group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
+                      {workspaces.name || 'Sin nombre'}
+                    </span>
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${workspaces.activo 
+                    ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' 
+                    : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                  }`}>
+                    {workspaces.activo ? 'Online' : 'Offline'}
                   </span>
-                  <span className="text-gray-900 dark:text-white">{workspaces.name || 'Sin nombre'}</span>
                 </button>
               ))}
             </div>
           ) : (
-            <p className="text-gray-600 dark:text-zinc-400">No tienes sesiones aún. Crea una nueva instancia.</p>
+            <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-800 dark:to-zinc-900 border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-xl text-center">
+              <SparklesIcon className="w-12 h-12 mx-auto mb-3 text-gray-400 dark:text-zinc-500" />
+              <p className="text-gray-600 dark:text-zinc-400 text-sm">No tienes suites aún.</p>
+              <p className="text-gray-500 dark:text-zinc-500 text-xs mt-1">Crea tu primera instancia</p>
+            </div>
           )}
         </div>
       </div>
 
       {/* Right Content Area (Dynamic) */}
-      <div className="w-full bg-white dark:bg-zinc-900 p-5 text-gray-900 dark:text-white rounded-bl-3xl rounded-tl-3xl border-l border-gray-200 dark:border-zinc-800">
+      <div className="flex-1 bg-gradient-to-br from-gray-50 to-white dark:from-zinc-900 dark:to-zinc-800 p-8 text-gray-900 dark:text-white overflow-y-auto">
 
         {selectedWorkspace ? (
           selectedWorkspace.name === 'n8n_free_treal' ? (
@@ -680,35 +707,54 @@ function DashboardContent() {
           )
 
         ) : (
-          <div>
+          <div className="animate-fadeIn">
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">Crear Nueva Suite</h2>
+              <p className="text-gray-600 dark:text-zinc-400">Selecciona un producto para comenzar</p>
+            </div>
             {loadingProducts ? (
-              <p className="text-gray-600 dark:text-zinc-400">Cargando productos...</p>
+              <div className="flex items-center justify-center py-20">
+                <div className="text-center">
+                  <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-600 dark:text-zinc-400">Cargando productos...</p>
+                </div>
+              </div>
             ) : error ? (
-              <p className="text-red-500">{error}</p>
+              <div className="p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+                <p className="text-red-600 dark:text-red-400">{error}</p>
+              </div>
             ) : products.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {products.map((product, index) => (
                   <div
                     key={index}
-                    className="bg-gray-100 dark:bg-zinc-800 rounded-lg p-4 shadow-md dark:shadow-none flex flex-col h-full cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700 transition"
+                    className="group bg-white dark:bg-zinc-800 rounded-2xl p-6 shadow-lg hover:shadow-2xl dark:shadow-none border border-gray-200 dark:border-zinc-700 flex flex-col h-full cursor-pointer transition-all duration-300 hover:scale-105 hover:border-emerald-400 dark:hover:border-emerald-500"
                     onClick={() => handleOpenModal(product)}
                   >
-                    <div className="flex-1 flex items-center justify-center mb-2">
+                    <div className="flex-1 flex items-center justify-center mb-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-900 dark:to-zinc-800 rounded-xl p-6">
                       <Image
                         src={product.img}
                         alt={product.name}
                         width={300}
                         height={200}
-                        className="object-contain w-full h-40 rounded-md"
-                        style={{ maxHeight: '80px', width: '100%' }}
+                        className="object-contain w-full h-32 transition-transform duration-300 group-hover:scale-110"
                       />
                     </div>
-                    <h3 className="text-lg font-semibold text-center">{product.name}</h3>
+                    <h3 className="text-xl font-bold text-center text-gray-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{product.name}</h3>
+                    <div className="mt-4 text-center">
+                      <span className="inline-flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400 font-semibold">
+                        Crear instancia
+                        <ArrowTopRightOnSquareIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-gray-600 dark:text-zinc-400">No hay productos disponibles.</p>
+              <div className="text-center py-20">
+                <SparklesIcon className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-zinc-500" />
+                <p className="text-gray-600 dark:text-zinc-400 text-lg">No hay productos disponibles.</p>
+              </div>
             )}
           </div>
         )}
@@ -719,28 +765,32 @@ function DashboardContent() {
       {/* Modal */}
       {isModalOpen && selectedProduct && (
         <div
-          className="fixed inset-0 flex items-center justify-center z-50 bg-black/50"
+          className="fixed inset-0 flex items-center justify-center z-50 bg-black/60 backdrop-blur-sm animate-fadeIn"
           onClick={handleCloseModal}
         >
           <div
-            className="bg-white dark:bg-zinc-800 p-6 rounded-lg shadow-2xl w-full max-w-md"
+            className="bg-white dark:bg-zinc-800 p-8 rounded-2xl shadow-2xl w-full max-w-2xl border border-gray-200 dark:border-zinc-700 animate-slideInRight max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Crear Nueva Instancia</h2>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Crear Nueva Instancia</h2>
+                <p className="text-sm text-gray-600 dark:text-zinc-400">
+                  Configura tu instancia de{' '}
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">{selectedProduct.name}</span>
+                </p>
+              </div>
               {planLimits && (
-                <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded-full">
-                  {workspace.length}/{planLimits.instances} usadas
-                </span>
+                <div className="text-right">
+                  <span className="text-xs bg-gradient-to-r from-emerald-100 to-cyan-100 dark:from-emerald-900/30 dark:to-cyan-900/30 text-emerald-700 dark:text-emerald-400 px-3 py-1.5 rounded-full font-semibold">
+                    {workspace.length}/{planLimits.instances} usadas
+                  </span>
+                </div>
               )}
             </div>
-            <p className="text-gray-700 dark:text-zinc-300 mb-4">
-              Configura los detalles para la nueva instancia de{' '}
-              <span className="font-bold text-emerald-600 dark:text-emerald-400">{selectedProduct.name}</span>
-            </p>
             
             {/* Selector de Plan */}
-            <div className="mb-6 p-4 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg">
+            <div className="mb-6 p-6 bg-gradient-to-br from-cyan-50 via-blue-50 to-purple-50 dark:from-cyan-900/20 dark:via-blue-900/20 dark:to-purple-900/20 border-2 border-cyan-200 dark:border-cyan-800 rounded-2xl shadow-inner">
               <label className="block text-gray-900 dark:text-white mb-3 font-semibold text-lg">
                 1️⃣ Selecciona tu Plan
                 <span className="text-red-500 ml-1">*</span>
@@ -829,20 +879,6 @@ function DashboardContent() {
                             💡 Usa solo minúsculas, números y guiones bajos (_)
                           </p>
                           
-                          {/* Preview de URL */}
-                          {formValues[key] && formValues[key].length >= 3 && (
-                            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                              <p className="text-xs text-blue-700 dark:text-blue-400 font-semibold mb-1">
-                                🌐 Tu instancia estará disponible en:
-                              </p>
-                              <p className="text-sm text-blue-900 dark:text-blue-300 font-mono break-all">
-                                http://localhost:PUERTO (desarrollo local)
-                              </p>
-                              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                                💡 El puerto se asignará automáticamente al crear la instancia
-                              </p>
-                            </div>
-                          )}
                           
                           {/[A-Z]/.test(formValues[key] || '') && (
                             <p className="text-red-500 text-sm flex items-center gap-1">
@@ -876,23 +912,24 @@ function DashboardContent() {
               <button
                 onClick={handleCloseModal}
                 disabled={isLoading}
-                className="bg-gray-200 dark:bg-zinc-600 text-gray-700 dark:text-white px-5 py-2.5 rounded-lg hover:bg-gray-300 dark:hover:bg-zinc-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-gray-200 dark:bg-zinc-600 text-gray-700 dark:text-white px-6 py-3 rounded-xl hover:bg-gray-300 dark:hover:bg-zinc-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleConfirm}
                 disabled={isLoading || !selectedPlanForInstance || (planLimits && workspace.length >= planLimits.instances)}
-                className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-6 py-2.5 rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-emerald-500/30"
+                className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-8 py-3 rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transform hover:scale-105 active:scale-95 font-bold"
               >
                 {isLoading ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     Creando...
                   </>
                 ) : (
                   <>
-                    ✨ Crear Instancia
+                    <SparklesIcon className="w-5 h-5" />
+                    Crear Instancia
                   </>
                 )}
               </button>
