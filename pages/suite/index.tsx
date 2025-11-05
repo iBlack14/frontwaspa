@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Sidebard from '../components/dashboard/index';
 import { Toaster, toast } from 'sonner';
-import { ArrowTopRightOnSquareIcon, PlusIcon, ClipboardIcon, ArrowPathIcon, StopIcon, EyeIcon, EyeSlashIcon, PlayIcon, TrashIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { ArrowTopRightOnSquareIcon, PlusIcon, ClipboardIcon, ArrowPathIcon, StopIcon, EyeIcon, EyeSlashIcon, PlayIcon, TrashIcon, SparklesIcon, RocketLaunchIcon, BoltIcon, StarIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
 import Image from 'next/image';
+import { api } from '../../lib/api-client';
 
 interface CustomSession {
   id?: string;
@@ -80,19 +81,12 @@ function DashboardContent() {
   const fetchWorkspaces = async () => {
     if (!typedSession?.id) return;
     try {
-      const res = await fetch(`/api/suite?token=${typedSession.jwt}`, {
+      const data = await api.get(`/api/suite?token=${typedSession.jwt}`, {
         headers: {
           Authorization: `Bearer ''`,
         },
+        showErrorToast: false, // Manejamos el error manualmente
       });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || `Error API: ${res.status}`);
-      }
-
-      const data = await res.json();
-      console.log('Workspaces cargados:', data);
 
       // Verificar que data tenga la estructura esperada
       if (!data || !Array.isArray(data) || data.length === 0 || !data[0].suites) {
@@ -121,7 +115,7 @@ function DashboardContent() {
         }
       }
     } catch (err: any) {
-      console.error('Error al cargar workspaces:', err);
+      console.error('[fetchWorkspaces] Error:', err);
       setError(err.message || 'Error al cargar las sesiones.');
       toast.error('No se pudieron cargar las instancias de Suite');
     }
@@ -150,20 +144,13 @@ function DashboardContent() {
   const fetchProducts = async () => {
     try {
       setLoadingProducts(true);
-      const res = await fetch('/api/products');
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || `Error API: ${res.status}`);
-      }
-      const data = await res.json();
-      console.log('Productos cargados:', data);
+      const data = await api.get('/api/products');
       setProducts(data);
-      setError(null); // Limpiar error si la carga fue exitosa
-      setLoadingProducts(false);
+      setError(null);
     } catch (err: any) {
-      console.error('Error al cargar productos:', err);
+      console.error('[fetchProducts] Error:', err);
       setError(err.message || 'Error al cargar los productos.');
-      toast.error('No se pudieron cargar los productos');
+    } finally {
       setLoadingProducts(false);
     }
   };
@@ -224,6 +211,68 @@ function DashboardContent() {
       setResourceUsage(null);
     }
   }, [selectedWorkspace]);
+
+  // Accesibilidad del modal
+  useEffect(() => {
+    if (isModalOpen) {
+      // Guardar el elemento que tenía el foco antes de abrir el modal
+      const previousActiveElement = document.activeElement as HTMLElement;
+      
+      // Focus en el primer input del modal
+      setTimeout(() => {
+        const firstInput = document.querySelector<HTMLInputElement>('input[type="text"]');
+        if (firstInput) {
+          firstInput.focus();
+        }
+      }, 100);
+
+      // Cerrar modal con tecla Esc
+      const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          handleCloseModal();
+        }
+      };
+
+      // Trap focus dentro del modal
+      const handleTabKey = (e: KeyboardEvent) => {
+        if (e.key === 'Tab') {
+          const modal = document.querySelector('[role="dialog"]');
+          if (!modal) return;
+
+          const focusableElements = modal.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          );
+          const firstElement = focusableElements[0];
+          const lastElement = focusableElements[focusableElements.length - 1];
+
+          if (e.shiftKey && document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          } else if (!e.shiftKey && document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
+      };
+
+      document.addEventListener('keydown', handleEscape);
+      document.addEventListener('keydown', handleTabKey);
+
+      // Prevenir scroll del body
+      document.body.style.overflow = 'hidden';
+
+      return () => {
+        document.removeEventListener('keydown', handleEscape);
+        document.removeEventListener('keydown', handleTabKey);
+        document.body.style.overflow = 'unset';
+        
+        // Restaurar foco al elemento anterior
+        if (previousActiveElement) {
+          previousActiveElement.focus();
+        }
+      };
+    }
+  }, [isModalOpen]);
 
   const createNewWorkSpace = async (productName: string, fields: ProductField) => {
     try {
@@ -713,11 +762,20 @@ function DashboardContent() {
               <p className="text-gray-600 dark:text-zinc-400">Selecciona un producto para comenzar</p>
             </div>
             {loadingProducts ? (
-              <div className="flex items-center justify-center py-20">
-                <div className="text-center">
-                  <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                  <p className="text-gray-600 dark:text-zinc-400">Cargando productos...</p>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="bg-white dark:bg-zinc-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-zinc-700 animate-pulse"
+                  >
+                    {/* Skeleton Image */}
+                    <div className="flex-1 flex items-center justify-center mb-4 bg-gray-200 dark:bg-zinc-700 rounded-xl h-32"></div>
+                    {/* Skeleton Title */}
+                    <div className="h-6 bg-gray-200 dark:bg-zinc-700 rounded-lg mb-4 w-3/4 mx-auto"></div>
+                    {/* Skeleton Button */}
+                    <div className="h-4 bg-gray-200 dark:bg-zinc-700 rounded-lg w-1/2 mx-auto"></div>
+                  </div>
+                ))}
               </div>
             ) : error ? (
               <div className="p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
@@ -767,14 +825,18 @@ function DashboardContent() {
         <div
           className="fixed inset-0 flex items-center justify-center z-50 bg-black/60 backdrop-blur-sm animate-fadeIn"
           onClick={handleCloseModal}
+          role="presentation"
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
             className="bg-white dark:bg-zinc-800 p-8 rounded-2xl shadow-2xl w-full max-w-2xl border border-gray-200 dark:border-zinc-700 animate-slideInRight max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Crear Nueva Instancia</h2>
+                <h2 id="modal-title" className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Crear Nueva Instancia</h2>
                 <p className="text-sm text-gray-600 dark:text-zinc-400">
                   Configura tu instancia de{' '}
                   <span className="font-bold text-emerald-600 dark:text-emerald-400">{selectedProduct.name}</span>
@@ -791,48 +853,131 @@ function DashboardContent() {
             
             {/* Selector de Plan */}
             <div className="mb-6 p-6 bg-gradient-to-br from-cyan-50 via-blue-50 to-purple-50 dark:from-cyan-900/20 dark:via-blue-900/20 dark:to-purple-900/20 border-2 border-cyan-200 dark:border-cyan-800 rounded-2xl shadow-inner">
-              <label className="block text-gray-900 dark:text-white mb-3 font-semibold text-lg">
+              <label id="plan-selector-label" className="block text-gray-900 dark:text-white mb-3 font-semibold text-lg">
                 1️⃣ Selecciona tu Plan
                 <span className="text-red-500 ml-1">*</span>
               </label>
-              <div className="grid grid-cols-1 gap-3">
+              <div role="radiogroup" aria-labelledby="plan-selector-label" className="grid grid-cols-1 gap-3">
                 {[
-                  { value: 'free', name: 'Free', desc: '256MB RAM, 256 CPU, 1 instancia', color: 'gray' },
-                  { value: 'basic', name: 'Basic', desc: '512MB RAM, 512 CPU, 1 instancia', color: 'blue' },
-                  { value: 'premium', name: 'Premium', desc: '1GB RAM, 1024 CPU, 3 instancias', color: 'purple' },
-                  { value: 'pro', name: 'Pro', desc: '2GB RAM, 2048 CPU, 10 instancias', color: 'emerald' },
-                ].map((plan) => (
-                  <button
-                    key={plan.value}
-                    type="button"
-                    onClick={() => setSelectedPlanForInstance(plan.value)}
-                    disabled={isLoading}
-                    className={`p-4 rounded-lg border-2 transition-all text-left ${
-                      selectedPlanForInstance === plan.value
-                        ? `border-${plan.color}-500 bg-${plan.color}-50 dark:bg-${plan.color}-900/30 ring-2 ring-${plan.color}-500`
-                        : 'border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-600'
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-bold text-gray-900 dark:text-white text-lg">
-                          {plan.name}
-                        </div>
-                        <div className="text-sm text-gray-600 dark:text-zinc-400 mt-1">
-                          {plan.desc}
-                        </div>
-                      </div>
-                      {selectedPlanForInstance === plan.value && (
-                        <div className="text-emerald-500 text-2xl">✓</div>
+                  { 
+                    value: 'free', 
+                    name: 'Free', 
+                    desc: '256MB RAM, 256 CPU, 1 instancia',
+                    subtitle: 'Ideal para pruebas',
+                    icon: SparklesIcon,
+                    styles: {
+                      border: 'border-gray-400',
+                      bg: 'bg-gray-50 dark:bg-gray-900/30',
+                      ring: 'ring-gray-500',
+                      hover: 'hover:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800/50',
+                      iconColor: 'text-gray-600 dark:text-gray-400'
+                    }
+                  },
+                  { 
+                    value: 'basic', 
+                    name: 'Basic', 
+                    desc: '512MB RAM, 512 CPU, 1 instancia',
+                    subtitle: 'Para proyectos pequeños',
+                    icon: BoltIcon,
+                    styles: {
+                      border: 'border-blue-400',
+                      bg: 'bg-blue-50 dark:bg-blue-900/30',
+                      ring: 'ring-blue-500',
+                      hover: 'hover:border-blue-500 hover:bg-blue-100 dark:hover:bg-blue-800/50',
+                      iconColor: 'text-blue-600 dark:text-blue-400'
+                    }
+                  },
+                  { 
+                    value: 'premium', 
+                    name: 'Premium', 
+                    desc: '1GB RAM, 1024 CPU, 3 instancias',
+                    subtitle: 'Para equipos medianos',
+                    icon: StarIcon,
+                    badge: 'Recomendado',
+                    styles: {
+                      border: 'border-purple-400',
+                      bg: 'bg-purple-50 dark:bg-purple-900/30',
+                      ring: 'ring-purple-500',
+                      hover: 'hover:border-purple-500 hover:bg-purple-100 dark:hover:bg-purple-800/50',
+                      iconColor: 'text-purple-600 dark:text-purple-400'
+                    }
+                  },
+                  { 
+                    value: 'pro', 
+                    name: 'Pro', 
+                    desc: '2GB RAM, 2048 CPU, 10 instancias',
+                    subtitle: 'Máximo rendimiento',
+                    icon: RocketLaunchIcon,
+                    badge: 'Popular',
+                    styles: {
+                      border: 'border-emerald-400',
+                      bg: 'bg-emerald-50 dark:bg-emerald-900/30',
+                      ring: 'ring-emerald-500',
+                      hover: 'hover:border-emerald-500 hover:bg-emerald-100 dark:hover:bg-emerald-800/50',
+                      iconColor: 'text-emerald-600 dark:text-emerald-400'
+                    }
+                  },
+                ].map((plan) => {
+                  const PlanIcon = plan.icon;
+                  const isSelected = selectedPlanForInstance === plan.value;
+                  
+                  return (
+                    <button
+                      key={plan.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={isSelected}
+                      onClick={() => setSelectedPlanForInstance(plan.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setSelectedPlanForInstance(plan.value);
+                        }
+                      }}
+                      disabled={isLoading}
+                      className={`relative p-4 rounded-xl border-2 transition-all duration-300 text-left group ${
+                        isSelected
+                          ? `${plan.styles.border} ${plan.styles.bg} ring-2 ${plan.styles.ring} shadow-lg transform scale-[1.02]`
+                          : `border-gray-300 dark:border-zinc-700 ${plan.styles.hover}`
+                      } disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 ${plan.styles.ring}`}
+                    >
+                      {plan.badge && (
+                        <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs font-bold rounded-full shadow-md">
+                          {plan.badge}
+                        </span>
                       )}
-                    </div>
-                  </button>
-                ))}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3 flex-1">
+                          <div className={`p-2 rounded-lg ${plan.styles.bg} ${plan.styles.iconColor} transition-transform group-hover:scale-110`}>
+                            <PlanIcon className="w-6 h-6" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-bold text-gray-900 dark:text-white text-lg flex items-center gap-2">
+                              {plan.name}
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-zinc-500 mt-0.5 font-medium">
+                              {plan.subtitle}
+                            </div>
+                            <div className="text-sm text-gray-600 dark:text-zinc-400 mt-2">
+                              {plan.desc}
+                            </div>
+                          </div>
+                        </div>
+                        {isSelected && (
+                          <CheckCircleIcon className="w-7 h-7 text-emerald-500 flex-shrink-0 animate-in zoom-in duration-200" />
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
               {!selectedPlanForInstance && (
-                <p className="text-amber-600 dark:text-amber-400 text-sm mt-2 flex items-center gap-1">
-                  ⚠️ Debes seleccionar un plan para continuar
-                </p>
+                <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <p className="text-amber-700 dark:text-amber-400 text-sm flex items-center gap-2">
+                    <span className="text-lg">⚠️</span>
+                    <span className="font-medium">Debes seleccionar un plan para continuar</span>
+                  </p>
+                </div>
               )}
             </div>
             {planLimits && workspace.length >= planLimits.instances && (
@@ -919,7 +1064,8 @@ function DashboardContent() {
               <button
                 onClick={handleConfirm}
                 disabled={isLoading || !selectedPlanForInstance || (planLimits && workspace.length >= planLimits.instances)}
-                className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-8 py-3 rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transform hover:scale-105 active:scale-95 font-bold"
+                title={!selectedPlanForInstance ? 'Debes seleccionar un plan primero' : (planLimits && workspace.length >= planLimits.instances) ? 'Has alcanzado el límite de tu plan' : 'Crear nueva instancia'}
+                className="relative bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-8 py-3 rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transform hover:scale-105 active:scale-95 disabled:transform-none font-bold group"
               >
                 {isLoading ? (
                   <>
@@ -928,7 +1074,7 @@ function DashboardContent() {
                   </>
                 ) : (
                   <>
-                    <SparklesIcon className="w-5 h-5" />
+                    <SparklesIcon className="w-5 h-5 group-hover:rotate-12 transition-transform" />
                     Crear Instancia
                   </>
                 )}

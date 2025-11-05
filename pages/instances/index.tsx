@@ -391,11 +391,40 @@ function DashboardContent() {
             )}
 
             {loadingSessions ? (
-              <div className="flex items-center justify-center py-20">
-                <div className="text-center">
-                  <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                  <p className="text-gray-600 dark:text-zinc-400">Cargando instancias...</p>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-6">
+                {[1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="bg-white dark:bg-zinc-800 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-700 p-6 animate-pulse"
+                  >
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-4">
+                        {/* Skeleton Avatar */}
+                        <div className="w-20 h-20 bg-gray-200 dark:bg-zinc-700 rounded-full"></div>
+                        <div className="space-y-2">
+                          {/* Skeleton Name */}
+                          <div className="h-5 bg-gray-200 dark:bg-zinc-700 rounded-lg w-32"></div>
+                          {/* Skeleton Phone */}
+                          <div className="h-4 bg-gray-200 dark:bg-zinc-700 rounded-lg w-40"></div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        {/* Skeleton Badge */}
+                        <div className="h-6 bg-gray-200 dark:bg-zinc-700 rounded-full w-24"></div>
+                        {/* Skeleton Buttons */}
+                        <div className="flex gap-2">
+                          <div className="w-10 h-10 bg-gray-200 dark:bg-zinc-700 rounded-xl"></div>
+                          <div className="w-10 h-10 bg-gray-200 dark:bg-zinc-700 rounded-xl"></div>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Skeleton Webhook Section */}
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-200 dark:bg-zinc-700 rounded-lg w-24"></div>
+                      <div className="h-10 bg-gray-200 dark:bg-zinc-700 rounded-xl w-full"></div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : sessions.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-6">
