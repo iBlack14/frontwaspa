@@ -5,14 +5,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 import axios from 'axios';
 import { Toaster, toast } from 'sonner'; // Import Sonner
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import wazone from '../../../public/logo/wallpaper-wazone.webp';
 import fondo from '../../../public/img/fondo.webp';
 import fondo_transparent from '../../../public/logo/wazilrest_white.png';
-import router from 'next/router';
 import { Suspense } from 'react';
 
 function ResetPassword() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const code = searchParams?.get('code') || undefined; // Retrieve `code` from query params
   const [password, setPassword] = useState<string>('');

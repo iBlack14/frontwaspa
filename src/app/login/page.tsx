@@ -39,14 +39,29 @@ export default function Home() {
   };
 
   const handleGoogleSignIn = async () => {
-    const result = await signIn('google', { redirect: false });
-    if (result?.error) {
-      toast.error('Error al iniciar sesión con Google'); // Use Sonner toast for error
-    } else {
-      toast.success('¡Inicio de sesión con Google exitoso! Redirigiendo...'); // Use Sonner toast for success
-      setTimeout(() => {
-        router.push('/home');
-      }, 1000);
+    try {
+      const result = await signIn('google', { redirect: false });
+      
+      if (result?.error) {
+        console.error('Google Sign In Error:', result.error);
+        
+        // Mensajes de error más específicos
+        if (result.error === 'OAuthCallback') {
+          toast.error('Error en la autenticación con Google. Por favor, intenta nuevamente.');
+        } else if (result.error === 'AccessDenied') {
+          toast.error('Acceso denegado. Debes dar permisos para continuar.');
+        } else {
+          toast.error(`Error: ${result.error}`);
+        }
+      } else if (result?.ok) {
+        toast.success('¡Inicio de sesión con Google exitoso! Redirigiendo...');
+        setTimeout(() => {
+          router.push('/home');
+        }, 1000);
+      }
+    } catch (error: any) {
+      console.error('Unexpected error during Google Sign In:', error);
+      toast.error('Error inesperado. Por favor, intenta nuevamente.');
     }
   };
 

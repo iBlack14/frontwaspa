@@ -7,14 +7,27 @@ import { Toaster, toast } from 'sonner'; // Import Sonner
 import wazone from '../../../public/logo/wallpaper-wazone.webp';
 import fondo from '../../../public/img/fondo.webp';
 import fondo_transparent from '../../../public/logo/wazilrest_white.png';
-import router from 'next/router';
+import { useRouter } from 'next/navigation';
 
 export default function ForgotPassword() {
+  const router = useRouter();
   const [email, setEmail] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    
+    // Validar formato de email
+    if (!validateEmail(email)) {
+      toast.error('Por favor, ingresa un email válido.');
+      return;
+    }
+    
     setLoading(true);
     try {
       await axios.post(`${process.env.NEXT_PUBLIC_STRAPI_URL}/api/auth/forgot-password`, {
@@ -25,8 +38,16 @@ export default function ForgotPassword() {
         router.push('/login');
       }, 2000);
 
-    } catch (error) {
-      toast.error('Ocurrió un error. Intenta nuevamente.');
+    } catch (error: any) {
+      console.error('Forgot password error:', error);
+      
+      if (error.response?.status === 404) {
+        toast.error('No existe una cuenta con este email.');
+      } else if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error('Ocurrió un error. Intenta nuevamente.');
+      }
     } finally {
       setLoading(false);
     }
