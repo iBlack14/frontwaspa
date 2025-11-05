@@ -100,7 +100,7 @@ function DashboardContent() {
   const hasInitializingSessions = sessions.some(s => s.state === 'Initializing' || s.state === 'Disconnected');
   const refreshInterval = hasInitializingSessions ? 500 : 3000; // 500ms si hay QR pendiente, 3s normal
 
-  // Fetch user sessions using SWR
+  // Fetch user sessions using SWR con reconexión automática mejorada
   const { data: fetchedSessions, error, isLoading: loadingSessions, mutate } = useSWR(
     typedSession?.id
       ? `/api/instances?token=${typedSession.jwt}`
@@ -113,6 +113,17 @@ function DashboardContent() {
       dedupingInterval: 200, // Reducido para QR más rápido
       refreshWhenHidden: true, // Actualizar aunque la pestaña esté oculta
       refreshWhenOffline: false,
+      onError: (err) => {
+        console.error('❌ Error al cargar instancias:', err);
+        // Reintentar después de 2 segundos si hay error
+        setTimeout(() => mutate(), 2000);
+      },
+      onSuccess: () => {
+        console.log('✅ Instancias cargadas correctamente');
+      },
+      shouldRetryOnError: true,
+      errorRetryCount: 5,
+      errorRetryInterval: 2000,
     }
   );
 
@@ -151,6 +162,37 @@ function DashboardContent() {
       router.push('/login');
     }
   }, [status, router]);
+
+  // Reconexión automática cuando el backend vuelve
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('🔄 Pestaña visible, revalidando datos...');
+        mutate();
+      }
+    };
+
+    const handleOnline = () => {
+      console.log('🌐 Conexión restaurada, revalidando datos...');
+      toast.success('Conexión restaurada');
+      mutate();
+    };
+
+    const handleOffline = () => {
+      console.log('⚠️ Conexión perdida');
+      toast.warning('Conexión perdida, reintentando...');
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [mutate]);
 
   const fetchQrsForDisconnectedSessions = async (documentId: string) => {
     const disconnectedSession = sessions.find(

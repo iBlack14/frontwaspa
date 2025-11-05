@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { toast, Toaster } from 'sonner';
 import { io } from 'socket.io-client';
-import { SparklesIcon, MagnifyingGlassIcon, FunnelIcon, ChatBubbleLeftRightIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import { SparklesIcon, MagnifyingGlassIcon, FunnelIcon, ChatBubbleLeftRightIcon, ArrowRightIcon, PhotoIcon, VideoCameraIcon, DocumentIcon, MicrophoneIcon, FaceSmileIcon, MapPinIcon, UserIcon, PhoneIcon } from '@heroicons/react/24/outline';
 
 export default function MessagesPage() {
   const { data: session, status } = useSession();
@@ -220,10 +220,65 @@ export default function MessagesPage() {
   );
 }
 
+// Función para detectar el tipo de mensaje
+function getMessageType(message) {
+  // Detectar por tipo explícito si existe
+  if (message.type) {
+    return message.type.toLowerCase();
+  }
+  
+  // Detectar por contenido del mensaje
+  if (message.hasMedia || message.media) {
+    if (message.mediaType) {
+      return message.mediaType.toLowerCase();
+    }
+  }
+  
+  // Detectar por extensión o palabras clave
+  const text = message.text || '';
+  if (text.includes('sticker') || message.isSticker) return 'sticker';
+  if (text.includes('audio') || text.includes('.ogg') || text.includes('.mp3')) return 'audio';
+  if (text.includes('video') || text.includes('.mp4')) return 'video';
+  if (text.includes('image') || text.includes('.jpg') || text.includes('.png')) return 'image';
+  if (text.includes('document') || text.includes('.pdf') || text.includes('.docx')) return 'document';
+  if (text.includes('location') || text.includes('ubicación')) return 'location';
+  if (text.includes('contact') || text.includes('vcard')) return 'contact';
+  
+  // Si tiene texto, es texto
+  if (text && text.length > 0) return 'text';
+  
+  // Por defecto, multimedia
+  return 'media';
+}
+
+// Función para obtener icono y label por tipo de mensaje
+function getMessageTypeInfo(type) {
+  const types = {
+    text: { icon: ChatBubbleLeftRightIcon, label: 'Texto', color: 'text-gray-600', bg: 'bg-gray-100 dark:bg-gray-800' },
+    sticker: { icon: FaceSmileIcon, label: 'Sticker', color: 'text-yellow-600', bg: 'bg-yellow-100 dark:bg-yellow-900/30' },
+    audio: { icon: MicrophoneIcon, label: 'Audio', color: 'text-green-600', bg: 'bg-green-100 dark:bg-green-900/30' },
+    voice: { icon: MicrophoneIcon, label: 'Nota de voz', color: 'text-green-600', bg: 'bg-green-100 dark:bg-green-900/30' },
+    video: { icon: VideoCameraIcon, label: 'Video', color: 'text-purple-600', bg: 'bg-purple-100 dark:bg-purple-900/30' },
+    image: { icon: PhotoIcon, label: 'Imagen', color: 'text-blue-600', bg: 'bg-blue-100 dark:bg-blue-900/30' },
+    document: { icon: DocumentIcon, label: 'Documento', color: 'text-red-600', bg: 'bg-red-100 dark:bg-red-900/30' },
+    location: { icon: MapPinIcon, label: 'Ubicación', color: 'text-pink-600', bg: 'bg-pink-100 dark:bg-pink-900/30' },
+    contact: { icon: UserIcon, label: 'Contacto', color: 'text-indigo-600', bg: 'bg-indigo-100 dark:bg-indigo-900/30' },
+    call: { icon: PhoneIcon, label: 'Llamada', color: 'text-cyan-600', bg: 'bg-cyan-100 dark:bg-cyan-900/30' },
+    media: { icon: PhotoIcon, label: 'Multimedia', color: 'text-orange-600', bg: 'bg-orange-100 dark:bg-orange-900/30' },
+  };
+  
+  return types[type] || types.text;
+}
+
 // Componente para cada tarjeta de mensaje
 function MessageCard({ message, instances }) {
   const instance = instances.find(i => i.document_id === message.instanceId);
   const instanceName = instance?.name || instance?.phone_number || 'Desconocida';
+  
+  // Detectar tipo de mensaje
+  const messageType = getMessageType(message);
+  const typeInfo = getMessageTypeInfo(messageType);
+  const TypeIcon = typeInfo.icon;
   
   // Colores aleatorios basados en el instanceId para diferenciar visualmente
   const getInstanceColor = (id) => {
@@ -265,10 +320,18 @@ function MessageCard({ message, instances }) {
             </div>
           </div>
 
+          {/* Badge de tipo de mensaje */}
+          <div className="mb-3">
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold ${typeInfo.bg} ${typeInfo.color} border border-current/20`}>
+              <TypeIcon className="w-4 h-4" />
+              {typeInfo.label}
+            </span>
+          </div>
+
           {/* Contenido del mensaje */}
           <div className={`mb-4 p-4 ${colorScheme.bg} rounded-xl border border-gray-200 dark:border-zinc-700`}>
             <p className="text-gray-800 dark:text-white leading-relaxed">
-              {message.text || '📎 [Mensaje multimedia]'}
+              {message.text || `📎 [${typeInfo.label}]`}
             </p>
           </div>
 
