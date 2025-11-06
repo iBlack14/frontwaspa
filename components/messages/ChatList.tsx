@@ -134,7 +134,7 @@ function ChatItem({ chat, isSelected, onClick }: { chat: Chat; isSelected: boole
         </div>
         <div className="flex justify-between items-center">
           <p className="text-sm text-[#667781] dark:text-[#8696a0] truncate flex-1">
-            {chat.last_message_text || 'Sin mensajes'}
+            {chat.last_message_text || '📎 Archivo multimedia'}
           </p>
           {chat.unread_count > 0 && (
             <span className="ml-2 bg-[#00a884] text-white text-xs font-semibold rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center">

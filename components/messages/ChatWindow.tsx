@@ -200,6 +200,49 @@ function MessageBubble({ message }: { message: Message }) {
     return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
   };
 
+  // Renderizar contenido según el tipo de mensaje
+  const renderMessageContent = () => {
+    // Si hay texto, mostrarlo siempre
+    if (message.message_text) {
+      return (
+        <p className={`text-[14.2px] whitespace-pre-wrap break-words px-1 leading-[19px] ${
+          message.from_me 
+            ? 'text-[#111b21] dark:text-[#e9edef]' 
+            : 'text-[#111b21] dark:text-[#e9edef]'
+        }`}>
+          {message.message_text}
+        </p>
+      );
+    }
+
+    // Si no hay texto, mostrar indicador según el tipo
+    const typeIcons: Record<string, string> = {
+      image: '🖼️ Imagen',
+      video: '🎥 Video',
+      audio: '🎵 Audio',
+      voice: '🎤 Nota de voz',
+      document: '📄 Documento',
+      sticker: '🎨 Sticker',
+      location: '📍 Ubicación',
+      contact: '👤 Contacto',
+      contacts: '👥 Contactos',
+      poll: '📊 Encuesta',
+      reaction: '❤️ Reacción',
+    };
+
+    const typeLabel = typeIcons[message.message_type] || '📎 Archivo';
+
+    return (
+      <p className={`text-[14.2px] italic px-1 leading-[19px] ${
+        message.from_me 
+          ? 'text-[#667781] dark:text-[#8696a0]' 
+          : 'text-[#667781] dark:text-[#8696a0]'
+      }`}>
+        {typeLabel}
+      </p>
+    );
+  };
+
   return (
     <div className={`flex ${message.from_me ? 'justify-end' : 'justify-start'} mb-1`}>
       <div
@@ -220,13 +263,7 @@ function MessageBubble({ message }: { message: Message }) {
           </p>
         )}
         
-        <p className={`text-[14.2px] whitespace-pre-wrap break-words px-1 leading-[19px] ${
-          message.from_me 
-            ? 'text-[#111b21] dark:text-[#e9edef]' 
-            : 'text-[#111b21] dark:text-[#e9edef]'
-        }`}>
-          {message.message_text || message.message_caption || '[Media]'}
-        </p>
+        {renderMessageContent()}
         
         <div className="flex items-center justify-end gap-1 mt-0.5 px-1">
           <span className={`text-[11px] ${
