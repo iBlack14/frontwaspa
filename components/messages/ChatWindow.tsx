@@ -31,6 +31,7 @@ interface Message {
   from_me: boolean;
   timestamp: string;
   is_read: boolean;
+  metadata?: any;
 }
 
 interface ChatWindowProps {
@@ -202,7 +203,100 @@ function MessageBubble({ message }: { message: Message }) {
 
   // Renderizar contenido según el tipo de mensaje
   const renderMessageContent = () => {
-    // Si hay texto, mostrarlo siempre
+    // Renderizar imagen
+    if (message.message_type === 'image' && message.media_url) {
+      return (
+        <div className="mb-1">
+          <img
+            src={message.media_url}
+            alt="Imagen"
+            className="max-w-full rounded-lg cursor-pointer hover:opacity-90 transition"
+            style={{ maxHeight: '300px', objectFit: 'cover' }}
+            onClick={() => window.open(message.media_url, '_blank')}
+          />
+          {message.message_text && (
+            <p className="text-[14.2px] mt-1 px-1">{message.message_text}</p>
+          )}
+        </div>
+      );
+    }
+
+    // Renderizar video
+    if (message.message_type === 'video' && message.media_url) {
+      return (
+        <div className="mb-1">
+          <video
+            controls
+            className="max-w-full rounded-lg"
+            style={{ maxHeight: '300px' }}
+          >
+            <source src={message.media_url} type="video/mp4" />
+            Tu navegador no soporta video.
+          </video>
+          {message.message_text && (
+            <p className="text-[14.2px] mt-1 px-1">{message.message_text}</p>
+          )}
+        </div>
+      );
+    }
+
+    // Renderizar audio o nota de voz
+    if ((message.message_type === 'audio' || message.message_type === 'voice') && message.media_url) {
+      return (
+        <div className="mb-1">
+          <div className="flex items-center gap-2 bg-white/10 dark:bg-black/10 rounded-lg p-2">
+            {message.message_type === 'voice' ? '🎤' : '🎵'}
+            <audio controls className="flex-1" style={{ height: '32px' }}>
+              <source src={message.media_url} />
+              Tu navegador no soporta audio.
+            </audio>
+          </div>
+          {message.message_text && (
+            <p className="text-[14.2px] mt-1 px-1">{message.message_text}</p>
+          )}
+        </div>
+      );
+    }
+
+    // Renderizar sticker
+    if (message.message_type === 'sticker' && message.media_url) {
+      return (
+        <div className="mb-1">
+          <img
+            src={message.media_url}
+            alt="Sticker"
+            className="max-w-[150px] cursor-pointer"
+            onClick={() => window.open(message.media_url, '_blank')}
+          />
+        </div>
+      );
+    }
+
+    // Renderizar documento
+    if (message.message_type === 'document' && message.media_url) {
+      const fileName = (message.metadata as any)?.fileName || 'documento';
+      return (
+        <div className="mb-1">
+          <a
+            href={message.media_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 bg-white/10 dark:bg-black/10 rounded-lg p-3 hover:bg-white/20 dark:hover:bg-black/20 transition"
+          >
+            <span className="text-2xl">📄</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{fileName}</p>
+              <p className="text-xs opacity-70">Click para descargar</p>
+            </div>
+          </a>
+          {message.message_text && (
+            <p className="text-[14.2px] mt-1 px-1">{message.message_text}</p>
+          )}
+        </div>
+      );
+    }
+
+    // Si hay texto, mostrarlo
     if (message.message_text) {
       return (
         <p className={`text-[14.2px] whitespace-pre-wrap break-words px-1 leading-[19px] ${
@@ -215,7 +309,7 @@ function MessageBubble({ message }: { message: Message }) {
       );
     }
 
-    // Si no hay texto, mostrar indicador según el tipo
+    // Si no hay texto ni media, mostrar indicador según el tipo
     const typeIcons: Record<string, string> = {
       image: '🖼️ Imagen',
       video: '🎥 Video',
