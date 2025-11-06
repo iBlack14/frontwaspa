@@ -26,9 +26,10 @@ export const serviceNameSchema = z
  */
 export const createSuiteInstanceSchema = z.object({
   service_name: serviceNameSchema,
-  plan: z.enum(['free', 'basic', 'premium', 'pro'], {
-    errorMap: () => ({ message: 'Debes seleccionar un plan válido' }),
-  }),
+  plan: z.enum(['free', 'basic', 'premium', 'pro']).refine(
+    (val) => ['free', 'basic', 'premium', 'pro'].includes(val),
+    { message: 'Debes seleccionar un plan válido' }
+  ),
 });
 
 export type CreateSuiteInstanceInput = z.infer<typeof createSuiteInstanceSchema>;
@@ -129,7 +130,7 @@ export function validateData<T>(
     return { success: true, data: result.data };
   }
 
-  const errors = result.error.errors.map((err) => {
+  const errors = result.error.issues.map((err: any) => {
     const path = err.path.join('.');
     return path ? `${path}: ${err.message}` : err.message;
   });
@@ -156,7 +157,7 @@ export function useValidation<T>(schema: z.ZodSchema<T>) {
 
         return {
           success: false,
-          error: result.error.errors[0]?.message || 'Error de validación',
+          error: result.error.issues[0]?.message || 'Error de validación',
         };
       } catch {
         return { success: true };
