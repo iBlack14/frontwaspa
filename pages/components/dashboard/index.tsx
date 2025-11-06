@@ -74,7 +74,7 @@ function SidebarLayout({ children }: { children: React.ReactNode }) {
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
-    router.push('/login');
+    router.push('/'); // Redirige a landing page
   };
 
   const menuItems = [
