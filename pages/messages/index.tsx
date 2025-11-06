@@ -87,7 +87,29 @@ function MessagesContent() {
     }
   }, [selectedChat]);
 
-  // Suscribirse a nuevos mensajes en tiempo real
+  // Polling automático cada segundo para actualizar chats
+  useEffect(() => {
+    if (!selectedInstance) return;
+
+    const intervalId = setInterval(() => {
+      fetchChats(selectedInstance);
+    }, 1000); // Actualizar cada segundo
+
+    return () => clearInterval(intervalId);
+  }, [selectedInstance]);
+
+  // Polling automático cada segundo para actualizar mensajes del chat actual
+  useEffect(() => {
+    if (!selectedChat) return;
+
+    const intervalId = setInterval(() => {
+      fetchMessages(selectedChat.instance_id, selectedChat.chat_id, true); // true = silencioso
+    }, 1000); // Actualizar cada segundo
+
+    return () => clearInterval(intervalId);
+  }, [selectedChat]);
+
+  // Suscribirse a nuevos mensajes en tiempo real (backup)
   useEffect(() => {
     if (!supabase || !selectedInstance) return;
 
@@ -106,7 +128,13 @@ function MessagesContent() {
           
           // Si el mensaje es del chat actual, agregarlo
           if (selectedChat && payload.new.chat_id === selectedChat.chat_id) {
-            setMessages((prev) => [...prev, payload.new]);
+            setMessages((prev) => {
+              // Evitar duplicados
+              if (prev.some(m => m.message_id === payload.new.message_id)) {
+                return prev;
+              }
+              return [...prev, payload.new];
+            });
           }
           
           // Actualizar lista de chats
@@ -153,16 +181,28 @@ function MessagesContent() {
     }
   };
 
-  const fetchMessages = async (instanceId: string, chatId: string) => {
+  const fetchMessages = async (instanceId: string, chatId: string, silent = false) => {
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const response = await axios.get(`${backendUrl}/api/messages/${instanceId}/${chatId}?limit=100`);
-      setMessages(response.data.messages || []);
       
-      // Marcar como leído
-      await markAsRead(instanceId, chatId);
+      setMessages((prevMessages) => {
+        const newMessages = response.data.messages || [];
+        // Solo actualizar si hay cambios
+        if (JSON.stringify(prevMessages) !== JSON.stringify(newMessages)) {
+          return newMessages;
+        }
+        return prevMessages;
+      });
+      
+      // Marcar como leído solo si no es silencioso
+      if (!silent) {
+        await markAsRead(instanceId, chatId);
+      }
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      if (!silent) {
+        console.error('Error fetching messages:', error);
+      }
     }
   };
 
