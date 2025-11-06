@@ -36,6 +36,7 @@ export interface Message {
   from_me: boolean;
   timestamp: string;
   is_read: boolean;
+  metadata?: any;
 }
 
 function MessagesContent() {

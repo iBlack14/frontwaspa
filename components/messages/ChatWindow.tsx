@@ -1,38 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
-import { CheckIcon, PaperAirplaneIcon, FaceSmileIcon, PaperClipIcon } from '@heroicons/react/24/outline';
+import { useState, useEffect, useRef, KeyboardEvent } from 'react';
+import { Chat, Message } from '../../pages/messages/index';
 import axios from 'axios';
+import ImageViewer from './ImageViewer';
+import { CheckIcon, PaperAirplaneIcon, FaceSmileIcon, PaperClipIcon } from '@heroicons/react/24/outline';
 import { toast } from 'sonner';
-
-interface Chat {
-  id: string;
-  instance_id: string;
-  chat_id: string;
-  chat_name?: string;
-  chat_type: 'individual' | 'group';
-  profile_pic_url?: string;
-  last_message_text?: string;
-  last_message_at?: string;
-  unread_count: number;
-  is_archived: boolean;
-  is_pinned: boolean;
-}
-
-interface Message {
-  id: string;
-  instance_id: string;
-  chat_id: string;
-  message_id: string;
-  sender_name?: string;
-  sender_phone?: string;
-  message_text?: string;
-  message_caption?: string;
-  message_type: string;
-  media_url?: string;
-  from_me: boolean;
-  timestamp: string;
-  is_read: boolean;
-  metadata?: any;
-}
 
 interface ChatWindowProps {
   chat: Chat;
@@ -45,6 +16,8 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<{ url: string; caption?: string } | null>(null);
 
   useEffect(() => {
     scrollToBottom();
@@ -150,7 +123,14 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
           </div>
         ) : (
           sortedMessages.map((message) => (
-            <MessageBubble key={message.id} message={message} />
+            <MessageBubble 
+              key={message.id} 
+              message={message} 
+              onImageClick={(url, caption) => {
+                setSelectedImage({ url, caption });
+                setImageViewerOpen(true);
+              }}
+            />
           ))
         )}
         <div ref={messagesEndRef} />
@@ -191,11 +171,29 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
           )}
         </button>
       </div>
+
+      {/* Image Viewer Modal */}
+      {imageViewerOpen && selectedImage && (
+        <ImageViewer
+          imageUrl={selectedImage.url}
+          caption={selectedImage.caption}
+          onClose={() => {
+            setImageViewerOpen(false);
+            setSelectedImage(null);
+          }}
+        />
+      )}
     </div>
   );
 }
 
-function MessageBubble({ message }: { message: Message }) {
+function MessageBubble({ 
+  message, 
+  onImageClick 
+}: { 
+  message: Message;
+  onImageClick?: (url: string, caption?: string) => void;
+}) {
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
@@ -210,9 +208,9 @@ function MessageBubble({ message }: { message: Message }) {
           <img
             src={message.media_url}
             alt="Imagen"
-            className="max-w-full rounded-lg cursor-pointer hover:opacity-90 transition"
+            className="max-w-full rounded-lg cursor-pointer hover:opacity-90 transition hover:shadow-lg"
             style={{ maxHeight: '300px', objectFit: 'cover' }}
-            onClick={() => window.open(message.media_url, '_blank')}
+            onClick={() => onImageClick?.(message.media_url!, message.message_text)}
           />
           {message.message_text && (
             <p className="text-[14.2px] mt-1 px-1">{message.message_text}</p>
