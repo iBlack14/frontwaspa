@@ -325,15 +325,36 @@ function MessageBubble({ message }: { message: Message }) {
     };
 
     const typeLabel = typeIcons[message.message_type] || '📎 Archivo';
+    
+    // Intentar obtener nombre de archivo del metadata
+    const fileName = (message.metadata as any)?.fileName;
 
     return (
-      <p className={`text-[14.2px] italic px-1 leading-[19px] ${
-        message.from_me 
-          ? 'text-[#667781] dark:text-[#8696a0]' 
-          : 'text-[#667781] dark:text-[#8696a0]'
-      }`}>
-        {typeLabel}
-      </p>
+      <div className="px-1">
+        <p className={`text-[14.2px] italic leading-[19px] ${
+          message.from_me 
+            ? 'text-[#667781] dark:text-[#8696a0]' 
+            : 'text-[#667781] dark:text-[#8696a0]'
+        }`}>
+          {typeLabel}
+        </p>
+        {fileName && (
+          <p className={`text-xs mt-0.5 leading-[16px] ${
+            message.from_me 
+              ? 'text-[#667781] dark:text-[#8696a0]' 
+              : 'text-[#667781] dark:text-[#8696a0]'
+          }`}>
+            {fileName}
+          </p>
+        )}
+        <p className={`text-xs mt-1 opacity-60 leading-[16px] ${
+          message.from_me 
+            ? 'text-[#667781] dark:text-[#8696a0]' 
+            : 'text-[#667781] dark:text-[#8696a0]'
+        }`}>
+          (Mensaje antiguo sin media)
+        </p>
+      </div>
     );
   };
 
