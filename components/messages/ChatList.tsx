@@ -39,22 +39,27 @@ export default function ChatList({ chats, selectedChat, onSelectChat }: ChatList
   const regularChats = chats.filter(c => !c.is_pinned && !c.is_archived);
 
   return (
-    <div className="h-full bg-white dark:bg-gray-800">
-      {/* Search */}
-      <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-        <input
-          type="text"
-          placeholder="Buscar chats..."
-          className="w-full px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white border-none focus:ring-2 focus:ring-emerald-500"
-        />
+    <div className="h-full bg-[#f0f2f5] dark:bg-[#111b21] flex flex-col">
+      {/* Search - Estilo WhatsApp */}
+      <div className="p-2 bg-white dark:bg-[#202c33]">
+        <div className="bg-[#f0f2f5] dark:bg-[#202c33] rounded-lg px-4 py-2 flex items-center">
+          <svg className="w-5 h-5 text-gray-500 dark:text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Buscar o iniciar un chat"
+            className="flex-1 bg-transparent text-sm text-gray-900 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 border-none focus:outline-none"
+          />
+        </div>
       </div>
 
       {/* Chats */}
-      <div className="overflow-y-auto">
+      <div className="flex-1 overflow-y-auto bg-white dark:bg-[#111b21]">
         {/* Pinned */}
         {pinnedChats.length > 0 && (
           <div>
-            <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900">
+            <div className="px-4 py-2 text-xs font-medium text-[#00a884] dark:text-[#00a884] bg-white dark:bg-[#111b21]">
               FIJADOS
             </div>
             {pinnedChats.map((chat) => (
@@ -80,7 +85,7 @@ export default function ChatList({ chats, selectedChat, onSelectChat }: ChatList
 
         {chats.length === 0 && (
           <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-            No hay chats disponibles
+            <p className="text-sm">No hay chats disponibles</p>
           </div>
         )}
       </div>
@@ -92,12 +97,14 @@ function ChatItem({ chat, isSelected, onClick }: { chat: Chat; isSelected: boole
   return (
     <div
       onClick={onClick}
-      className={`flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition ${
-        isSelected ? 'bg-gray-100 dark:bg-gray-700' : ''
+      className={`flex items-center gap-3 px-4 py-3 cursor-pointer border-b border-gray-100 dark:border-[#202c33] transition-colors ${
+        isSelected 
+          ? 'bg-[#f0f2f5] dark:bg-[#2a3942]' 
+          : 'bg-white dark:bg-[#111b21] hover:bg-[#f5f6f6] dark:hover:bg-[#202c33]'
       }`}
     >
-      {/* Avatar */}
-      <div className="flex-shrink-0">
+      {/* Avatar - Estilo WhatsApp */}
+      <div className="flex-shrink-0 relative">
         {chat.profile_pic_url ? (
           <img
             src={chat.profile_pic_url}
@@ -105,7 +112,7 @@ function ChatItem({ chat, isSelected, onClick }: { chat: Chat; isSelected: boole
             className="w-12 h-12 rounded-full object-cover"
           />
         ) : (
-          <div className="w-12 h-12 rounded-full bg-emerald-600 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-[#6b7c85] dark:bg-[#6b7c85] flex items-center justify-center">
             {chat.chat_type === 'group' ? (
               <UserGroupIcon className="w-6 h-6 text-white" />
             ) : (
@@ -117,21 +124,21 @@ function ChatItem({ chat, isSelected, onClick }: { chat: Chat; isSelected: boole
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-baseline">
-          <h3 className="font-semibold text-gray-900 dark:text-white truncate">
+        <div className="flex justify-between items-start mb-1">
+          <h3 className="font-medium text-[15px] text-[#111b21] dark:text-[#e9edef] truncate">
             {chat.chat_name || chat.chat_id}
           </h3>
-          <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+          <span className="text-xs text-[#667781] dark:text-[#8696a0] ml-2 flex-shrink-0">
             {formatTime(chat.last_message_at)}
           </span>
         </div>
-        <div className="flex justify-between items-center mt-1">
-          <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-[#667781] dark:text-[#8696a0] truncate flex-1">
             {chat.last_message_text || 'Sin mensajes'}
           </p>
           {chat.unread_count > 0 && (
-            <span className="ml-2 bg-emerald-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-              {chat.unread_count}
+            <span className="ml-2 bg-[#00a884] text-white text-xs font-semibold rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center">
+              {chat.unread_count > 99 ? '99+' : chat.unread_count}
             </span>
           )}
         </div>

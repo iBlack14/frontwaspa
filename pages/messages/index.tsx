@@ -221,15 +221,15 @@ function MessagesContent() {
   }
 
   return (
-    <div className="h-screen flex flex-col">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
+    <div className="h-screen flex flex-col bg-[#f0f2f5] dark:bg-[#111b21]">
+      {/* Header - Estilo WhatsApp */}
+      <div className="bg-[#f0f2f5] dark:bg-[#202c33] border-b border-[#d1d7db] dark:border-[#2a3942] px-4 py-3">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Mensajes</h1>
+          <h1 className="text-xl font-semibold text-[#111b21] dark:text-[#e9edef]">Mensajes WhatsApp</h1>
           <select
             value={selectedInstance || ''}
             onChange={(e) => setSelectedInstance(e.target.value)}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="px-3 py-1.5 border border-[#d1d7db] dark:border-[#2a3942] rounded-lg bg-white dark:bg-[#2a3942] text-[#111b21] dark:text-[#e9edef] text-sm focus:outline-none focus:ring-2 focus:ring-[#00a884]"
           >
             {instances
               .filter((i) => i.state === 'Connected')
@@ -242,10 +242,10 @@ function MessagesContent() {
         </div>
       </div>
 
-      {/* Chat Interface */}
+      {/* Chat Interface - Layout WhatsApp */}
       <div className="flex-1 flex overflow-hidden">
         {/* Chat List */}
-        <div className="w-1/3 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
+        <div className="w-[30%] min-w-[300px] border-r border-[#d1d7db] dark:border-[#2a3942] overflow-hidden">
           <ChatList
             chats={chats}
             selectedChat={selectedChat}
@@ -254,7 +254,7 @@ function MessagesContent() {
         </div>
 
         {/* Chat Window */}
-        <div className="flex-1">
+        <div className="flex-1 bg-[#efeae2] dark:bg-[#0b141a]">
           {selectedChat ? (
             <ChatWindow
               chat={selectedChat}
@@ -262,10 +262,24 @@ function MessagesContent() {
               onRefresh={() => fetchMessages(selectedChat.instance_id, selectedChat.chat_id)}
             />
           ) : (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center text-gray-500 dark:text-gray-400">
-                <p className="text-xl mb-2">Selecciona un chat para comenzar</p>
-                <p className="text-sm">Tus mensajes aparecerán aquí</p>
+            <div className="flex items-center justify-center h-full bg-[#f0f2f5] dark:bg-[#222e35]">
+              <div className="text-center">
+                <div className="w-64 h-64 mx-auto mb-6 opacity-10">
+                  <svg viewBox="0 0 303 172" fill="currentColor" className="text-[#00a884]">
+                    <path d="M151.5 0C67.9 0 0 67.9 0 151.5S67.9 303 151.5 303 303 235.1 303 151.5 235.1 0 151.5 0zm0 276.5c-69 0-125-56-125-125s56-125 125-125 125 56 125 125-56 125-125 125z"/>
+                  </svg>
+                </div>
+                <h2 className="text-3xl font-light text-[#41525d] dark:text-[#8696a0] mb-2">
+                  WhatsApp Web
+                </h2>
+                <p className="text-sm text-[#667781] dark:text-[#8696a0] mb-8">
+                  Selecciona un chat para ver los mensajes
+                </p>
+                <div className="bg-[#f0f2f5] dark:bg-[#202c33] rounded-lg p-4 max-w-md mx-auto">
+                  <p className="text-xs text-[#667781] dark:text-[#8696a0]">
+                    🔒 Tus mensajes están cifrados de extremo a extremo
+                  </p>
+                </div>
               </div>
             </div>
           )}
