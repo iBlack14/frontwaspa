@@ -53,12 +53,29 @@ export default async function handler(req, res) {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
     if (backendUrl) {
       try {
+        // ✅ Obtener API key del usuario
+        const { data: profile } = await supabaseAdmin
+          .from('profiles')
+          .select('api_key')
+          .eq('id', session.id)
+          .single();
+
+        if (!profile || !profile.api_key) {
+          return res.status(403).json({
+            error: 'API Key requerida',
+            message: 'Para gestionar Suite debes tener tu API Key generada en tu perfil.'
+          });
+        }
+
         await axios.post(`${backendUrl}/api/suite/init`, {
           service_name: name_service,
           user_id: session.id
         }, { 
           timeout: 15000,
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${profile.api_key}`
+          }
         });
         console.log(`Container ${name_service} started successfully`);
       } catch (dockerError) {
