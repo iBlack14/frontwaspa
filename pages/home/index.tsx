@@ -54,13 +54,33 @@ function DashboardContent() {
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Estado para estadísticas de cache
+  const [cacheStats, setCacheStats] = useState<any>(null);
+  const [systemInfo, setSystemInfo] = useState<any>(null);
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
     } else if (status === 'authenticated') {
       fetchUserSessions();
+      fetchCacheStats();
+      // Actualizar estadísticas cada 30 segundos
+      const interval = setInterval(fetchCacheStats, 30000);
+      return () => clearInterval(interval);
     }
   }, [status, router]);
+  
+  // Función para obtener estadísticas de cache
+  const fetchCacheStats = async () => {
+    try {
+      const res = await axios.get('/api/system/cache-stats');
+      setCacheStats(res.data.cache);
+      setSystemInfo(res.data.system);
+    } catch (error) {
+      // Silencioso - no mostrar error si falla
+      console.log('Cache stats not available');
+    }
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -399,6 +419,92 @@ function DashboardContent() {
               </div>
             </div>
           </div>
+
+          {/* Cache & System Stats - NUEVO */}
+          {cacheStats && (
+            <div className="bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-xl p-6 border border-zinc-700 shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-white text-lg font-bold flex items-center gap-2">
+                  <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+                  </svg>
+                  Sistema & Cache
+                </h3>
+                <span className="text-zinc-400 text-xs">Actualiza cada 30s</span>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Cache LRU */}
+                <div className="bg-zinc-900/50 rounded-lg p-4 border border-zinc-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-zinc-400 text-sm">Cache LRU</span>
+                    <span className={`text-xs px-2 py-1 rounded ${
+                      parseFloat(cacheStats.usage) > 80 ? 'bg-red-900/30 text-red-400' :
+                      parseFloat(cacheStats.usage) > 50 ? 'bg-yellow-900/30 text-yellow-400' :
+                      'bg-green-900/30 text-green-400'
+                    }`}>
+                      {cacheStats.usage}
+                    </span>
+                  </div>
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {cacheStats.size}/{cacheStats.maxSize}
+                  </div>
+                  <div className="w-full bg-zinc-800 rounded-full h-2 mb-2">
+                    <div
+                      className={`h-2 rounded-full transition-all ${
+                        parseFloat(cacheStats.usage) > 80 ? 'bg-red-500' :
+                        parseFloat(cacheStats.usage) > 50 ? 'bg-yellow-500' :
+                        'bg-green-500'
+                      }`}
+                      style={{ width: cacheStats.usage }}
+                    />
+                  </div>
+                  <span className="text-zinc-500 text-xs">spams activos</span>
+                </div>
+
+                {/* Memoria del Sistema */}
+                {systemInfo && (
+                  <div className="bg-zinc-900/50 rounded-lg p-4 border border-zinc-700">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-zinc-400 text-sm">Memoria Heap</span>
+                      <span className="text-xs px-2 py-1 rounded bg-blue-900/30 text-blue-400">
+                        {((systemInfo.memoryUsage.heapUsed / systemInfo.memoryUsage.heapTotal) * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="text-2xl font-bold text-white mb-1">
+                      {(systemInfo.memoryUsage.heapUsed / 1024 / 1024).toFixed(0)} MB
+                    </div>
+                    <div className="w-full bg-zinc-800 rounded-full h-2 mb-2">
+                      <div
+                        className="bg-blue-500 h-2 rounded-full transition-all"
+                        style={{ width: `${(systemInfo.memoryUsage.heapUsed / systemInfo.memoryUsage.heapTotal) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-zinc-500 text-xs">de {(systemInfo.memoryUsage.heapTotal / 1024 / 1024).toFixed(0)} MB total</span>
+                  </div>
+                )}
+
+                {/* Uptime */}
+                {systemInfo && (
+                  <div className="bg-zinc-900/50 rounded-lg p-4 border border-zinc-700">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-zinc-400 text-sm">Uptime</span>
+                      <span className="text-xs px-2 py-1 rounded bg-purple-900/30 text-purple-400">
+                        {systemInfo.platform}
+                      </span>
+                    </div>
+                    <div className="text-2xl font-bold text-white mb-1">
+                      {Math.floor(systemInfo.uptime / 3600)}h {Math.floor((systemInfo.uptime % 3600) / 60)}m
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-zinc-500 text-xs">Node {systemInfo.nodeVersion}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Instance Selector with Profile - MEJORADO */}
           <div className="bg-gradient-to-br from-white to-gray-50 dark:from-zinc-800 dark:to-zinc-900 rounded-2xl p-6 border border-gray-200 dark:border-zinc-700 shadow-xl dark:shadow-2xl">

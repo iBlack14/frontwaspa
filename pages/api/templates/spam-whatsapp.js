@@ -20,6 +20,7 @@ import {
   isSafeHour,
   isValidPhoneNumber,
 } from '../../../src/lib/anti-ban-system';
+import { validatePlan } from '../../../src/middleware/plan-validation.middleware';
 
 export const config = {
   api: {
@@ -101,6 +102,22 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'No autorizado' });
     }
 
+    // ✅ VALIDAR PLAN - FREE solo puede usar spam con limitaciones
+    const planValidation = await validatePlan(req, res, 'spam');
+    if (!planValidation.allowed) {
+      return res.status(planValidation.statusCode).json({
+        error: planValidation.error,
+        message: planValidation.message,
+        currentPlan: planValidation.currentPlan,
+        requiredPlan: planValidation.requiredPlan,
+        currentUsage: planValidation.currentUsage,
+        limit: planValidation.limit,
+      });
+    }
+
+    console.log(`[SPAM] ✅ Plan validado: ${planValidation.planType.toUpperCase()}`);
+    console.log(`[SPAM] Límites: ${planValidation.limits.maxMessagesPerDay} msg/día, ${planValidation.limits.maxMessagesPerHour} msg/hora`);
+
     // Verificar plan activo y obtener configuración de proxy
     const { data: profile } = await supabaseAdmin
       .from('profiles')
@@ -158,31 +175,31 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Faltan los números manuales' });
     }
 
-    // Subir imagen a Supabase Storage si se subió un archivo
-    let finalImageUrl = imageUrl || '';
+    // Subir imagen a Supabase si existe
+    let finalImageUrl = null;
+    let imageFilePath = null;
     
     if (imageFile) {
       try {
-        const imageFilePath = Array.isArray(imageFile) ? imageFile[0].filepath : imageFile.filepath;
+        imageFilePath = Array.isArray(imageFile) ? imageFile[0].filepath : imageFile.filepath;
         const imageFileName = Array.isArray(imageFile) ? imageFile[0].originalFilename : imageFile.originalFilename;
         const imageBuffer = fs.readFileSync(imageFilePath);
         
         // Generar nombre único
-        const timestamp = Date.now();
-        const extension = imageFileName.split('.').pop();
-        const uniqueName = `spam-images/${session.id}/${timestamp}.${extension}`;
+        const fileExt = imageFileName.split('.').pop();
+        const uniqueName = `spam-images/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
         
         // Subir a Supabase Storage
         const { data: uploadData, error: uploadError } = await supabaseAdmin
           .storage
-          .from('public-files') // Asegúrate de tener este bucket creado
+          .from('public-files')
           .upload(uniqueName, imageBuffer, {
             contentType: Array.isArray(imageFile) ? imageFile[0].mimetype : imageFile.mimetype,
             upsert: false
           });
         
         if (uploadError) {
-          // Error uploading image
+          console.error('[SPAM] Error subiendo imagen:', uploadError);
         } else {
           // Obtener URL pública
           const { data: { publicUrl } } = supabaseAdmin
@@ -192,11 +209,18 @@ export default async function handler(req, res) {
           
           finalImageUrl = publicUrl;
         }
-        
-        // Limpiar archivo temporal
-        fs.unlinkSync(imageFilePath);
       } catch (uploadError) {
-        // Continuar sin imagen si falla
+        console.error('[SPAM] Error procesando imagen:', uploadError);
+      } finally {
+        // ✅ GARANTIZAR limpieza del archivo temporal
+        if (imageFilePath && fs.existsSync(imageFilePath)) {
+          try {
+            fs.unlinkSync(imageFilePath);
+            console.log('[SPAM] 🧹 Archivo temporal de imagen eliminado');
+          } catch (cleanupError) {
+            console.error('[SPAM] Error limpiando archivo temporal:', cleanupError);
+          }
+        }
       }
     }
 
@@ -241,24 +265,34 @@ export default async function handler(req, res) {
 
     // Leer contactos según el modo de carga
     let data = [];
+    let excelFilePath = null;
     
     if (uploadMode === 'excel') {
-      // Leer archivo Excel
-      const filePath = Array.isArray(excelFile) ? excelFile[0].filepath : excelFile.filepath;
-      const workbook = XLSX.readFile(filePath);
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      data = XLSX.utils.sheet_to_json(worksheet);
+      try {
+        // Leer archivo Excel
+        excelFilePath = Array.isArray(excelFile) ? excelFile[0].filepath : excelFile.filepath;
+        const workbook = XLSX.readFile(excelFilePath);
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        data = XLSX.utils.sheet_to_json(worksheet);
 
-      // Validar que tenga la columna 'numero'
-      if (data.length === 0 || !data[0].hasOwnProperty('numero')) {
-        return res.status(400).json({ 
-          error: 'El Excel debe tener una columna llamada "numero"' 
-        });
+        // Validar que tenga la columna 'numero'
+        if (data.length === 0 || !data[0].hasOwnProperty('numero')) {
+          return res.status(400).json({ 
+            error: 'El Excel debe tener una columna llamada "numero"' 
+          });
+        }
+      } finally {
+        // ✅ GARANTIZAR limpieza del archivo Excel temporal
+        if (excelFilePath && fs.existsSync(excelFilePath)) {
+          try {
+            fs.unlinkSync(excelFilePath);
+            console.log('[SPAM] 🧹 Archivo Excel temporal eliminado');
+          } catch (cleanupError) {
+            console.error('[SPAM] Error limpiando Excel temporal:', cleanupError);
+          }
+        }
       }
-      
-      // Limpiar archivo subido
-      fs.unlinkSync(filePath);
     } else if (uploadMode === 'manual') {
       // Parsear números manuales con validación mejorada
       const numbersArray = manualNumbers
@@ -349,39 +383,59 @@ async function processSpamInBackground({
       'Authorization': apiKey,
       'Content-Type': 'application/json',
     },
-    timeout: 30000,
+    timeout: 60000, // ✅ Aumentado a 60 segundos para imágenes grandes
   };
   
   if (proxyConfig && proxyConfig.enabled) {
     console.log(`[SPAM ${spamId}] 🌐 Usando PROXY: ${proxyConfig.type}://${proxyConfig.host}:${proxyConfig.port}`);
     
-    // Construir URL del proxy
-    let proxyUrl;
-    if (proxyConfig.username && proxyConfig.password) {
-      proxyUrl = `${proxyConfig.type}://${proxyConfig.username}:${proxyConfig.password}@${proxyConfig.host}:${proxyConfig.port}`;
+    // ✅ VALIDAR configuración del proxy
+    if (!proxyConfig.host || !proxyConfig.port) {
+      console.error(`[SPAM ${spamId}] ❌ Proxy mal configurado: falta host o port`);
+      console.log(`[SPAM ${spamId}] Continuando sin proxy...`);
     } else {
-      proxyUrl = `${proxyConfig.type}://${proxyConfig.host}:${proxyConfig.port}`;
-    }
-    
-    // Configurar proxy en axios
-    try {
-      const { HttpsProxyAgent } = require('https-proxy-agent');
-      const { SocksProxyAgent } = require('socks-proxy-agent');
-      
-      let agent;
-      if (proxyConfig.type === 'socks4' || proxyConfig.type === 'socks5') {
-        agent = new SocksProxyAgent(proxyUrl);
+      // Construir URL del proxy
+      let proxyUrl;
+      if (proxyConfig.username && proxyConfig.password) {
+        proxyUrl = `${proxyConfig.type}://${proxyConfig.username}:${proxyConfig.password}@${proxyConfig.host}:${proxyConfig.port}`;
       } else {
-        agent = new HttpsProxyAgent(proxyUrl);
+        proxyUrl = `${proxyConfig.type}://${proxyConfig.host}:${proxyConfig.port}`;
       }
       
-      axiosConfig.httpAgent = agent;
-      axiosConfig.httpsAgent = agent;
-      
-      console.log(`[SPAM ${spamId}] ✅ Proxy configurado correctamente`);
-    } catch (proxyError) {
-      console.error(`[SPAM ${spamId}] ⚠️  Error configurando proxy:`, proxyError.message);
-      console.log(`[SPAM ${spamId}] Continuando sin proxy...`);
+      // Configurar proxy en axios
+      try {
+        const { HttpsProxyAgent } = require('https-proxy-agent');
+        const { SocksProxyAgent } = require('socks-proxy-agent');
+        
+        let agent;
+        if (proxyConfig.type === 'socks4' || proxyConfig.type === 'socks5') {
+          agent = new SocksProxyAgent(proxyUrl);
+        } else {
+          agent = new HttpsProxyAgent(proxyUrl);
+        }
+        
+        axiosConfig.httpAgent = agent;
+        axiosConfig.httpsAgent = agent;
+        
+        // ✅ TEST de conexión del proxy
+        console.log(`[SPAM ${spamId}] 🔍 Probando conexión del proxy...`);
+        try {
+          await axios.get('https://api.ipify.org?format=json', {
+            httpAgent: agent,
+            httpsAgent: agent,
+            timeout: 5000,
+          });
+          console.log(`[SPAM ${spamId}] ✅ Proxy funcionando correctamente`);
+        } catch (testError) {
+          console.error(`[SPAM ${spamId}] ⚠️  Proxy no responde, usando conexión directa`);
+          // Remover proxy si falla el test
+          delete axiosConfig.httpAgent;
+          delete axiosConfig.httpsAgent;
+        }
+      } catch (proxyError) {
+        console.error(`[SPAM ${spamId}] ⚠️  Error configurando proxy:`, proxyError.message);
+        console.log(`[SPAM ${spamId}] Continuando sin proxy...`);
+      }
     }
   } else {
     console.log(`[SPAM ${spamId}] 📡 Enviando SIN proxy (IP directa)`);

@@ -1,6 +1,7 @@
-import { getServerSession } from 'next-auth';
+import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+import { validatePlan } from '../../../src/middleware/plan-validation.middleware';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -18,6 +19,19 @@ export default async function handler(req, res) {
     if (!session || !session.id) {
       return res.status(401).json({ error: 'No autorizado' });
     }
+
+    // ✅ VALIDAR PLAN - FREE solo puede usar chatbot con limitaciones
+    const planValidation = await validatePlan(req, res, 'chatbot');
+    if (!planValidation.allowed) {
+      return res.status(planValidation.statusCode).json({
+        error: planValidation.error,
+        message: planValidation.message,
+        currentPlan: planValidation.currentPlan,
+        requiredPlan: planValidation.requiredPlan,
+      });
+    }
+
+    console.log(`[CHATBOT] ✅ Plan validado: ${planValidation.planType.toUpperCase()}`);
 
     const { instanceId, chatbotName, welcomeMessage, defaultResponse, rules } = req.body;
 

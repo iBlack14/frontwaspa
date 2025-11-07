@@ -1,7 +1,9 @@
 // =============================================
-// SISTEMA ANTI-BANEO PARA WHATSAPP
-// Previene bloqueos por envío masivo
+// SISTEMA ANTI-BANEO CON PERSISTENCIA EN SUPABASE
+// Reemplaza el sistema en memoria por uno persistente
 // =============================================
+
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 /**
  * Configuración de límites seguros según tipo de cuenta
@@ -75,11 +77,110 @@ export function isSafeHour() {
 }
 
 /**
- * Calcular tiempo de espera adaptativo basado en:
- * - Tipo de cuenta
- * - Mensajes enviados
- * - Hora del día
- * - Errores recientes
+ * Obtener o crear contador desde Supabase
+ */
+export async function getCounters(instanceId, userId) {
+  try {
+    const { data, error } = await supabaseAdmin
+      .rpc('get_or_create_anti_ban_counter', {
+        p_instance_id: instanceId,
+        p_user_id: userId,
+      });
+
+    if (error) {
+      console.error('[ANTI-BAN-SUPABASE] Error obteniendo contador:', error);
+      // Retornar valores por defecto en caso de error
+      return {
+        messagesSentToday: 0,
+        messagesSentThisHour: 0,
+        recentErrors: 0,
+        lastResetDay: new Date().getDate(),
+        lastResetHour: new Date().getHours(),
+      };
+    }
+
+    const counter = data[0];
+    return {
+      messagesSentToday: counter.messages_sent_today,
+      messagesSentThisHour: counter.messages_sent_this_hour,
+      recentErrors: counter.recent_errors,
+      lastResetDay: counter.last_reset_day,
+      lastResetHour: counter.last_reset_hour,
+    };
+  } catch (error) {
+    console.error('[ANTI-BAN-SUPABASE] Error:', error);
+    return {
+      messagesSentToday: 0,
+      messagesSentThisHour: 0,
+      recentErrors: 0,
+      lastResetDay: new Date().getDate(),
+      lastResetHour: new Date().getHours(),
+    };
+  }
+}
+
+/**
+ * Incrementar contador de mensajes en Supabase
+ */
+export async function incrementMessageCount(instanceId) {
+  try {
+    const { error} = await supabaseAdmin
+      .rpc('increment_anti_ban_counter', {
+        p_instance_id: instanceId,
+      });
+
+    if (error) {
+      console.error('[ANTI-BAN-SUPABASE] Error incrementando contador:', error);
+    }
+
+    // Retornar contadores actualizados
+    // Nota: No podemos obtener el userId aquí, así que retornamos valores estimados
+    return {
+      messagesSentToday: 0, // Se actualizará en la próxima llamada a getCounters
+      messagesSentThisHour: 0,
+      recentErrors: 0,
+    };
+  } catch (error) {
+    console.error('[ANTI-BAN-SUPABASE] Error:', error);
+    return {
+      messagesSentToday: 0,
+      messagesSentThisHour: 0,
+      recentErrors: 0,
+    };
+  }
+}
+
+/**
+ * Registrar error en Supabase
+ */
+export async function recordError(instanceId) {
+  try {
+    const { error } = await supabaseAdmin
+      .rpc('record_anti_ban_error', {
+        p_instance_id: instanceId,
+      });
+
+    if (error) {
+      console.error('[ANTI-BAN-SUPABASE] Error registrando error:', error);
+    }
+
+    return {
+      messagesSentToday: 0,
+      messagesSentThisHour: 0,
+      recentErrors: 1,
+    };
+  } catch (error) {
+    console.error('[ANTI-BAN-SUPABASE] Error:', error);
+    return {
+      messagesSentToday: 0,
+      messagesSentThisHour: 0,
+      recentErrors: 0,
+    };
+  }
+}
+
+/**
+ * Calcular tiempo de espera adaptativo
  */
 export function calculateAdaptiveDelay(config) {
   const {
@@ -156,194 +257,6 @@ export function getTimeUntilNextHour() {
 }
 
 /**
- * Variar mensaje para evitar detección de spam
- * Agrega variaciones sutiles sin cambiar el contenido
- */
-export function varyMessage(message, variation = 0) {
-  const variations = [
-    message, // Original
-    message + ' ', // Espacio al final
-    ' ' + message, // Espacio al inicio
-    message.replace(/\./g, '. '), // Espacios después de puntos
-    message.replace(/,/g, ', '), // Espacios después de comas
-  ];
-  
-  return variations[variation % variations.length];
-}
-
-/**
- * Sistema de contadores por instancia con LRU Cache
- */
-
-// LRU Cache para contadores de instancias
-class CountersLRUCache {
-  constructor(maxSize = 200, ttl = 86400000) { // TTL: 24 horas
-    this.maxSize = maxSize;
-    this.ttl = ttl;
-    this.cache = new Map();
-    this.accessOrder = new Map();
-  }
-
-  set(key, value) {
-    if (this.cache.has(key)) {
-      this.cache.delete(key);
-      this.accessOrder.delete(key);
-    }
-
-    // Eliminar el más antiguo si alcanzamos el límite
-    if (this.cache.size >= this.maxSize) {
-      const oldestKey = this.accessOrder.keys().next().value;
-      this.cache.delete(oldestKey);
-      this.accessOrder.delete(oldestKey);
-      console.log(`[ANTI-BAN] ♻️  Contador de instancia eliminado por límite: ${oldestKey}`);
-    }
-
-    const entry = {
-      value,
-      timestamp: Date.now(),
-      expiresAt: Date.now() + this.ttl,
-    };
-
-    this.cache.set(key, entry);
-    this.accessOrder.set(key, Date.now());
-  }
-
-  get(key) {
-    const entry = this.cache.get(key);
-    
-    if (!entry) {
-      return null;
-    }
-
-    // Verificar expiración
-    if (Date.now() > entry.expiresAt) {
-      this.cache.delete(key);
-      this.accessOrder.delete(key);
-      console.log(`[ANTI-BAN] ⏰ Contador expirado: ${key}`);
-      return null;
-    }
-
-    // Actualizar orden de acceso
-    this.accessOrder.delete(key);
-    this.accessOrder.set(key, Date.now());
-
-    return entry.value;
-  }
-
-  has(key) {
-    return this.get(key) !== null;
-  }
-
-  delete(key) {
-    this.accessOrder.delete(key);
-    return this.cache.delete(key);
-  }
-
-  cleanup() {
-    const now = Date.now();
-    let cleaned = 0;
-
-    for (const [key, entry] of this.cache.entries()) {
-      if (now > entry.expiresAt) {
-        this.cache.delete(key);
-        this.accessOrder.delete(key);
-        cleaned++;
-      }
-    }
-
-    if (cleaned > 0) {
-      console.log(`[ANTI-BAN] 🧹 Limpieza: ${cleaned} contadores expirados eliminados`);
-    }
-
-    return cleaned;
-  }
-
-  getStats() {
-    return {
-      size: this.cache.size,
-      maxSize: this.maxSize,
-      usage: `${((this.cache.size / this.maxSize) * 100).toFixed(1)}%`,
-    };
-  }
-}
-
-const instanceCounters = new CountersLRUCache(200, 86400000); // 200 instancias max, 24h TTL
-
-// Limpieza automática cada 6 horas
-let countersCleanupInterval = setInterval(() => {
-  const stats = instanceCounters.getStats();
-  console.log('[ANTI-BAN] 📊 Estadísticas de contadores:', stats);
-  instanceCounters.cleanup();
-}, 6 * 3600000); // Cada 6 horas
-
-/**
- * Inicializar contadores para una instancia
- */
-export function initializeCounters(instanceId) {
-  if (!instanceCounters.has(instanceId)) {
-    instanceCounters.set(instanceId, {
-      messagesSentToday: 0,
-      messagesSentThisHour: 0,
-      lastResetDay: new Date().getDate(),
-      lastResetHour: new Date().getHours(),
-      recentErrors: 0,
-      lastErrorTime: null,
-    });
-  }
-  return instanceCounters.get(instanceId);
-}
-
-/**
- * Incrementar contador de mensajes
- */
-export function incrementMessageCount(instanceId) {
-  const counters = initializeCounters(instanceId);
-  const now = new Date();
-  
-  // Reset contador diario
-  if (now.getDate() !== counters.lastResetDay) {
-    counters.messagesSentToday = 0;
-    counters.lastResetDay = now.getDate();
-  }
-  
-  // Reset contador por hora
-  if (now.getHours() !== counters.lastResetHour) {
-    counters.messagesSentThisHour = 0;
-    counters.lastResetHour = now.getHours();
-  }
-  
-  counters.messagesSentToday++;
-  counters.messagesSentThisHour++;
-  
-  return counters;
-}
-
-/**
- * Registrar error
- */
-export function recordError(instanceId) {
-  const counters = initializeCounters(instanceId);
-  counters.recentErrors++;
-  counters.lastErrorTime = Date.now();
-  
-  // Decrementar errores después de 5 minutos
-  setTimeout(() => {
-    if (counters.recentErrors > 0) {
-      counters.recentErrors--;
-    }
-  }, 5 * 60 * 1000);
-  
-  return counters;
-}
-
-/**
- * Obtener contadores de una instancia
- */
-export function getCounters(instanceId) {
-  return initializeCounters(instanceId);
-}
-
-/**
  * Validar número de teléfono (formato internacional)
  */
 export function isValidPhoneNumber(number) {
@@ -367,8 +280,7 @@ export function isValidPhoneNumber(number) {
 /**
  * Logs para debugging
  */
-export function logAntiBanStatus(instanceId) {
-  const counters = getCounters(instanceId);
+export function logAntiBanStatus(instanceId, counters) {
   console.log(`
 ╔═══════════════════════════════════════════════╗
 ║         ANTI-BAN STATUS: ${instanceId.substring(0, 15)}...         ║
@@ -394,5 +306,26 @@ export function getRecommendedAccountType(accountAge, messagesTotal) {
     return 'established_account';
   } else {
     return 'warm_account';
+  }
+}
+
+/**
+ * Limpieza de instancias inactivas (llamar desde cron job)
+ */
+export async function cleanupInactiveInstances() {
+  try {
+    const { data, error } = await supabaseAdmin
+      .rpc('cleanup_inactive_instances');
+
+    if (error) {
+      console.error('[ANTI-BAN-SUPABASE] Error en limpieza:', error);
+      return 0;
+    }
+
+    console.log(`[ANTI-BAN-SUPABASE] 🧹 Limpieza completada: ${data} instancias eliminadas`);
+    return data;
+  } catch (error) {
+    console.error('[ANTI-BAN-SUPABASE] Error:', error);
+    return 0;
   }
 }

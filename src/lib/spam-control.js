@@ -1,9 +1,185 @@
 // Sistema de control de envíos masivos
-// Usa memoria para velocidad + Supabase para persistencia
+// Usa LRU cache con límite + Supabase para persistencia
 
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
-const activeSpams = new Map();
+// =====================================================
+// LRU CACHE CON LÍMITE Y TTL
+// =====================================================
+
+class LRUCache {
+  constructor(maxSize = 100, ttl = 3600000) { // TTL por defecto: 1 hora
+    this.maxSize = maxSize;
+    this.ttl = ttl;
+    this.cache = new Map();
+    this.accessOrder = new Map(); // Tracking de último acceso
+  }
+
+  set(key, value) {
+    // Si ya existe, eliminar para re-insertar al final
+    if (this.cache.has(key)) {
+      this.cache.delete(key);
+      this.accessOrder.delete(key);
+    }
+
+    // Si alcanzamos el límite, eliminar el más antiguo (LRU)
+    if (this.cache.size >= this.maxSize) {
+      const oldestKey = this.accessOrder.keys().next().value;
+      this.cache.delete(oldestKey);
+      this.accessOrder.delete(oldestKey);
+      console.log(`[LRU-CACHE] ♻️  Eliminado spam antiguo por límite: ${oldestKey}`);
+    }
+
+    // Agregar nuevo elemento con timestamp
+    const entry = {
+      value,
+      timestamp: Date.now(),
+      expiresAt: Date.now() + this.ttl,
+    };
+
+    this.cache.set(key, entry);
+    this.accessOrder.set(key, Date.now());
+  }
+
+  get(key) {
+    const entry = this.cache.get(key);
+    
+    if (!entry) {
+      return null;
+    }
+
+    // Verificar si expiró
+    if (Date.now() > entry.expiresAt) {
+      this.cache.delete(key);
+      this.accessOrder.delete(key);
+      console.log(`[LRU-CACHE] ⏰ Spam expirado: ${key}`);
+      return null;
+    }
+
+    // Actualizar orden de acceso (mover al final)
+    this.accessOrder.delete(key);
+    this.accessOrder.set(key, Date.now());
+
+    return entry.value;
+  }
+
+  has(key) {
+    return this.get(key) !== null;
+  }
+
+  delete(key) {
+    this.accessOrder.delete(key);
+    return this.cache.delete(key);
+  }
+
+  clear() {
+    this.cache.clear();
+    this.accessOrder.clear();
+  }
+
+  size() {
+    return this.cache.size;
+  }
+
+  // Limpieza de elementos expirados
+  cleanup() {
+    const now = Date.now();
+    let cleaned = 0;
+
+    for (const [key, entry] of this.cache.entries()) {
+      if (now > entry.expiresAt) {
+        this.cache.delete(key);
+        this.accessOrder.delete(key);
+        cleaned++;
+      }
+    }
+
+    if (cleaned > 0) {
+      console.log(`[LRU-CACHE] 🧹 Limpieza automática: ${cleaned} spams expirados eliminados`);
+    }
+
+    return cleaned;
+  }
+
+  // Obtener estadísticas
+  getStats() {
+    return {
+      size: this.cache.size,
+      maxSize: this.maxSize,
+      usage: `${((this.cache.size / this.maxSize) * 100).toFixed(1)}%`,
+      oldestEntry: this.accessOrder.keys().next().value,
+    };
+  }
+}
+
+// Instancia global del cache con límite de 100 spams y TTL de 1 hora
+const activeSpams = new LRUCache(100, 3600000);
+
+// =====================================================
+// LIMPIEZA AUTOMÁTICA CADA HORA
+// =====================================================
+
+let cleanupInterval = null;
+
+function startAutomaticCleanup() {
+  if (cleanupInterval) {
+    return; // Ya está corriendo
+  }
+
+  console.log('[SPAM-CONTROL] 🚀 Iniciando limpieza automática cada hora');
+
+  cleanupInterval = setInterval(() => {
+    const stats = activeSpams.getStats();
+    console.log('[SPAM-CONTROL] 📊 Estadísticas antes de limpieza:', stats);
+    
+    const cleaned = activeSpams.cleanup();
+    
+    const newStats = activeSpams.getStats();
+    console.log('[SPAM-CONTROL] 📊 Estadísticas después de limpieza:', newStats);
+    
+    // También limpiar registros antiguos de Supabase (más de 24 horas)
+    cleanupOldDatabaseRecords();
+  }, 3600000); // Cada hora (3600000 ms)
+
+  // Limpieza inicial
+  activeSpams.cleanup();
+}
+
+// Iniciar limpieza automática al cargar el módulo
+startAutomaticCleanup();
+
+// Función para limpiar registros antiguos de la base de datos
+async function cleanupOldDatabaseRecords() {
+  try {
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    
+    const { data, error } = await supabaseAdmin
+      .from('spam_progress')
+      .delete()
+      .lt('started_at', oneDayAgo)
+      .eq('completed', true);
+
+    if (!error) {
+      console.log('[SPAM-CONTROL] 🗑️  Registros antiguos eliminados de la BD');
+    }
+  } catch (error) {
+    console.error('[SPAM-CONTROL] Error limpiando BD:', error);
+  }
+}
+
+// Función para detener limpieza (útil para tests)
+export function stopAutomaticCleanup() {
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+    cleanupInterval = null;
+    console.log('[SPAM-CONTROL] 🛑 Limpieza automática detenida');
+  }
+}
+
+// Función para obtener estadísticas del cache
+export function getCacheStats() {
+  return activeSpams.getStats();
+}
 
 /**
  * Crea un nuevo envío
@@ -24,8 +200,12 @@ export async function createSpam(spamId, totalContacts, userId) {
     success: [],
   };
   
-  // Guardar en memoria
+  // Guardar en LRU cache
   activeSpams.set(spamId, spamData);
+  
+  // Log de estadísticas del cache
+  const stats = activeSpams.getStats();
+  console.log(`[SPAM-CONTROL] 📊 Cache: ${stats.size}/${stats.maxSize} (${stats.usage})`);
   
   // Guardar en Supabase
   try {
@@ -143,10 +323,9 @@ export async function completeSpam(spamId) {
       console.error('[SPAM-CONTROL] Error completando en DB:', error);
     }
     
-    // Limpiar de memoria después de 5 minutos
-    setTimeout(() => {
-      activeSpams.delete(spamId);
-    }, 5 * 60 * 1000);
+    // ✅ NO usar setTimeout - el LRU cache lo eliminará automáticamente
+    // cuando expire (1 hora) o cuando se alcance el límite de 100
+    console.log(`[SPAM-CONTROL] ✅ Spam completado: ${spamId} (será limpiado automáticamente)`);
   }
 }
 
