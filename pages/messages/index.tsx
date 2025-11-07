@@ -88,34 +88,16 @@ function MessagesContent() {
     }
   }, [selectedChat]);
 
-  // Polling automático cada segundo para actualizar chats
-  useEffect(() => {
-    if (!selectedInstance) return;
+  // NOTA: Polling eliminado para evitar rate limit
+  // Ahora usamos solo Supabase Realtime para actualizaciones en tiempo real
 
-    const intervalId = setInterval(() => {
-      fetchChats(selectedInstance);
-    }, 1000); // Actualizar cada segundo
-
-    return () => clearInterval(intervalId);
-  }, [selectedInstance]);
-
-  // Polling automático cada segundo para actualizar mensajes del chat actual
-  useEffect(() => {
-    if (!selectedChat) return;
-
-    const intervalId = setInterval(() => {
-      fetchMessages(selectedChat.instance_id, selectedChat.chat_id, true); // true = silencioso
-    }, 1000); // Actualizar cada segundo
-
-    return () => clearInterval(intervalId);
-  }, [selectedChat]);
-
-  // Suscribirse a nuevos mensajes en tiempo real (backup)
+  // Suscripción en tiempo real a mensajes y chats (sin polling)
   useEffect(() => {
     if (!supabase || !selectedInstance) return;
 
-    const channel = supabase
-      .channel('messages')
+    // Canal para nuevos mensajes
+    const messagesChannel = supabase
+      .channel(`messages-${selectedInstance}`)
       .on(
         'postgres_changes',
         {
@@ -134,7 +116,9 @@ function MessagesContent() {
               if (prev.some(m => m.message_id === payload.new.message_id)) {
                 return prev;
               }
-              return [...prev, payload.new];
+              return [...prev, payload.new].sort((a, b) => 
+                new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+              );
             });
           }
           
@@ -148,10 +132,52 @@ function MessagesContent() {
           }
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `instance_id=eq.${selectedInstance}`,
+        },
+        (payload: any) => {
+          console.log('📝 Mensaje actualizado:', payload.new);
+          
+          // Actualizar mensaje si es del chat actual
+          if (selectedChat && payload.new.chat_id === selectedChat.chat_id) {
+            setMessages((prev) => 
+              prev.map(m => m.message_id === payload.new.message_id ? payload.new : m)
+            );
+          }
+          
+          // Actualizar lista de chats
+          fetchChats(selectedInstance);
+        }
+      )
+      .subscribe();
+
+    // Canal para actualizaciones de chats
+    const chatsChannel = supabase
+      .channel(`chats-${selectedInstance}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chats',
+          filter: `instance_id=eq.${selectedInstance}`,
+        },
+        (payload: any) => {
+          console.log('💬 Chat actualizado:', payload);
+          // Actualizar lista de chats
+          fetchChats(selectedInstance);
+        }
+      )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(messagesChannel);
+      supabase.removeChannel(chatsChannel);
     };
   }, [supabase, selectedInstance, selectedChat]);
 
