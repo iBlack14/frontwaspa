@@ -6,7 +6,7 @@ const wazilrest_logo = '/logo/wazilrest_logo.png';
 
 import { useSession, signOut } from 'next-auth/react';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
+import { useRouter, usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
 import Breadcrumb from '../Breadcrumb';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -29,7 +29,7 @@ import {
 
 function SidebarLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const pathname = router.pathname;
+  const pathname = usePathname();
   // ✅ Una sola llamada a useSession
   const { data: session, status } = useSession();
   const email = session?.user?.email;
@@ -73,8 +73,22 @@ function SidebarLayout({ children }: { children: React.ReactNode }) {
   }, [isCollapsed]);
 
   const handleLogout = async () => {
-    await signOut({ redirect: false });
-    router.push('/'); // Redirige a landing page
+    try {
+      // Sign out from next-auth
+      await signOut({ redirect: false });
+      
+      // Clear any local storage/session data if needed
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('sidebarCollapsed');
+      }
+      
+      // Force redirect to home page
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Fallback to window.location if router fails
+      window.location.href = '/';
+    }
   };
 
   const menuItems = [
@@ -97,6 +111,8 @@ function SidebarLayout({ children }: { children: React.ReactNode }) {
   const handleNavigation = (path: string) => {
     router.push(path);
   };
+  
+  // Remove the duplicate router declaration
 
   if (!hasMounted) {
     return null;
