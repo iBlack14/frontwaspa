@@ -24,15 +24,21 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'No autorizado - Inicia sesión' });
     }
 
-    // Verificar plan del usuario
+    // Verificar plan del usuario y obtener API key
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('status_plan')
+      .select('status_plan, api_key')
       .eq('id', session.id)
       .single();
 
     if (!profile || profile.status_plan === false) {
       return res.status(400).json({ message: 'No tienes un plan activo' });
+    }
+
+    if (!profile.api_key) {
+      return res.status(400).json({ 
+        message: 'No tienes una API key generada. Por favor, contacta soporte.' 
+      });
     }
 
     // Actualizar estado en Supabase antes de generar QR
@@ -45,12 +51,13 @@ export default async function handler(req, res) {
       .eq('document_id', clientId)
       .eq('user_id', session.id);
 
-    // Llamar al backend de WhatsApp para generar QR
+    // ✅ Llamar al backend de WhatsApp con API key del usuario
     const response = await axios.post(
       `${BACKEND_URL}/api/generate-qr`,
       { clientId },
       {
         headers: {
+          'Authorization': `Bearer ${profile.api_key}`,
           'Content-Type': 'application/json',
         },
       }

@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import axios from 'axios';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth/[...nextauth]';
+import { createWhatsAppSession } from '@/lib/backend-api';
 
 export default async function handler(req, res) {
   const { method, headers, body, query } = req;
@@ -43,10 +44,10 @@ export default async function handler(req, res) {
     } else if (method === 'POST') {
       // Create new instance
       
-      // Verificar plan del usuario
+      // Verificar plan del usuario y obtener API key
       const { data: profile } = await supabaseAdmin
         .from('profiles')
-        .select('status_plan')
+        .select('status_plan, api_key')
         .eq('id', session.id)
         .single()
 
@@ -54,31 +55,46 @@ export default async function handler(req, res) {
         return res.status(400).json({ message: 'No tienes un plan activo' });
       }
 
+      if (!profile.api_key) {
+        return res.status(400).json({ 
+          message: 'No tienes una API key generada. Por favor, contacta soporte.' 
+        });
+      }
+
       // Generar clientId único
       const clientId = `${session.id}-${Date.now()}`;
 
-      // Llamar a N8N para crear la instancia
-      const n8nWebhook = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || 'https://blxk-n8n.1mrj9n.easypanel.host/webhook/create-instance';
-      
-      const response = await axios.post(
-        n8nWebhook,
-        {
-          clientId,
-          userId: session.id,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      // ✅ Llamar DIRECTAMENTE al backend con API key del usuario
+      try {
+        const response = await createWhatsAppSession(session.id, clientId);
 
-      return res.status(200).json({ 
-        success: true,
-        message: 'Instancia creada exitosamente',
-        clientId,
-        data: response.data
-      });
+        // Guardar instancia en Supabase
+        const { error: insertError } = await supabaseAdmin
+          .from('instances')
+          .insert({
+            document_id: clientId,
+            user_id: session.id,
+            status: 'connecting',
+            created_at: new Date().toISOString(),
+          });
+
+        if (insertError) {
+          console.error('[INSTANCES] Error guardando en Supabase:', insertError);
+        }
+
+        return res.status(200).json({ 
+          success: true,
+          message: 'Instancia creada exitosamente',
+          clientId,
+          data: response
+        });
+      } catch (backendError) {
+        console.error('[INSTANCES] Error llamando al backend:', backendError);
+        return res.status(500).json({ 
+          error: 'Error al crear la sesión de WhatsApp',
+          details: backendError.response?.data || backendError.message
+        });
+      }
 
 
 
