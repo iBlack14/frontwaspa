@@ -70,10 +70,10 @@ export async function validatePlan(req, res, requiredTemplate, requiredFeature =
       };
     }
 
-    // Obtener perfil y plan del usuario
+    // Obtener perfil y plan del usuario (incluir api_key para validación)
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('status_plan, plan_type')
+      .select('status_plan, plan_type, api_key')
       .eq('id', session.id)
       .single();
 
@@ -92,6 +92,17 @@ export async function validatePlan(req, res, requiredTemplate, requiredFeature =
         error: 'No tienes un plan activo',
         message: 'Por favor, activa un plan para usar esta función',
         statusCode: 403,
+      };
+    }
+
+    // ✅ VALIDAR API KEY - Requerida para usar templates
+    if (!profile.api_key) {
+      return {
+        allowed: false,
+        error: 'API Key requerida',
+        message: 'Para usar templates debes generar tu API Key en tu perfil. Ve a Profile → API Key → Generar',
+        statusCode: 403,
+        requiresApiKey: true,
       };
     }
 

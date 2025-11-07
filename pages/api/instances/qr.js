@@ -24,7 +24,7 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'No autorizado - Inicia sesión' });
     }
 
-    // Verificar plan del usuario y obtener API key
+    // Verificar plan del usuario (API key NO es requerida para generar QR)
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('status_plan, api_key')
@@ -35,11 +35,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ message: 'No tienes un plan activo' });
     }
 
-    if (!profile.api_key) {
-      return res.status(400).json({ 
-        message: 'No tienes una API key generada. Por favor, contacta soporte.' 
-      });
-    }
+    // ℹ️ Si no tiene API key, usar una master key del backend
+    const apiKeyToUse = profile.api_key || process.env.MASTER_API_KEY || 'internal-system-key';
 
     // Actualizar estado en Supabase antes de generar QR
     await supabaseAdmin
@@ -51,13 +48,13 @@ export default async function handler(req, res) {
       .eq('document_id', clientId)
       .eq('user_id', session.id);
 
-    // ✅ Llamar al backend de WhatsApp con API key del usuario
+    // ✅ Llamar al backend de WhatsApp
     const response = await axios.post(
       `${BACKEND_URL}/api/generate-qr`,
       { clientId },
       {
         headers: {
-          'Authorization': `Bearer ${profile.api_key}`,
+          'Authorization': `Bearer ${apiKeyToUse}`,
           'Content-Type': 'application/json',
         },
       }

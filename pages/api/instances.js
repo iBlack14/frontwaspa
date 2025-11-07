@@ -44,7 +44,7 @@ export default async function handler(req, res) {
     } else if (method === 'POST') {
       // Create new instance
       
-      // Verificar plan del usuario y obtener API key
+      // Verificar plan del usuario (API key NO es requerida para crear instancias)
       const { data: profile } = await supabaseAdmin
         .from('profiles')
         .select('status_plan, api_key')
@@ -55,11 +55,8 @@ export default async function handler(req, res) {
         return res.status(400).json({ message: 'No tienes un plan activo' });
       }
 
-      if (!profile.api_key) {
-        return res.status(400).json({ 
-          message: 'No tienes una API key generada. Por favor, contacta soporte.' 
-        });
-      }
+      // ℹ️ API key es opcional para crear instancias
+      // Solo se requiere para usar templates 
 
       // Generar clientId único
       const clientId = `${session.id}-${Date.now()}`;

@@ -20,26 +20,23 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'No autorizado - Inicia sesión' });
     }
 
-    // Obtener API key del usuario
+    // Obtener API key del usuario (opcional para desconectar)
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('api_key')
       .eq('id', session.id)
       .single();
 
-    if (!profile?.api_key) {
-      return res.status(400).json({ 
-        message: 'No tienes una API key generada.' 
-      });
-    }
+    // ℹ️ Si no tiene API key, usar una master key del backend
+    const apiKeyToUse = profile?.api_key || process.env.MASTER_API_KEY || 'internal-system-key';
 
-    // ✅ Llamar al backend con API key del usuario
+    // ✅ Llamar al backend
     const response = await axios.post(
       `${BACKEND_URL}/api/disconnect-session/${documentId}`,
       {},
       {
         headers: {
-          'Authorization': `Bearer ${profile.api_key}`,
+          'Authorization': `Bearer ${apiKeyToUse}`,
           'Content-Type': 'application/json',
         },
       }
