@@ -154,27 +154,10 @@ export async function validatePlan(req, res, requiredTemplate, requiredFeature =
       }
     }
 
-    // Verificar límites de instancias (solo si no es ilimitado)
-    if (planLimits.maxInstances > 0) {
-      const { count: instanceCount } = await supabaseAdmin
-        .from('instances')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', session.id);
-
-      if (instanceCount >= planLimits.maxInstances) {
-        return {
-          allowed: false,
-          error: 'Límite de instancias alcanzado',
-          message: `Has alcanzado el límite de ${planLimits.maxInstances} instancia(s) de tu plan ${planType.toUpperCase()}`,
-          currentUsage: instanceCount,
-          limit: planLimits.maxInstances,
-          currentPlan: planType,
-          statusCode: 429,
-        };
-      }
-    }
-
     // ✅ TODO OK - Usuario puede usar el template
+    // NOTA: NO verificamos límite de instancias aquí porque este middleware
+    // se usa para activar templates en instancias EXISTENTES.
+    // El límite de instancias se verifica al CREAR una nueva instancia.
     return {
       allowed: true,
       planType,
