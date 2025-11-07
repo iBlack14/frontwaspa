@@ -15,11 +15,19 @@ const templates = [
     available: true,
   },
   {
+    id: 'chatbot',
+    name: 'Chatbot IA',
+    description: 'Crea un chatbot inteligente con respuestas automáticas personalizadas',
+    icon: '🤖',
+    color: 'blue',
+    available: true,
+  },
+  {
     id: 'auto-respuesta',
     name: 'Auto-respuesta',
     description: 'Responde automáticamente a mensajes recibidos',
-    icon: '🤖',
-    color: 'blue',
+    icon: '💬',
+    color: 'cyan',
     available: false,
   },
   {
@@ -90,6 +98,12 @@ function TemplatesContent() {
               <h1 className="text-2xl font-bold">Plantillas de Automatización</h1>
             </div>
             <div className="flex items-center gap-4">
+              <Link
+                href="/templates/manage"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition text-sm font-semibold flex items-center gap-2"
+              >
+                ⚙️ Gestionar Templates
+              </Link>
               <span className="text-gray-600 dark:text-zinc-400">{session?.user?.email}</span>
             </div>
           </div>
