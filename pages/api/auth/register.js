@@ -69,8 +69,9 @@ export default async function handler(req, res) {
           id: data.user.id,
           username: username || email.split('@')[0],
           api_key: apiKey,
-          status_plan: false,
-          plan_type: 'free',
+          status_plan: true,           // ✅ Plan activo desde el inicio
+          plan_type: 'free',           // ✅ Plan Free permanente
+          plan_expires_at: null,       // ✅ Sin expiración
         })
         .select()
         .single();
@@ -98,6 +99,17 @@ export default async function handler(req, res) {
           username: newProfile.username,
           api_key: newProfile.api_key,
         },
+        plan: {
+          type: 'free',
+          status: 'active',
+          expires_at: null,
+          limits: {
+            instances: 1,
+            messages_per_day: 100,
+            webhooks: 1,
+          },
+          message: '¡Bienvenido! Tu plan Free está activo con acceso ilimitado.',
+        },
       });
     }
 
@@ -113,6 +125,17 @@ export default async function handler(req, res) {
         email: data.user.email,
         username: profile.username,
         api_key: profile.api_key,
+      },
+      plan: {
+        type: 'free',
+        status: 'active',
+        expires_at: null,
+        limits: {
+          instances: 1,
+          messages_per_day: 100,
+          webhooks: 1,
+        },
+        message: '¡Bienvenido! Tu plan Free está activo con acceso ilimitado.',
       },
     })
   } catch (error) {
