@@ -135,6 +135,22 @@ export default async function handler(req, res) {
         console.log('Service Name:', service_name);
         console.log('Plan:', plan);
         
+        // ✅ Obtener API key del usuario
+        const { data: profile } = await supabaseAdmin
+          .from('profiles')
+          .select('api_key')
+          .eq('id', session.id)
+          .single();
+
+        if (!profile || !profile.api_key) {
+          return res.status(403).json({
+            error: 'API Key requerida',
+            message: 'Para crear instancias N8N debes generar tu API Key en tu perfil. Ve a Profile → API Key → Generar',
+            suite_created: true,
+            suite_id: newSuite.id
+          });
+        }
+        
         const dockerResponse = await axios.post(
           `${backendUrl}/api/suite/create-n8n`,
           {
@@ -146,7 +162,10 @@ export default async function handler(req, res) {
           },
           {
             timeout: 120000, // Aumentado a 2 minutos
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${profile.api_key}` // ✅ Agregar API key
+            }
           }
         );
 
