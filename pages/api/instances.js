@@ -81,7 +81,7 @@ export default async function handler(req, res) {
           .insert({
             document_id: clientId,
             user_id: session.id,
-            status: 'connecting',
+            state: 'Initializing',
             created_at: new Date().toISOString(),
           });
 
