@@ -66,7 +66,14 @@ export default async function handler(req, res) {
 
       // ✅ Llamar DIRECTAMENTE al backend con API key del usuario
       try {
+        console.log('[INSTANCES] 🚀 Creando sesión de WhatsApp...');
+        console.log('[INSTANCES] 📋 ClientId:', clientId);
+        console.log('[INSTANCES] 👤 UserId:', session.id);
+        console.log('[INSTANCES] 🔑 API Key:', profile.api_key ? 'Existe ✅' : 'No existe ❌');
+        
         const response = await createWhatsAppSession(session.id, clientId);
+        
+        console.log('[INSTANCES] ✅ Respuesta del backend:', response);
 
         // Guardar instancia en Supabase
         const { error: insertError } = await supabaseAdmin
@@ -79,7 +86,9 @@ export default async function handler(req, res) {
           });
 
         if (insertError) {
-          console.error('[INSTANCES] Error guardando en Supabase:', insertError);
+          console.error('[INSTANCES] ❌ Error guardando en Supabase:', insertError);
+        } else {
+          console.log('[INSTANCES] ✅ Instancia guardada en Supabase');
         }
 
         return res.status(200).json({ 
@@ -89,7 +98,13 @@ export default async function handler(req, res) {
           data: response
         });
       } catch (backendError) {
-        console.error('[INSTANCES] Error llamando al backend:', backendError);
+        console.error('[INSTANCES] ❌ Error llamando al backend:', backendError);
+        console.error('[INSTANCES] 📋 Detalles del error:', {
+          message: backendError.message,
+          response: backendError.response?.data,
+          status: backendError.response?.status,
+        });
+        
         return res.status(500).json({ 
           error: 'Error al crear la sesión de WhatsApp',
           details: backendError.response?.data || backendError.message

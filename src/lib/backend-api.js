@@ -17,6 +17,12 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_U
  */
 export async function backendRequest(userId, endpoint, data = null, method = 'POST') {
   try {
+    console.log('[BACKEND-API] 🚀 Iniciando request...');
+    console.log('[BACKEND-API] 📋 Endpoint:', endpoint);
+    console.log('[BACKEND-API] 📋 Method:', method);
+    console.log('[BACKEND-API] 📋 Data:', data);
+    console.log('[BACKEND-API] 📋 Backend URL:', BACKEND_URL);
+    
     // 1. Obtener API key del usuario desde Supabase
     const { data: profile, error } = await supabaseAdmin
       .from('profiles')
@@ -25,10 +31,12 @@ export async function backendRequest(userId, endpoint, data = null, method = 'PO
       .single();
 
     if (error || !profile?.api_key) {
+      console.error('[BACKEND-API] ❌ No se pudo obtener API key:', error);
       throw new Error('No se pudo obtener la API key del usuario');
     }
 
     const apiKey = profile.api_key;
+    console.log('[BACKEND-API] ✅ API Key obtenida:', apiKey.substring(0, 20) + '...');
 
     // 2. Hacer request al backend con la API key
     const config = {
@@ -46,11 +54,19 @@ export async function backendRequest(userId, endpoint, data = null, method = 'PO
       config.params = data;
     }
 
+    console.log('[BACKEND-API] 📤 Enviando request a:', config.url);
     const response = await axios(config);
+    console.log('[BACKEND-API] ✅ Respuesta recibida:', response.status);
+    
     return response.data;
 
   } catch (error) {
-    console.error('[BACKEND-API] Error:', error.response?.data || error.message);
+    console.error('[BACKEND-API] ❌ Error completo:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      url: error.config?.url,
+    });
     throw error;
   }
 }
