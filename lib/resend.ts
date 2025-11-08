@@ -13,7 +13,7 @@ export async function sendCredentialsEmail(
 ) {
   try {
     const { data, error } = await resend.emails.send({
-      from: 'BLXK Studio <noreply@blxkstudio.com>', // Cambiar por tu dominio verificado
+      from: 'BLXK Studio <noreply@blxkstudio.com>',
       to: [email],
       subject: '🎉 ¡Bienvenido a BLXK Studio! - Tus credenciales de acceso',
       html: `
