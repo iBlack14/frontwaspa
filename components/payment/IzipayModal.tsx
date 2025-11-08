@@ -31,6 +31,15 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail }: Izipay
   }, [isOpen]);
 
   const loadIzipayScript = () => {
+    // Cargar el CSS de Izipay si no está cargado
+    if (!document.getElementById('izipay-css')) {
+      const link = document.createElement('link');
+      link.id = 'izipay-css';
+      link.rel = 'stylesheet';
+      link.href = 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic-reset.css';
+      document.head.appendChild(link);
+    }
+
     // Cargar el script de Izipay si no está cargado
     if (document.getElementById('izipay-script')) {
       return;
@@ -99,16 +108,30 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail }: Izipay
     window.KR.setFormConfig({
       formToken: token,
       'kr-public-key': publicKey,
+      'kr-language': 'es-ES',
+      'kr-placeholder-pan': 'Número de tarjeta',
+      'kr-placeholder-expiry': 'MM/AA',
+      'kr-placeholder-security-code': 'CVV',
+      'kr-hide-debug-toolbar': true,
+    });
+
+    // Personalizar estilos del formulario
+    window.KR.setFormConfig({
+      'kr-theme': 'material',
+      'kr-card-form-expanded': true,
     });
 
     window.KR.onSubmit((paymentData: any) => {
       console.log('[Izipay] Payment submitted:', paymentData);
-      return true;
+      // Mostrar mensaje de éxito
+      alert('¡Pago procesado exitosamente! Redirigiendo...');
+      window.location.href = '/dashboard';
+      return false; // Prevenir el submit por defecto
     });
 
     window.KR.onError((error: any) => {
       console.error('[Izipay] Payment error:', error);
-      setError('Error al procesar el pago');
+      setError('Error al procesar el pago. Por favor, verifica los datos de tu tarjeta.');
     });
 
     setLoading(false);
@@ -208,10 +231,72 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail }: Izipay
                 {/* Formulario de Izipay */}
                 <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
                   <h4 className="text-gray-900 font-semibold text-lg mb-4">Información de pago</h4>
-                  <div className="kr-embedded" kr-form-token={formToken}>
-                    {/* El formulario se renderizará aquí */}
+                  <div className="izipay-form-container">
+                    <div className="kr-embedded" kr-form-token={formToken}>
+                      {/* El formulario se renderizará aquí */}
+                    </div>
                   </div>
                 </div>
+                
+                <style jsx>{`
+                  .izipay-form-container :global(.kr-embedded) {
+                    font-family: inherit;
+                  }
+                  
+                  .izipay-form-container :global(.kr-pan),
+                  .izipay-form-container :global(.kr-expiry),
+                  .izipay-form-container :global(.kr-security-code) {
+                    border: 1px solid #e5e7eb !important;
+                    border-radius: 0.5rem !important;
+                    padding: 0.75rem !important;
+                    font-size: 1rem !important;
+                    margin-bottom: 1rem !important;
+                    background-color: white !important;
+                  }
+                  
+                  .izipay-form-container :global(.kr-pan:focus),
+                  .izipay-form-container :global(.kr-expiry:focus),
+                  .izipay-form-container :global(.kr-security-code:focus) {
+                    border-color: #10b981 !important;
+                    outline: none !important;
+                    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+                  }
+                  
+                  .izipay-form-container :global(.kr-form-error) {
+                    color: #ef4444 !important;
+                    font-size: 0.875rem !important;
+                    margin-top: 0.25rem !important;
+                  }
+                  
+                  .izipay-form-container :global(button[type="submit"]) {
+                    background: linear-gradient(to right, #10b981, #14b8a6) !important;
+                    color: white !important;
+                    font-weight: 600 !important;
+                    padding: 0.875rem 2rem !important;
+                    border-radius: 0.75rem !important;
+                    border: none !important;
+                    width: 100% !important;
+                    font-size: 1.125rem !important;
+                    cursor: pointer !important;
+                    transition: all 0.2s !important;
+                  }
+                  
+                  .izipay-form-container :global(button[type="submit"]:hover) {
+                    transform: translateY(-1px) !important;
+                    box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3) !important;
+                  }
+                  
+                  .izipay-form-container :global(button[type="submit"]:active) {
+                    transform: translateY(0) !important;
+                  }
+                  
+                  .izipay-form-container :global(label) {
+                    color: #374151 !important;
+                    font-weight: 500 !important;
+                    margin-bottom: 0.5rem !important;
+                    display: block !important;
+                  }
+                `}</style>
 
                 {/* Información de seguridad */}
                 <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-6">
