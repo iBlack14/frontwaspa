@@ -100,6 +100,9 @@ export default async function handler(req, res) {
         }
         
         // Enviar email con credenciales usando Resend
+        console.log('[Izipay Webhook] Sending email to:', customer.email);
+        console.log('[Izipay Webhook] Resend API Key exists:', !!process.env.RESEND_API_KEY);
+        
         try {
           const { data: emailData, error: emailError } = await resend.emails.send({
             from: 'BLXK Studio <noreply@blxkstudio.com>',
@@ -169,7 +172,7 @@ export default async function handler(req, res) {
           });
           
           if (emailError) {
-            console.error('[Izipay Webhook] Failed to send credentials email:', emailError);
+            console.error('[Izipay Webhook] Failed to send credentials email:', JSON.stringify(emailError, null, 2));
           } else {
             console.log('[Izipay Webhook] Credentials email sent successfully:', emailData);
           }
