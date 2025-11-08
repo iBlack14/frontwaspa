@@ -117,7 +117,6 @@ export default function PricingSection() {
           isOpen={isPaymentModalOpen}
           onClose={() => setIsPaymentModalOpen(false)}
           plan={selectedPlan}
-          userEmail="user@example.com"
         />
       )}
     </section>
