@@ -41,13 +41,21 @@ export default async function handler(req, res) {
 
     // Verificar la firma HMAC
     const hmacKey = process.env.IZIPAY_HMAC_KEY || 'ypEXi0Ia8SIpqW4SDQsqDvslpNuBB9M0EEg0h2OYcnUHH';
+    console.log('[Izipay Webhook] HMAC Key configured:', hmacKey.substring(0, 10) + '...');
+    console.log('[Izipay Webhook] Hash algorithm from Izipay:', req.body['kr-hash-algorithm']);
+    console.log('[Izipay Webhook] Hash key from Izipay:', req.body['kr-hash-key']);
+    
     const calculatedHash = crypto
       .createHmac('sha256', hmacKey)
       .update(krAnswer)
       .digest('hex');
 
+    console.log('[Izipay Webhook] Calculated hash:', calculatedHash.substring(0, 20) + '...');
+    console.log('[Izipay Webhook] Received hash:', krHash.substring(0, 20) + '...');
+
     if (calculatedHash !== krHash) {
-      console.error('[Izipay Webhook] Invalid signature');
+      console.error('[Izipay Webhook] Invalid signature - Hashes do not match');
+      console.error('[Izipay Webhook] This means the HMAC key is incorrect');
       return res.status(400).json({ error: 'Invalid signature' });
     }
 
