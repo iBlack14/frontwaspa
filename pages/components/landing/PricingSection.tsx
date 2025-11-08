@@ -1,11 +1,16 @@
+import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { CheckCircleIcon } from '@heroicons/react/24/outline';
+import IzipayModal from '../../../components/payment/IzipayModal';
 
 export default function PricingSection() {
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const plans = [
     {
       name: 'Free',
-      price: '$0',
+      price: 0,
+      priceDisplay: '$0',
       period: 'Por siempre',
       features: ['1 instancia de WhatsApp', '100 mensajes/mes', 'Respuestas automáticas básicas', 'Soporte por email'],
       cta: 'Comenzar Gratis',
@@ -13,21 +18,35 @@ export default function PricingSection() {
     },
     {
       name: 'Pro',
-      price: '$99',
+      price: 99,
+      priceDisplay: '$99',
       period: 'Por mes',
       features: ['5 instancias de WhatsApp', '10,000 mensajes/mes', 'IA conversacional con GPT-4', 'Automatización N8N ilimitada', 'Analytics avanzado', 'Soporte prioritario 24/7'],
-      cta: 'Comenzar Prueba Gratis',
+      cta: 'Pagar Ahora',
       highlighted: true
     },
     {
       name: 'Enterprise',
-      price: 'Custom',
+      price: 0,
+      priceDisplay: 'Custom',
       period: 'Contactar ventas',
       features: ['Instancias ilimitadas', 'Mensajes ilimitados', 'White Label completo', 'Infraestructura dedicada', 'SLA 99.99%', 'Account Manager dedicado'],
       cta: 'Contactar Ventas',
       highlighted: false
     }
   ];
+
+  const handlePlanClick = (plan: any) => {
+    if (plan.name === 'Enterprise') {
+      window.open('mailto:sales@blxkstudio.com');
+    } else if (plan.name === 'Free') {
+      signIn();
+    } else {
+      // Abrir modal de pago para planes de pago
+      setSelectedPlan(plan);
+      setIsPaymentModalOpen(true);
+    }
+  };
 
   return (
     <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-zinc-800">
@@ -61,7 +80,7 @@ export default function PricingSection() {
                   {plan.name}
                 </h3>
                 <div className={`text-4xl font-bold mb-2 ${plan.highlighted ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
-                  {plan.price}
+                  {plan.priceDisplay}
                 </div>
                 <div className={plan.highlighted ? 'text-emerald-100' : 'text-gray-600 dark:text-gray-400'}>
                   {plan.period}
@@ -78,7 +97,7 @@ export default function PricingSection() {
                 ))}
               </ul>
               <button
-                onClick={() => plan.name === 'Enterprise' ? window.open('mailto:sales@blxkstudio.com') : signIn()}
+                onClick={() => handlePlanClick(plan)}
                 className={`w-full py-3 rounded-lg transition font-medium ${
                   plan.highlighted
                     ? 'bg-white text-emerald-600 hover:bg-gray-100'
@@ -91,6 +110,16 @@ export default function PricingSection() {
           ))}
         </div>
       </div>
+
+      {/* Modal de pago */}
+      {selectedPlan && (
+        <IzipayModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          plan={selectedPlan}
+          userEmail="user@example.com"
+        />
+      )}
     </section>
   );
 }
