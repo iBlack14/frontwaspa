@@ -16,12 +16,21 @@ const resend = new Resend(process.env.RESEND_API_KEY);
  * POST /api/payment/webhook
  */
 export default async function handler(req, res) {
+  console.log('[Izipay Webhook] ========== WEBHOOK CALLED ==========');
+  console.log('[Izipay Webhook] Method:', req.method);
+  console.log('[Izipay Webhook] Headers:', JSON.stringify(req.headers, null, 2));
+  console.log('[Izipay Webhook] Body keys:', Object.keys(req.body));
+  
   if (req.method !== 'POST') {
+    console.log('[Izipay Webhook] Method not allowed:', req.method);
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
     const { 'kr-answer': krAnswer, 'kr-hash': krHash } = req.body;
+    
+    console.log('[Izipay Webhook] kr-answer exists:', !!krAnswer);
+    console.log('[Izipay Webhook] kr-hash exists:', !!krHash);
 
     // Verificar la firma HMAC
     const hmacKey = process.env.IZIPAY_HMAC_KEY || 'ypEXi0Ia8SIpqW4SDQsqDvslpNuBB9M0EEg0h2OYcnUHH';
