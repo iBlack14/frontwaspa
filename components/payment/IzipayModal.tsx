@@ -62,6 +62,13 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail }: Izipay
 
       const orderId = `ORDER-${Date.now()}`;
       
+      console.log('[Izipay] Creating payment token with:', {
+        amount: plan.price,
+        currency: 'PEN',
+        orderId,
+        customerEmail: userEmail
+      });
+      
       const response = await fetch('/api/payment/create-token', {
         method: 'POST',
         headers: {
@@ -76,9 +83,12 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail }: Izipay
       });
 
       const data = await response.json();
+      
+      console.log('[Izipay] Token response:', data);
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error al crear el token de pago');
+        console.error('[Izipay] Token creation failed:', data);
+        throw new Error(data.error || data.details || 'Error al crear el token de pago');
       }
 
       setFormToken(data.formToken);
@@ -123,15 +133,23 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail }: Izipay
 
     window.KR.onSubmit((paymentData: any) => {
       console.log('[Izipay] Payment submitted:', paymentData);
-      // Mostrar mensaje de éxito
-      alert('¡Pago procesado exitosamente! Redirigiendo...');
-      window.location.href = '/dashboard';
-      return false; // Prevenir el submit por defecto
+      return true; // Permitir que Izipay procese el pago
     });
 
     window.KR.onError((error: any) => {
       console.error('[Izipay] Payment error:', error);
-      setError('Error al procesar el pago. Por favor, verifica los datos de tu tarjeta.');
+      const errorMessage = error?.detailedErrorMessage || error?.errorMessage || 'Error desconocido';
+      setError(`Error al procesar el pago: ${errorMessage}`);
+    });
+
+    // Evento cuando el pago es exitoso
+    window.KR.onFormReady(() => {
+      console.log('[Izipay] Form ready');
+    });
+
+    // Evento cuando el pago es procesado
+    window.KR.onFormCreated(() => {
+      console.log('[Izipay] Form created');
     });
 
     setLoading(false);

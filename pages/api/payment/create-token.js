@@ -12,8 +12,11 @@ export default async function handler(req, res) {
   try {
     const { amount, currency = 'PEN', orderId, customerEmail } = req.body;
 
+    console.log('[Izipay API] Request received:', { amount, currency, orderId, customerEmail });
+
     // Validaciones
     if (!amount || !orderId || !customerEmail) {
+      console.error('[Izipay API] Missing required fields');
       return res.status(400).json({ 
         error: 'Missing required fields: amount, orderId, customerEmail' 
       });
@@ -23,6 +26,12 @@ export default async function handler(req, res) {
     const username = process.env.IZIPAY_USERNAME || '47575197';
     const password = process.env.IZIPAY_PASSWORD || 'testpassword_aUfHU1fnUEv66whwWsBctdGPoRzYRnpgYjVv0Wx6vobGR';
     const endpoint = process.env.NEXT_PUBLIC_IZIPAY_ENDPOINT || 'https://api.micuentaweb.pe';
+
+    console.log('[Izipay API] Using credentials:', { 
+      username, 
+      endpoint,
+      passwordLength: password.length 
+    });
 
     // Crear el token de pago
     const response = await axios.post(
