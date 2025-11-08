@@ -9,7 +9,7 @@ interface IzipayModalProps {
     price: number;
     period: string;
   };
-  userEmail: string;
+  userEmail?: string;
 }
 
 declare global {
@@ -18,19 +18,38 @@ declare global {
   }
 }
 
-export default function IzipayModal({ isOpen, onClose, plan, userEmail }: IzipayModalProps) {
-  const [loading, setLoading] = useState(true);
+export default function IzipayModal({ isOpen, onClose, plan, userEmail: initialEmail }: IzipayModalProps) {
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formToken, setFormToken] = useState('');
   const [processing, setProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [email, setEmail] = useState(initialEmail || '');
+  const [emailError, setEmailError] = useState('');
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       loadIzipayScript();
-      createPaymentToken();
+      // Solo crear token si ya tenemos email
+      if (initialEmail) {
+        setShowPaymentForm(true);
+        createPaymentToken();
+      }
     }
   }, [isOpen]);
+
+  const handleContinue = () => {
+    // Validar email
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      setEmailError('Por favor ingresa un correo válido');
+      return;
+    }
+    
+    setEmailError('');
+    setShowPaymentForm(true);
+    createPaymentToken();
+  };
 
   const loadIzipayScript = () => {
     // Cargar el CSS de Izipay si no está cargado
@@ -68,7 +87,7 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail }: Izipay
         amount: plan.price,
         currency: 'PEN',
         orderId,
-        customerEmail: userEmail
+        customerEmail: email
       });
       
       const response = await fetch('/api/payment/create-token', {
@@ -80,7 +99,7 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail }: Izipay
           amount: plan.price,
           currency: 'PEN',
           orderId: orderId,
-          customerEmail: userEmail,
+          customerEmail: email,
         }),
       });
 
@@ -312,8 +331,86 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail }: Izipay
               </div>
             )}
 
-            {!loading && !error && (
+            {!loading && !error && !showPaymentForm && (
               <div>
+                {/* Campo de correo electrónico */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+                  <div className="flex items-center mb-4">
+                    <div className="bg-emerald-100 rounded-full p-2 mr-3">
+                      <svg className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <h4 className="text-gray-900 font-semibold text-lg">Correo electrónico</h4>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-4">
+                    Te enviaremos tus credenciales de acceso a este correo después del pago.
+                  </p>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setEmailError('');
+                    }}
+                    placeholder="tu@correo.com"
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all text-base ${
+                      emailError ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                  {emailError && (
+                    <p className="text-red-600 text-sm mt-2 flex items-center">
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      {emailError}
+                    </p>
+                  )}
+                </div>
+
+                {/* Información del plan */}
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-200 p-6 mb-6">
+                  <h4 className="text-gray-900 font-semibold text-lg mb-4">Resumen de tu compra</h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Plan seleccionado</span>
+                      <span className="text-gray-900 font-semibold">{plan.name}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Periodo</span>
+                      <span className="text-gray-900 font-medium">{plan.period}</span>
+                    </div>
+                    <div className="border-t border-emerald-200 pt-3 mt-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-900 font-semibold text-lg">Total</span>
+                        <span className="text-emerald-600 font-bold text-2xl">S/ {plan.price}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Botón continuar */}
+                <button
+                  onClick={handleContinue}
+                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-4 rounded-lg font-semibold text-lg hover:from-emerald-600 hover:to-teal-600 transition-all shadow-lg hover:shadow-xl"
+                >
+                  Continuar al pago
+                </button>
+              </div>
+            )}
+
+            {!loading && !error && showPaymentForm && (
+              <div>
+                {/* Email confirmado */}
+                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-6">
+                  <div className="flex items-center">
+                    <svg className="h-5 w-5 text-emerald-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-emerald-800 font-medium text-sm">{email}</span>
+                  </div>
+                </div>
+
                 {/* Información del plan */}
                 <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
                   <h4 className="text-gray-900 font-semibold text-lg mb-4">Resumen de tu compra</h4>

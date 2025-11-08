@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
+import { sendCredentialsEmail } from '@/lib/resend';
 
 // Inicializar cliente de Supabase
 const supabase = createClient(
@@ -89,11 +90,24 @@ export default async function handler(req, res) {
         
         console.log('[Izipay Webhook] User created with temp password');
         
-        // TODO: Enviar email con credenciales
-        console.log('[Izipay Webhook] Credentials:', {
-          email: customer.email,
-          password: tempPassword
-        });
+        // Determinar nombre del plan
+        let planName = 'Basic';
+        if (amount >= 99) {
+          planName = 'Premium';
+        }
+        
+        // Enviar email con credenciales
+        const emailResult = await sendCredentialsEmail(
+          customer.email,
+          tempPassword,
+          planName
+        );
+        
+        if (emailResult.success) {
+          console.log('[Izipay Webhook] Credentials email sent successfully');
+        } else {
+          console.error('[Izipay Webhook] Failed to send credentials email:', emailResult.error);
+        }
       }
       
       // 2. Guardar el pago en la base de datos
