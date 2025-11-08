@@ -22,6 +22,7 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail }: Izipay
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [formToken, setFormToken] = useState('');
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -131,20 +132,43 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail }: Izipay
       'kr-card-form-expanded': true,
     });
 
-    window.KR.onSubmit((paymentData: any) => {
+    window.KR.onSubmit(async (paymentData: any) => {
       console.log('[Izipay] Payment submitted:', paymentData);
-      return true; // Permitir que Izipay procese el pago
+      setProcessing(true);
+      
+      try {
+        // Aquí puedes procesar la respuesta del pago
+        if (paymentData.clientAnswer.orderStatus === 'PAID') {
+          console.log('[Izipay] Payment successful!');
+          alert('¡Pago exitoso! Redirigiendo al dashboard...');
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 1500);
+        } else {
+          console.log('[Izipay] Payment not completed:', paymentData.clientAnswer.orderStatus);
+          setError('El pago no se completó. Por favor, intenta de nuevo.');
+          setProcessing(false);
+        }
+      } catch (err) {
+        console.error('[Izipay] Error processing payment:', err);
+        setError('Error al procesar el pago');
+        setProcessing(false);
+      }
+      
+      return false; // Prevenir el submit por defecto
     });
 
     window.KR.onError((error: any) => {
       console.error('[Izipay] Payment error:', error);
       const errorMessage = error?.detailedErrorMessage || error?.errorMessage || 'Error desconocido';
       setError(`Error al procesar el pago: ${errorMessage}`);
+      setProcessing(false);
     });
 
     // Evento cuando el pago es exitoso
     window.KR.onFormReady(() => {
       console.log('[Izipay] Form ready');
+      setLoading(false);
     });
 
     // Evento cuando el pago es procesado
@@ -195,6 +219,18 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail }: Izipay
 
           {/* Body */}
           <div className="px-8 py-8 bg-gray-50">
+            {processing && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-xl p-8 max-w-sm mx-4">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-emerald-500 mx-auto"></div>
+                    <h3 className="mt-4 text-xl font-bold text-gray-900">Procesando pago...</h3>
+                    <p className="mt-2 text-gray-600">Por favor espera, no cierres esta ventana</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {loading && (
               <div className="text-center py-12">
                 <div className="inline-flex items-center justify-center">
