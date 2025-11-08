@@ -40,7 +40,7 @@ export default async function handler(req, res) {
     console.log('[Izipay Webhook] kr-hash exists:', !!krHash);
 
     // Verificar la firma HMAC
-    const hmacKey = process.env.IZIPAY_HMAC_KEY || 'ypEXi0Ia8SIpqW4SDQsqDvslpNuBB9M0EEg0h2OYcnUHH';
+    const hmacKey = process.env.IZIPAY_HMAC_KEY || 'R8z7kgwk5RwqUNdHDK5cGLfkrqj7F5VyJekvDLfr9j14';
     console.log('[Izipay Webhook] HMAC Key configured:', hmacKey.substring(0, 10) + '...');
     console.log('[Izipay Webhook] Hash algorithm from Izipay:', req.body['kr-hash-algorithm']);
     console.log('[Izipay Webhook] Hash key from Izipay:', req.body['kr-hash-key']);
