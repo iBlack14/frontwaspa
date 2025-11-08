@@ -2,6 +2,13 @@ import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 
+// Configuración de Next.js API
+export const config = {
+  api: {
+    bodyParser: true,
+  },
+};
+
 // Inicializar cliente de Supabase
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
