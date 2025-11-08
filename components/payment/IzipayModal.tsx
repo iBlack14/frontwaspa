@@ -23,6 +23,7 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail }: Izipay
   const [error, setError] = useState('');
   const [formToken, setFormToken] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -140,10 +141,14 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail }: Izipay
         // Aquí puedes procesar la respuesta del pago
         if (paymentData.clientAnswer.orderStatus === 'PAID') {
           console.log('[Izipay] Payment successful!');
-          alert('¡Pago exitoso! Redirigiendo al dashboard...');
+          setPaymentSuccess(true);
+          setProcessing(false);
+          
+          // Redirigir después de 3 segundos
           setTimeout(() => {
-            window.location.href = '/dashboard';
-          }, 1500);
+            // Verificar si el usuario está autenticado
+            window.location.href = '/login?payment=success';
+          }, 3000);
         } else {
           console.log('[Izipay] Payment not completed:', paymentData.clientAnswer.orderStatus);
           setError('El pago no se completó. Por favor, intenta de nuevo.');
@@ -219,7 +224,55 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail }: Izipay
 
           {/* Body */}
           <div className="px-8 py-8 bg-gray-50">
-            {processing && (
+            {/* Modal de éxito */}
+            {paymentSuccess && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-2xl">
+                  <div className="text-center">
+                    {/* Icono de éxito animado */}
+                    <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-emerald-100 mb-6">
+                      <svg className="h-12 w-12 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    
+                    <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                      ¡Pago exitoso!
+                    </h3>
+                    
+                    <p className="text-gray-600 mb-2">
+                      Tu pago ha sido procesado correctamente.
+                    </p>
+                    
+                    <p className="text-sm text-gray-500 mb-6">
+                      Recibirás un correo de confirmación en breve.
+                    </p>
+                    
+                    <div className="bg-emerald-50 rounded-lg p-4 mb-6">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">Plan:</span>
+                        <span className="font-semibold text-gray-900">{plan.name}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm mt-2">
+                        <span className="text-gray-600">Total:</span>
+                        <span className="font-bold text-emerald-600">S/ {plan.price}</span>
+                      </div>
+                    </div>
+                    
+                    <p className="text-sm text-gray-500">
+                      Redirigiendo al inicio de sesión...
+                    </p>
+                    
+                    {/* Barra de progreso */}
+                    <div className="mt-4 w-full bg-gray-200 rounded-full h-1.5">
+                      <div className="bg-emerald-600 h-1.5 rounded-full animate-progress" style={{animation: 'progress 3s linear'}}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {processing && !paymentSuccess && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <div className="bg-white rounded-xl p-8 max-w-sm mx-4">
                   <div className="text-center">
@@ -293,6 +346,15 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail }: Izipay
                 </div>
                 
                 <style jsx>{`
+                  @keyframes progress {
+                    from {
+                      width: 0%;
+                    }
+                    to {
+                      width: 100%;
+                    }
+                  }
+                  
                   .izipay-form-container :global(.kr-embedded) {
                     font-family: inherit;
                   }
