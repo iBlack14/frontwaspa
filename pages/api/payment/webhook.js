@@ -23,10 +23,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
  * POST /api/payment/webhook
  */
 export default async function handler(req, res) {
-  console.log('[Izipay Webhook] ========== WEBHOOK CALLED ==========');
-  console.log('[Izipay Webhook] Method:', req.method);
-  console.log('[Izipay Webhook] Headers:', JSON.stringify(req.headers, null, 2));
-  console.log('[Izipay Webhook] Body keys:', Object.keys(req.body));
+  console.log('[Izipay Webhook] Webhook called');
   
   if (req.method !== 'POST') {
     console.log('[Izipay Webhook] Method not allowed:', req.method);
@@ -36,27 +33,21 @@ export default async function handler(req, res) {
   try {
     const { 'kr-answer': krAnswer, 'kr-hash': krHash } = req.body;
     
-    console.log('[Izipay Webhook] kr-answer exists:', !!krAnswer);
-    console.log('[Izipay Webhook] kr-hash exists:', !!krHash);
+    if (!krAnswer || !krHash) {
+      console.error('[Izipay Webhook] Missing kr-answer or kr-hash');
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
 
     // Verificar la firma HMAC
-    // Izipay usa el PASSWORD para firmar, no la HMAC key separada
+    // Izipay usa el PASSWORD para firmar
     const hmacKey = process.env.IZIPAY_PASSWORD || 'testpassword_aUfHU1fnUEv66whwWsBctdGPoRzYRnpgYjVv0Wx6vobGR';
-    console.log('[Izipay Webhook] Using PASSWORD for HMAC');
-    console.log('[Izipay Webhook] Hash algorithm from Izipay:', req.body['kr-hash-algorithm']);
-    console.log('[Izipay Webhook] Hash key from Izipay:', req.body['kr-hash-key']);
-    
     const calculatedHash = crypto
       .createHmac('sha256', hmacKey)
       .update(krAnswer)
       .digest('hex');
 
-    console.log('[Izipay Webhook] Calculated hash:', calculatedHash.substring(0, 20) + '...');
-    console.log('[Izipay Webhook] Received hash:', krHash.substring(0, 20) + '...');
-
     if (calculatedHash !== krHash) {
-      console.error('[Izipay Webhook] Invalid signature - Hashes do not match');
-      console.error('[Izipay Webhook] This means the HMAC key is incorrect');
+      console.error('[Izipay Webhook] Invalid signature');
       return res.status(400).json({ error: 'Invalid signature' });
     }
 
@@ -125,9 +116,6 @@ export default async function handler(req, res) {
         }
         
         // Enviar email con credenciales usando Resend
-        console.log('[Izipay Webhook] Sending email to:', customer.email);
-        console.log('[Izipay Webhook] Resend API Key exists:', !!process.env.RESEND_API_KEY);
-        
         try {
           const { data: emailData, error: emailError } = await resend.emails.send({
             from: 'BLXK Studio <noreply@blxkstudio.com>',
