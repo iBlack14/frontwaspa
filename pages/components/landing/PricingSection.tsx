@@ -10,7 +10,7 @@ export default function PricingSection() {
     {
       name: 'Free',
       price: 0,
-      priceDisplay: '$0',
+      priceDisplay: 'S/0',
       period: 'Por siempre',
       features: ['1 instancia de WhatsApp', '100 mensajes/mes', 'Respuestas automáticas básicas', 'Soporte por email'],
       cta: 'Comenzar Gratis',
@@ -19,7 +19,7 @@ export default function PricingSection() {
     {
       name: 'Pro',
       price: 99,
-      priceDisplay: '$99',
+      priceDisplay: 'S/99',
       period: 'Por mes',
       features: ['5 instancias de WhatsApp', '10,000 mensajes/mes', 'IA conversacional con GPT-4', 'Automatización N8N ilimitada', 'Analytics avanzado', 'Soporte prioritario 24/7'],
       cta: 'Pagar Ahora',
