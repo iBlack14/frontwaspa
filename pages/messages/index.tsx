@@ -60,7 +60,7 @@ function MessagesContent() {
   useEffect(() => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    
+
     if (supabaseUrl && supabaseKey) {
       const client = createClient(supabaseUrl, supabaseKey);
       setSupabase(client);
@@ -108,7 +108,7 @@ function MessagesContent() {
         },
         (payload: any) => {
           console.log('🔔 Nuevo mensaje:', payload.new);
-          
+
           // Si el mensaje es del chat actual, agregarlo
           if (selectedChat && payload.new.chat_id === selectedChat.chat_id) {
             setMessages((prev) => {
@@ -116,15 +116,15 @@ function MessagesContent() {
               if (prev.some(m => m.message_id === payload.new.message_id)) {
                 return prev;
               }
-              return [...prev, payload.new].sort((a, b) => 
+              return [...prev, payload.new].sort((a, b) =>
                 new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
               );
             });
           }
-          
+
           // Actualizar lista de chats
           fetchChats(selectedInstance);
-          
+
           // Notificación sonora
           if (!payload.new.from_me) {
             playNotificationSound();
@@ -142,14 +142,14 @@ function MessagesContent() {
         },
         (payload: any) => {
           console.log('📝 Mensaje actualizado:', payload.new);
-          
+
           // Actualizar mensaje si es del chat actual
           if (selectedChat && payload.new.chat_id === selectedChat.chat_id) {
-            setMessages((prev) => 
+            setMessages((prev) =>
               prev.map(m => m.message_id === payload.new.message_id ? payload.new : m)
             );
           }
-          
+
           // Actualizar lista de chats
           fetchChats(selectedInstance);
         }
@@ -185,7 +185,7 @@ function MessagesContent() {
     try {
       const response = await axios.get('/api/instances');
       setInstances(response.data.instances || []);
-      
+
       // Seleccionar la primera instancia conectada por defecto
       const connectedInstance = response.data.instances.find((i: any) => i.state === 'Connected');
       if (connectedInstance) {
@@ -212,7 +212,7 @@ function MessagesContent() {
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const response = await axios.get(`${backendUrl}/api/messages/${instanceId}/${chatId}?limit=100`);
-      
+
       setMessages((prevMessages) => {
         const newMessages = response.data.messages || [];
         // Solo actualizar si hay cambios
@@ -221,7 +221,7 @@ function MessagesContent() {
         }
         return prevMessages;
       });
-      
+
       // Marcar como leído solo si no es silencioso
       if (!silent) {
         await markAsRead(instanceId, chatId);
@@ -240,7 +240,7 @@ function MessagesContent() {
         instanceId,
         chatId,
       });
-      
+
       // Actualizar lista de chats
       fetchChats(instanceId);
     } catch (error) {
@@ -252,7 +252,7 @@ function MessagesContent() {
     try {
       const audio = new Audio('/sounds/notification.mp3');
       audio.volume = 0.5;
-      audio.play().catch(() => {});
+      audio.play().catch(() => { });
     } catch (error) {
       // Silenciar error si no hay sonido
     }
@@ -292,7 +292,7 @@ function MessagesContent() {
       {/* Header - Estilo WhatsApp */}
       <div className="bg-[#f0f2f5] dark:bg-[#202c33] border-b border-[#d1d7db] dark:border-[#2a3942] px-4 py-3">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-[#111b21] dark:text-[#e9edef]">Mensajes WhatsApp</h1>
+          <h1 className="text-xl font-semibold text-[#111b21] dark:text-[#e9edef]">Connect BLXK</h1>
           <select
             value={selectedInstance || ''}
             onChange={(e) => setSelectedInstance(e.target.value)}
@@ -329,30 +329,33 @@ function MessagesContent() {
               onRefresh={() => fetchMessages(selectedChat.instance_id, selectedChat.chat_id)}
             />
           ) : (
-            <div className="flex items-center justify-center h-full bg-[#f0f2f5] dark:bg-[#222e35]">
-              <div className="text-center">
-                <div className="w-64 h-64 mx-auto mb-6 opacity-10">
-                  <svg viewBox="0 0 303 172" fill="currentColor" className="text-[#00a884]">
-                    <path d="M151.5 0C67.9 0 0 67.9 0 151.5S67.9 303 151.5 303 303 235.1 303 151.5 235.1 0 151.5 0zm0 276.5c-69 0-125-56-125-125s56-125 125-125 125 56 125 125-56 125-125 125z"/>
-                  </svg>
-                </div>
-                <h2 className="text-3xl font-light text-[#41525d] dark:text-[#8696a0] mb-2">
-                  WhatsApp Web
-                </h2>
-                <p className="text-sm text-[#667781] dark:text-[#8696a0] mb-8">
-                  Selecciona un chat para ver los mensajes
-                </p>
-                <div className="bg-[#f0f2f5] dark:bg-[#202c33] rounded-lg p-4 max-w-md mx-auto">
-                  <p className="text-xs text-[#667781] dark:text-[#8696a0]">
-                    🔒 Tus mensajes están cifrados de extremo a extremo
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+          ): (
+              <div className = "flex items-center justify-center h-full bg-[#f0f2f5] dark:bg-[#222e35] border-b-8 border-[#25d366]">
+              <div className = "text-center max-w-md px-6">
+                <div className = "w-64 h-64 mx-auto mb-8 opacity-20">
+                   <svg viewBox = "0 0 303 172" fill = "currentColor" className = "text-[#00a884] w-full h-full">
+                     <path d = "M151.5 0C67.9 0 0 67.9 0 151.5S67.9 303 151.5 303 303 235.1 303 151.5 235.1 0 151.5 0zm0 276.5c-69 0-125-56-125-125s56-125 125-125 125 56 125 125-56 125-125 125z"/>
+        </svg>
+      </div>
+      <h2 className="text-3xl font-light text-[#41525d] dark:text-[#e9edef] mb-4">
+        Connect BLXK Web
+      </h2>
+      <p className="text-sm text-[#667781] dark:text-[#8696a0] mb-8 leading-6">
+        Envía y recibe mensajes sin necesidad de mantener tu teléfono conectado.
+        <br />
+        Usa Connect BLXK en hasta 4 dispositivos vinculados y 1 teléfono a la vez.
+      </p>
+      <div className="flex items-center justify-center gap-2 text-[#8696a0] text-xs">
+        <span className="w-3 h-3 bg-[#8696a0] rounded-full opacity-30"></span>
+        🔒 Tus mensajes personales están cifrados de extremo a extremo
       </div>
     </div>
+            </div >
+          )
+}
+        </div >
+      </div >
+    </div >
   );
 }
 

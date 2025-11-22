@@ -26,7 +26,7 @@ const formatTime = (timestamp?: string) => {
   const date = new Date(timestamp);
   const now = new Date();
   const diff = now.getTime() - date.getTime();
-  
+
   if (diff < 86400000) { // Menos de 24 horas
     return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
   }
@@ -40,16 +40,16 @@ export default function ChatList({ chats, selectedChat, onSelectChat }: ChatList
 
   return (
     <div className="h-full bg-[#f0f2f5] dark:bg-[#111b21] flex flex-col">
-      {/* Search - Estilo WhatsApp */}
-      <div className="p-2 bg-white dark:bg-[#202c33]">
-        <div className="bg-[#f0f2f5] dark:bg-[#202c33] rounded-lg px-4 py-2 flex items-center">
-          <svg className="w-5 h-5 text-gray-500 dark:text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      {/* Search - Estilo WhatsApp Moderno */}
+      <div className="p-3 bg-white dark:bg-[#111b21] border-b border-gray-100 dark:border-[#202c33]">
+        <div className="bg-[#f0f2f5] dark:bg-[#202c33] rounded-lg px-4 py-2 flex items-center transition-all focus-within:ring-1 focus-within:ring-[#00a884]">
+          <svg className="w-5 h-5 text-[#54656f] dark:text-[#8696a0] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
             type="text"
             placeholder="Buscar o iniciar un chat"
-            className="flex-1 bg-transparent text-sm text-gray-900 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 border-none focus:outline-none"
+            className="flex-1 bg-transparent text-sm text-[#111b21] dark:text-[#e9edef] placeholder-[#54656f] dark:placeholder-[#8696a0] border-none focus:outline-none"
           />
         </div>
       </div>
@@ -97,11 +97,10 @@ function ChatItem({ chat, isSelected, onClick }: { chat: Chat; isSelected: boole
   return (
     <div
       onClick={onClick}
-      className={`flex items-center gap-3 px-4 py-3 cursor-pointer border-b border-gray-100 dark:border-[#202c33] transition-colors ${
-        isSelected 
-          ? 'bg-[#f0f2f5] dark:bg-[#2a3942]' 
+      className={`flex items-center gap-3 px-4 py-3 cursor-pointer border-b border-gray-100 dark:border-[#202c33] transition-colors ${isSelected
+          ? 'bg-[#f0f2f5] dark:bg-[#2a3942]'
           : 'bg-white dark:bg-[#111b21] hover:bg-[#f5f6f6] dark:hover:bg-[#202c33]'
-      }`}
+        }`}
     >
       {/* Avatar - Estilo WhatsApp */}
       <div className="flex-shrink-0 relative">

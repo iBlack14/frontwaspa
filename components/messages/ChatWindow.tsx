@@ -32,7 +32,7 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
     return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
   };
 
-  const sortedMessages = [...messages].sort((a, b) => 
+  const sortedMessages = [...messages].sort((a, b) =>
     new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   );
 
@@ -42,7 +42,7 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
     try {
       setSending(true);
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      
+
       await axios.post(`${backendUrl}/api/messages/send`, {
         instanceId: chat.instance_id,
         chatId: chat.chat_id,
@@ -51,7 +51,7 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
 
       setNewMessage('');
       toast.success('Mensaje enviado');
-      
+
       // Refrescar mensajes después de enviar
       setTimeout(() => onRefresh(), 1000);
     } catch (error: any) {
@@ -108,7 +108,7 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
       </div>
 
       {/* Messages - Fondo WhatsApp */}
-      <div 
+      <div
         className="flex-1 overflow-y-auto p-4 space-y-2"
         style={{
           backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h100v100H0z\' fill=\'%23efeae2\' fill-opacity=\'.4\'/%3E%3C/svg%3E")',
@@ -123,9 +123,9 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
           </div>
         ) : (
           sortedMessages.map((message) => (
-            <MessageBubble 
-              key={message.id} 
-              message={message} 
+            <MessageBubble
+              key={message.id}
+              message={message}
               onImageClick={(url, caption) => {
                 setSelectedImage({ url, caption });
                 setImageViewerOpen(true);
@@ -158,11 +158,10 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
         <button
           onClick={handleSendMessage}
           disabled={!newMessage.trim() || sending}
-          className={`p-2 rounded-full transition ${
-            newMessage.trim() && !sending
+          className={`p-2 rounded-full transition ${newMessage.trim() && !sending
               ? 'bg-[#00a884] hover:bg-[#008f6f] text-white'
               : 'text-[#8696a0] cursor-not-allowed'
-          }`}
+            }`}
         >
           {sending ? (
             <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -187,10 +186,10 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
   );
 }
 
-function MessageBubble({ 
-  message, 
-  onImageClick 
-}: { 
+function MessageBubble({
+  message,
+  onImageClick
+}: {
   message: Message;
   onImageClick?: (url: string, caption?: string) => void;
 }) {
@@ -297,11 +296,10 @@ function MessageBubble({
     // Si hay texto, mostrarlo
     if (message.message_text) {
       return (
-        <p className={`text-[14.2px] whitespace-pre-wrap break-words px-1 leading-[19px] ${
-          message.from_me 
-            ? 'text-[#111b21] dark:text-[#e9edef]' 
+        <p className={`text-[14.2px] whitespace-pre-wrap break-words px-1 leading-[19px] ${message.from_me
+            ? 'text-[#111b21] dark:text-[#e9edef]'
             : 'text-[#111b21] dark:text-[#e9edef]'
-        }`}>
+          }`}>
           {message.message_text}
         </p>
       );
@@ -323,33 +321,30 @@ function MessageBubble({
     };
 
     const typeLabel = typeIcons[message.message_type] || '📎 Archivo';
-    
+
     // Intentar obtener nombre de archivo del metadata
     const fileName = (message.metadata as any)?.fileName;
 
     return (
       <div className="px-1">
-        <p className={`text-[14.2px] italic leading-[19px] ${
-          message.from_me 
-            ? 'text-[#667781] dark:text-[#8696a0]' 
+        <p className={`text-[14.2px] italic leading-[19px] ${message.from_me
+            ? 'text-[#667781] dark:text-[#8696a0]'
             : 'text-[#667781] dark:text-[#8696a0]'
-        }`}>
+          }`}>
           {typeLabel}
         </p>
         {fileName && (
-          <p className={`text-xs mt-0.5 leading-[16px] ${
-            message.from_me 
-              ? 'text-[#667781] dark:text-[#8696a0]' 
+          <p className={`text-xs mt-0.5 leading-[16px] ${message.from_me
+              ? 'text-[#667781] dark:text-[#8696a0]'
               : 'text-[#667781] dark:text-[#8696a0]'
-          }`}>
+            }`}>
             {fileName}
           </p>
         )}
-        <p className={`text-xs mt-1 opacity-60 leading-[16px] ${
-          message.from_me 
-            ? 'text-[#667781] dark:text-[#8696a0]' 
+        <p className={`text-xs mt-1 opacity-60 leading-[16px] ${message.from_me
+            ? 'text-[#667781] dark:text-[#8696a0]'
             : 'text-[#667781] dark:text-[#8696a0]'
-        }`}>
+          }`}>
           (Mensaje antiguo sin media)
         </p>
       </div>
@@ -357,44 +352,49 @@ function MessageBubble({
   };
 
   return (
-    <div className={`flex ${message.from_me ? 'justify-end' : 'justify-start'} mb-1`}>
+    <div className={`flex ${message.from_me ? 'justify-end' : 'justify-start'} mb-2 group`}>
       <div
-        className={`max-w-[65%] rounded-lg px-2 py-1.5 shadow-sm ${
-          message.from_me
+        className={`max-w-[65%] rounded-lg px-2 py-1.5 shadow-sm relative ${message.from_me
             ? 'bg-[#d9fdd3] dark:bg-[#005c4b] rounded-tr-none'
             : 'bg-white dark:bg-[#202c33] rounded-tl-none'
-        }`}
+          }`}
         style={{
-          borderRadius: message.from_me 
-            ? '7.5px 7.5px 0px 7.5px' 
+          borderRadius: message.from_me
+            ? '7.5px 7.5px 0px 7.5px'
             : '7.5px 7.5px 7.5px 0px'
         }}
       >
+        {/* Tail for bubbles */}
+        <span className={`absolute top-0 ${message.from_me ? '-right-2 text-[#d9fdd3] dark:text-[#005c4b]' : '-left-2 text-white dark:text-[#202c33]'}`}>
+          <svg viewBox="0 0 8 13" width="8" height="13" className="fill-current">
+            <path d={message.from_me ? "M5.188 1H0v11.193l6.467-8.625C7.526 2.156 6.958 1 5.188 1z" : "M-2.188 1H3v11.193l-6.467-8.625C-4.526 2.156 -3.958 1 -2.188 1z"} transform={message.from_me ? "" : "scale(-1, 1) translate(-8, 0)"} />
+          </svg>
+        </span>
+
         {!message.from_me && message.sender_name && (
-          <p className="text-xs font-semibold text-[#00a884] dark:text-[#00a884] mb-0.5 px-1">
+          <p className="text-xs font-semibold text-[#e542a3] dark:text-[#e542a3] mb-0.5 px-1">
             {message.sender_name}
           </p>
         )}
-        
+
         {renderMessageContent()}
-        
-        <div className="flex items-center justify-end gap-1 mt-0.5 px-1">
-          <span className={`text-[11px] ${
-            message.from_me 
-              ? 'text-[#667781] dark:text-[#8696a0]' 
+
+        <div className="flex items-center justify-end gap-1 mt-0.5 px-1 select-none">
+          <span className={`text-[11px] ${message.from_me
+              ? 'text-[#667781] dark:text-[#8696a0]'
               : 'text-[#667781] dark:text-[#8696a0]'
-          }`}>
+            }`}>
             {formatTime(message.timestamp)}
           </span>
           {message.from_me && (
             <span className="ml-1">
               {message.is_read ? (
-                <svg viewBox="0 0 16 15" width="16" height="15" className="inline">
-                  <path fill="#53bdeb" d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L8.666 9.879a.32.32 0 0 1-.484.033l-.358-.325a.319.319 0 0 0-.484.032l-.378.483a.418.418 0 0 0 .036.541l1.32 1.266c.143.14.361.125.484-.033l6.272-8.048a.366.366 0 0 0-.064-.512zm-4.1 0l-.478-.372a.365.365 0 0 0-.51.063L4.566 9.879a.32.32 0 0 1-.484.033L1.891 7.769a.366.366 0 0 0-.515.006l-.423.433a.364.364 0 0 0 .006.514l3.258 3.185c.143.14.361.125.484-.033l6.272-8.048a.365.365 0 0 0-.063-.51z"/>
+                <svg viewBox="0 0 16 15" width="16" height="15" className="inline text-[#53bdeb]">
+                  <path fill="currentColor" d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L8.666 9.879a.32.32 0 0 1-.484.033l-.358-.325a.319.319 0 0 0-.484.032l-.378.483a.418.418 0 0 0 .036.541l1.32 1.266c.143.14.361.125.484-.033l6.272-8.048a.366.366 0 0 0-.064-.512zm-4.1 0l-.478-.372a.365.365 0 0 0-.51.063L4.566 9.879a.32.32 0 0 1-.484.033L1.891 7.769a.366.366 0 0 0-.515.006l-.423.433a.364.364 0 0 0 .006.514l3.258 3.185c.143.14.361.125.484-.033l6.272-8.048a.365.365 0 0 0-.063-.51z" />
                 </svg>
               ) : (
-                <svg viewBox="0 0 12 11" width="12" height="11" className="inline">
-                  <path fill="#8696a0" d="M11.1 2.3L10.7 2c-.2-.2-.5-.2-.7 0L5.2 7.8 2.7 5.3c-.2-.2-.5-.2-.7 0l-.4.4c-.2.2-.2.5 0 .7l3.4 3.4c.2.2.5.2.7 0l5.5-6.2c.2-.2.2-.5 0-.7z"/>
+                <svg viewBox="0 0 16 15" width="16" height="15" className="inline text-[#8696a0]">
+                  <path fill="currentColor" d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L8.666 9.879a.32.32 0 0 1-.484.033l-.358-.325a.319.319 0 0 0-.484.032l-.378.483a.418.418 0 0 0 .036.541l1.32 1.266c.143.14.361.125.484-.033l6.272-8.048a.366.366 0 0 0-.064-.512z" />
                 </svg>
               )}
             </span>
