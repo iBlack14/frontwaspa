@@ -18,7 +18,8 @@ import {
   TrashIcon,
   LinkIcon,
   ServerIcon,
-  PencilIcon
+  PencilIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 import { Toaster, toast } from 'sonner';
 
@@ -327,8 +328,8 @@ function ProfilePage() {
         <button
           onClick={() => setActiveTab('general')}
           className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium text-sm transition-all duration-300 ${activeTab === 'general'
-              ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
-              : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+            ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+            : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
             }`}
         >
           <UserIcon className="w-5 h-5" />
@@ -337,8 +338,8 @@ function ProfilePage() {
         <button
           onClick={() => setActiveTab('proxies')}
           className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium text-sm transition-all duration-300 ${activeTab === 'proxies'
-              ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
-              : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+            ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+            : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
             }`}
         >
           <ServerIcon className="w-5 h-5" />
@@ -480,8 +481,8 @@ function ProfilePage() {
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
                       <div className={`p-2 rounded-xl ${proxy.is_healthy
-                          ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'
-                          : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
+                        ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'
+                        : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
                         }`}>
                         <ServerIcon className="w-6 h-6" />
                       </div>
@@ -596,8 +597,8 @@ function ProfilePage() {
                   <label
                     key={instance.documentId}
                     className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-all ${selectedInstances.includes(instance.documentId)
-                        ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800'
-                        : 'bg-white border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700'
+                      ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800'
+                      : 'bg-white border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700'
                       }`}
                   >
                     <input
@@ -615,8 +616,8 @@ function ProfilePage() {
                       </p>
                     </div>
                     <span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase ${instance.state === 'Connected'
-                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                        : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
+                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                      : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
                       }`}>
                       {instance.state}
                     </span>
