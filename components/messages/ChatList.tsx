@@ -39,28 +39,28 @@ export default function ChatList({ chats, selectedChat, onSelectChat }: ChatList
   const regularChats = chats.filter(c => !c.is_pinned && !c.is_archived);
 
   return (
-    <div className="h-full bg-[#f0f2f5] dark:bg-[#111b21] flex flex-col">
-      {/* Search - Estilo WhatsApp Moderno */}
-      <div className="p-3 bg-white dark:bg-[#111b21] border-b border-gray-100 dark:border-[#202c33]">
-        <div className="bg-[#f0f2f5] dark:bg-[#202c33] rounded-lg px-4 py-2 flex items-center transition-all focus-within:ring-1 focus-within:ring-[#00a884]">
-          <svg className="w-5 h-5 text-[#54656f] dark:text-[#8696a0] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div className="h-full bg-[#f8fafc] dark:bg-[#0f172a] flex flex-col border-r border-slate-200 dark:border-slate-800">
+      {/* Search - Pastel Design */}
+      <div className="p-4 bg-white/80 backdrop-blur-md dark:bg-[#1e293b]/80 sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800">
+        <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-2.5 flex items-center transition-all focus-within:ring-2 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-900 focus-within:bg-white dark:focus-within:bg-slate-900 shadow-sm">
+          <svg className="w-5 h-5 text-slate-400 dark:text-slate-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
             type="text"
             placeholder="Buscar o iniciar un chat"
-            className="flex-1 bg-transparent text-sm text-[#111b21] dark:text-[#e9edef] placeholder-[#54656f] dark:placeholder-[#8696a0] border-none focus:outline-none"
+            className="flex-1 bg-transparent text-sm text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 border-none focus:outline-none"
           />
         </div>
       </div>
 
       {/* Chats */}
-      <div className="flex-1 overflow-y-auto bg-white dark:bg-[#111b21]">
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
         {/* Pinned */}
         {pinnedChats.length > 0 && (
-          <div>
-            <div className="px-4 py-2 text-xs font-medium text-[#00a884] dark:text-[#00a884] bg-white dark:bg-[#111b21]">
-              FIJADOS
+          <div className="mb-2">
+            <div className="px-5 py-3 text-xs font-bold text-indigo-500 dark:text-indigo-400 tracking-wider uppercase bg-transparent">
+              Fijados
             </div>
             {pinnedChats.map((chat) => (
               <ChatItem
@@ -74,17 +74,20 @@ export default function ChatList({ chats, selectedChat, onSelectChat }: ChatList
         )}
 
         {/* Regular */}
-        {regularChats.map((chat) => (
-          <ChatItem
-            key={chat.id}
-            chat={chat}
-            isSelected={selectedChat?.id === chat.id}
-            onClick={() => onSelectChat(chat)}
-          />
-        ))}
+        <div className="pb-4">
+          {pinnedChats.length > 0 && <div className="px-5 py-2 text-xs font-bold text-slate-400 dark:text-slate-500 tracking-wider uppercase">Recientes</div>}
+          {regularChats.map((chat) => (
+            <ChatItem
+              key={chat.id}
+              chat={chat}
+              isSelected={selectedChat?.id === chat.id}
+              onClick={() => onSelectChat(chat)}
+            />
+          ))}
+        </div>
 
         {chats.length === 0 && (
-          <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+          <div className="text-center py-12 text-slate-400 dark:text-slate-500">
             <p className="text-sm">No hay chats disponibles</p>
           </div>
         )}
@@ -97,51 +100,57 @@ function ChatItem({ chat, isSelected, onClick }: { chat: Chat; isSelected: boole
   return (
     <div
       onClick={onClick}
-      className={`flex items-center gap-3 px-4 py-3 cursor-pointer border-b border-gray-100 dark:border-[#202c33] transition-all duration-200 ${isSelected
-        ? 'bg-[#f0f2f5] dark:bg-[#2a3942] border-l-4 border-l-[#00a884]'
-        : 'bg-white dark:bg-[#111b21] hover:bg-[#f5f6f6] dark:hover:bg-[#202c33] border-l-4 border-l-transparent'
+      className={`group mx-2 mb-1 rounded-xl p-3 cursor-pointer transition-all duration-200 border border-transparent ${isSelected
+        ? 'bg-white dark:bg-[#1e293b] shadow-md border-indigo-50 dark:border-indigo-900/50 translate-x-1'
+        : 'hover:bg-white/60 dark:hover:bg-[#1e293b]/60 hover:shadow-sm'
         }`}
     >
-      {/* Avatar - Estilo WhatsApp */}
-      <div className="flex-shrink-0 relative">
-        {chat.profile_pic_url ? (
-          <img
-            src={chat.profile_pic_url}
-            alt={chat.chat_name || 'Chat'}
-            className="w-12 h-12 rounded-full object-cover"
-          />
-        ) : (
-          <div className="w-12 h-12 rounded-full bg-[#6b7c85] dark:bg-[#6b7c85] flex items-center justify-center">
-            {chat.chat_type === 'group' ? (
-              <UserGroupIcon className="w-6 h-6 text-white" />
+      <div className="flex items-center gap-3">
+        {/* Avatar - Pastel Ring */}
+        <div className="flex-shrink-0 relative">
+          <div className={`p-0.5 rounded-full ${isSelected ? 'bg-gradient-to-tr from-indigo-400 to-purple-400' : 'bg-transparent'}`}>
+            {chat.profile_pic_url ? (
+              <img
+                src={chat.profile_pic_url}
+                alt={chat.chat_name || 'Chat'}
+                className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-[#0f172a]"
+              />
             ) : (
-              <UserIcon className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center border-2 border-white dark:border-[#0f172a]">
+                {chat.chat_type === 'group' ? (
+                  <UserGroupIcon className="w-6 h-6 text-slate-500 dark:text-slate-400" />
+                ) : (
+                  <UserIcon className="w-6 h-6 text-slate-500 dark:text-slate-400" />
+                )}
+              </div>
             )}
           </div>
-        )}
-        {/* Online Status Indicator - Green Dot */}
-        <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-[#00a884] border-2 border-white dark:border-[#111b21] rounded-full"></span>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-start mb-1">
-          <h3 className="font-medium text-[16px] text-[#111b21] dark:text-[#e9edef] truncate">
-            {chat.chat_name || chat.chat_id}
-          </h3>
-          <span className={`text-xs ml-2 flex-shrink-0 ${chat.unread_count > 0 ? 'text-[#00a884] font-medium' : 'text-[#667781] dark:text-[#8696a0]'}`}>
-            {formatTime(chat.last_message_at)}
+          {/* Online Status Indicator - Green Dot with Pulse */}
+          <span className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-emerald-400 border-2 border-white dark:border-[#0f172a] rounded-full shadow-sm">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
           </span>
         </div>
-        <div className="flex justify-between items-center">
-          <p className="text-sm text-[#667781] dark:text-[#8696a0] truncate flex-1">
-            {chat.last_message_text || '📎 Archivo multimedia'}
-          </p>
-          {chat.unread_count > 0 && (
-            <span className="ml-2 bg-[#00a884] text-white text-xs font-semibold rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center shadow-sm">
-              {chat.unread_count > 99 ? '99+' : chat.unread_count}
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex justify-between items-start mb-0.5">
+            <h3 className={`font-semibold text-[15px] truncate transition-colors ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : 'text-slate-800 dark:text-slate-200'}`}>
+              {chat.chat_name || chat.chat_id}
+            </h3>
+            <span className={`text-xs ml-2 flex-shrink-0 font-medium ${chat.unread_count > 0 ? 'text-indigo-500' : 'text-slate-400 dark:text-slate-500'}`}>
+              {formatTime(chat.last_message_at)}
             </span>
-          )}
+          </div>
+          <div className="flex justify-between items-center">
+            <p className={`text-sm truncate flex-1 ${isSelected ? 'text-indigo-600/80 dark:text-indigo-300/80' : 'text-slate-500 dark:text-slate-400'}`}>
+              {chat.last_message_text || '📎 Archivo multimedia'}
+            </p>
+            {chat.unread_count > 0 && (
+              <span className="ml-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center shadow-sm shadow-indigo-200 dark:shadow-none">
+                {chat.unread_count > 99 ? '99+' : chat.unread_count}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>

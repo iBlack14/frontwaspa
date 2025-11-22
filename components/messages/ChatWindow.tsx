@@ -29,11 +29,6 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-  };
-
   const sortedMessages = [...messages].sort((a, b) =>
     new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   );
@@ -77,34 +72,37 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#efeae2] dark:bg-[#0b141a]">
-      {/* Header - Estilo WhatsApp */}
-      <div className="bg-[#f0f2f5] dark:bg-[#202c33] px-4 py-2.5 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-3">
-          {chat.profile_pic_url ? (
-            <img
-              src={chat.profile_pic_url}
-              alt={chat.chat_name || 'Chat'}
-              className="w-10 h-10 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-[#6b7c85] flex items-center justify-center text-white font-semibold text-sm">
-              {chat.chat_name?.[0]?.toUpperCase() || '?'}
-            </div>
-          )}
+    <div className="h-full flex flex-col bg-[#f1f5f9] dark:bg-[#0f172a]">
+      {/* Header - Pastel Glassmorphism */}
+      <div className="bg-white/80 backdrop-blur-md dark:bg-[#1e293b]/90 px-6 py-3 flex items-center justify-between shadow-sm border-b border-slate-200 dark:border-slate-800 z-10">
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            {chat.profile_pic_url ? (
+              <img
+                src={chat.profile_pic_url}
+                alt={chat.chat_name || 'Chat'}
+                className="w-11 h-11 rounded-full object-cover border-2 border-white dark:border-slate-700 shadow-sm"
+              />
+            ) : (
+              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 flex items-center justify-center text-indigo-600 dark:text-indigo-300 font-bold text-lg border-2 border-white dark:border-slate-700 shadow-sm">
+                {chat.chat_name?.[0]?.toUpperCase() || '?'}
+              </div>
+            )}
+            <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 border-2 border-white dark:border-slate-800 rounded-full"></span>
+          </div>
           <div>
-            <h2 className="font-medium text-[#111b21] dark:text-[#e9edef] text-[15px]">
+            <h2 className="font-bold text-slate-800 dark:text-slate-100 text-[16px]">
               {chat.chat_name || chat.chat_id}
             </h2>
-            <p className="text-xs text-[#667781] dark:text-[#8696a0]">
-              {chat.chat_type === 'group' ? 'Grupo' : 'Toca para ver info'}
+            <p className="text-xs font-medium text-indigo-500 dark:text-indigo-400">
+              {chat.chat_type === 'group' ? 'Grupo' : 'En línea'}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={onRefresh}
-            className="p-2 text-[#54656f] dark:text-[#8696a0] hover:bg-[#f5f6f6] dark:hover:bg-[#2a3942] rounded-full transition"
+            className="p-2.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:text-slate-400 dark:hover:bg-indigo-900/30 rounded-xl transition-all duration-200"
             title="Actualizar"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -114,18 +112,16 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
         </div>
       </div>
 
-      {/* Messages - Fondo WhatsApp */}
-      <div
-        className="flex-1 overflow-y-auto p-4 space-y-2"
-        style={{
-          backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h100v100H0z\' fill=\'%23efeae2\' fill-opacity=\'.4\'/%3E%3C/svg%3E")',
-        }}
-      >
+      {/* Messages - Clean Pastel Background */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
         {sortedMessages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-center text-[#667781] dark:text-[#8696a0] bg-white/50 dark:bg-[#202c33]/50 rounded-lg p-6">
-              <p className="text-sm">No hay mensajes en este chat</p>
-              <p className="text-xs mt-2">Los mensajes aparecerán aquí</p>
+            <div className="text-center bg-white/60 dark:bg-[#1e293b]/60 backdrop-blur-sm rounded-2xl p-8 shadow-sm border border-slate-100 dark:border-slate-800">
+              <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <PaperAirplaneIcon className="w-8 h-8 text-indigo-500" />
+              </div>
+              <p className="text-slate-600 dark:text-slate-300 font-medium">No hay mensajes aún</p>
+              <p className="text-xs text-slate-400 mt-2">Envía un mensaje para comenzar la conversación</p>
             </div>
           </div>
         ) : (
@@ -143,51 +139,54 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input - Estilo WhatsApp */}
-      <div className="bg-[#f0f2f5] dark:bg-[#202c33] px-4 py-2 flex items-center gap-2 relative z-20">
-        {showEmojiPicker && (
-          <div className="absolute bottom-16 left-4 z-50 shadow-2xl rounded-xl overflow-hidden">
-            <EmojiPicker onEmojiClick={onEmojiClick} width={300} height={400} />
-          </div>
-        )}
-
-        <button
-          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-          className={`p-2 rounded-full transition ${showEmojiPicker ? 'text-[#00a884] bg-[#d9d9d9] dark:bg-[#2a3942]' : 'text-[#54656f] dark:text-[#8696a0] hover:bg-[#d9d9d9] dark:hover:bg-[#2a3942]'}`}
-        >
-          <FaceSmileIcon className="w-6 h-6" />
-        </button>
-
-        <button className="p-2 text-[#54656f] dark:text-[#8696a0] hover:bg-[#d9d9d9] dark:hover:bg-[#2a3942] rounded-full transition">
-          <PaperClipIcon className="w-6 h-6" />
-        </button>
-
-        <div className="flex-1 bg-white dark:bg-[#2a3942] rounded-lg flex items-center px-4 py-2 shadow-sm border border-transparent focus-within:border-[#00a884] transition-all">
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Escribe un mensaje"
-            disabled={sending}
-            className="flex-1 bg-transparent text-[15px] text-[#111b21] dark:text-[#e9edef] placeholder-[#667781] dark:placeholder-[#8696a0] border-none focus:outline-none"
-          />
-        </div>
-
-        <button
-          onClick={handleSendMessage}
-          disabled={!newMessage.trim() || sending}
-          className={`p-2.5 rounded-full transition shadow-md ${newMessage.trim() && !sending
-            ? 'bg-[#00a884] hover:bg-[#008f6f] text-white transform hover:scale-105 active:scale-95'
-            : 'bg-transparent text-[#8696a0] cursor-not-allowed'
-            }`}
-        >
-          {sending ? (
-            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <PaperAirplaneIcon className="w-6 h-6" />
+      {/* Input - Floating Capsule Design */}
+      <div className="bg-white/80 backdrop-blur-md dark:bg-[#1e293b]/90 px-4 py-3 border-t border-slate-200 dark:border-slate-800 relative z-20">
+        <div className="max-w-4xl mx-auto flex items-end gap-2">
+          {showEmojiPicker && (
+            <div className="absolute bottom-20 left-4 z-50 shadow-2xl rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700">
+              <EmojiPicker onEmojiClick={onEmojiClick} width={300} height={400} />
+            </div>
           )}
-        </button>
+
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#0f172a] rounded-full p-1 border border-slate-200 dark:border-slate-700">
+            <button
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              className={`p-2 rounded-full transition-all duration-200 ${showEmojiPicker ? 'text-indigo-500 bg-white shadow-sm' : 'text-slate-500 hover:text-indigo-500 hover:bg-white/50'}`}
+            >
+              <FaceSmileIcon className="w-6 h-6" />
+            </button>
+            <button className="p-2 text-slate-500 hover:text-indigo-500 hover:bg-white/50 rounded-full transition-all duration-200">
+              <PaperClipIcon className="w-6 h-6" />
+            </button>
+          </div>
+
+          <div className="flex-1 bg-slate-100 dark:bg-[#0f172a] rounded-2xl flex items-center px-4 py-2.5 border border-slate-200 dark:border-slate-700 focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-900/30 transition-all shadow-inner">
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Escribe un mensaje..."
+              disabled={sending}
+              className="flex-1 bg-transparent text-[15px] text-slate-800 dark:text-slate-100 placeholder-slate-400 border-none focus:outline-none"
+            />
+          </div>
+
+          <button
+            onClick={handleSendMessage}
+            disabled={!newMessage.trim() || sending}
+            className={`p-3 rounded-full transition-all duration-300 shadow-lg ${newMessage.trim() && !sending
+              ? 'bg-gradient-to-tr from-indigo-500 to-purple-500 text-white hover:shadow-indigo-300 dark:hover:shadow-indigo-900 hover:scale-105 active:scale-95'
+              : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
+              }`}
+          >
+            {sending ? (
+              <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <PaperAirplaneIcon className="w-6 h-6 transform rotate-90" />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Image Viewer Modal */}
@@ -226,12 +225,12 @@ function MessageBubble({
           <img
             src={message.media_url}
             alt="Imagen"
-            className="max-w-full rounded-lg cursor-pointer hover:opacity-90 transition hover:shadow-lg"
+            className="max-w-full rounded-xl cursor-pointer hover:opacity-95 transition hover:shadow-md"
             style={{ maxHeight: '300px', objectFit: 'cover' }}
             onClick={() => onImageClick?.(message.media_url!, message.message_text)}
           />
           {message.message_text && (
-            <p className="text-[14.2px] mt-1 px-1">{message.message_text}</p>
+            <p className="text-[14.5px] mt-2 px-1">{message.message_text}</p>
           )}
         </div>
       );
@@ -315,9 +314,9 @@ function MessageBubble({
     // Si hay texto, mostrarlo
     if (message.message_text) {
       return (
-        <p className={`text-[14.2px] whitespace-pre-wrap break-words px-1 leading-[19px] ${message.from_me
-          ? 'text-[#111b21] dark:text-[#e9edef]'
-          : 'text-[#111b21] dark:text-[#e9edef]'
+        <p className={`text-[15px] whitespace-pre-wrap break-words leading-[22px] ${message.from_me
+          ? 'text-slate-800 dark:text-slate-100'
+          : 'text-slate-800 dark:text-slate-100'
           }`}>
           {message.message_text}
         </p>
@@ -347,22 +346,22 @@ function MessageBubble({
     return (
       <div className="px-1">
         <p className={`text-[14.2px] italic leading-[19px] ${message.from_me
-          ? 'text-[#667781] dark:text-[#8696a0]'
-          : 'text-[#667781] dark:text-[#8696a0]'
+          ? 'text-slate-500 dark:text-slate-400'
+          : 'text-slate-500 dark:text-slate-400'
           }`}>
           {typeLabel}
         </p>
         {fileName && (
           <p className={`text-xs mt-0.5 leading-[16px] ${message.from_me
-            ? 'text-[#667781] dark:text-[#8696a0]'
-            : 'text-[#667781] dark:text-[#8696a0]'
+            ? 'text-slate-500 dark:text-slate-400'
+            : 'text-slate-500 dark:text-slate-400'
             }`}>
             {fileName}
           </p>
         )}
         <p className={`text-xs mt-1 opacity-60 leading-[16px] ${message.from_me
-          ? 'text-[#667781] dark:text-[#8696a0]'
-          : 'text-[#667781] dark:text-[#8696a0]'
+          ? 'text-slate-500 dark:text-slate-400'
+          : 'text-slate-500 dark:text-slate-400'
           }`}>
           (Mensaje antiguo sin media)
         </p>
@@ -371,48 +370,36 @@ function MessageBubble({
   };
 
   return (
-    <div className={`flex ${message.from_me ? 'justify-end' : 'justify-start'} mb-2 group`}>
+    <div className={`flex ${message.from_me ? 'justify-end' : 'justify-start'} mb-4 group px-2`}>
       <div
-        className={`max-w-[65%] rounded-lg px-2 py-1.5 shadow-sm relative ${message.from_me
-          ? 'bg-[#d9fdd3] dark:bg-[#005c4b] rounded-tr-none'
-          : 'bg-white dark:bg-[#202c33] rounded-tl-none'
+        className={`max-w-[70%] rounded-2xl px-4 py-3 shadow-sm relative transition-all duration-200 ${message.from_me
+          ? 'bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/40 dark:to-purple-900/40 border border-indigo-100 dark:border-indigo-800 rounded-tr-sm'
+          : 'bg-white dark:bg-[#1e293b] border border-slate-100 dark:border-slate-800 rounded-tl-sm'
           }`}
-        style={{
-          borderRadius: message.from_me
-            ? '7.5px 7.5px 0px 7.5px'
-            : '7.5px 7.5px 7.5px 0px'
-        }}
       >
-        {/* Tail for bubbles */}
-        <span className={`absolute top-0 ${message.from_me ? '-right-2 text-[#d9fdd3] dark:text-[#005c4b]' : '-left-2 text-white dark:text-[#202c33]'}`}>
-          <svg viewBox="0 0 8 13" width="8" height="13" className="fill-current">
-            <path d={message.from_me ? "M5.188 1H0v11.193l6.467-8.625C7.526 2.156 6.958 1 5.188 1z" : "M-2.188 1H3v11.193l-6.467-8.625C-4.526 2.156 -3.958 1 -2.188 1z"} transform={message.from_me ? "" : "scale(-1, 1) translate(-8, 0)"} />
-          </svg>
-        </span>
-
         {!message.from_me && message.sender_name && (
-          <p className="text-xs font-semibold text-[#e542a3] dark:text-[#e542a3] mb-0.5 px-1">
+          <p className="text-xs font-bold text-indigo-500 mb-1">
             {message.sender_name}
           </p>
         )}
 
         {renderMessageContent()}
 
-        <div className="flex items-center justify-end gap-1 mt-0.5 px-1 select-none">
-          <span className={`text-[11px] ${message.from_me
-            ? 'text-[#667781] dark:text-[#8696a0]'
-            : 'text-[#667781] dark:text-[#8696a0]'
+        <div className="flex items-center justify-end gap-1 mt-1 select-none">
+          <span className={`text-[10px] font-medium ${message.from_me
+            ? 'text-indigo-400/80'
+            : 'text-slate-400'
             }`}>
             {formatTime(message.timestamp)}
           </span>
           {message.from_me && (
             <span className="ml-1">
               {message.is_read ? (
-                <svg viewBox="0 0 16 15" width="16" height="15" className="inline text-[#53bdeb]">
+                <svg viewBox="0 0 16 15" width="14" height="13" className="inline text-indigo-500">
                   <path fill="currentColor" d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L8.666 9.879a.32.32 0 0 1-.484.033l-.358-.325a.319.319 0 0 0-.484.032l-.378.483a.418.418 0 0 0 .036.541l1.32 1.266c.143.14.361.125.484-.033l6.272-8.048a.366.366 0 0 0-.064-.512zm-4.1 0l-.478-.372a.365.365 0 0 0-.51.063L4.566 9.879a.32.32 0 0 1-.484.033L1.891 7.769a.366.366 0 0 0-.515.006l-.423.433a.364.364 0 0 0 .006.514l3.258 3.185c.143.14.361.125.484-.033l6.272-8.048a.365.365 0 0 0-.063-.51z" />
                 </svg>
               ) : (
-                <svg viewBox="0 0 16 15" width="16" height="15" className="inline text-[#8696a0]">
+                <svg viewBox="0 0 16 15" width="14" height="13" className="inline text-slate-400">
                   <path fill="currentColor" d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L8.666 9.879a.32.32 0 0 1-.484.033l-.358-.325a.319.319 0 0 0-.484.032l-.378.483a.418.418 0 0 0 .036.541l1.32 1.266c.143.14.361.125.484-.033l6.272-8.048a.366.366 0 0 0-.064-.512z" />
                 </svg>
               )}
