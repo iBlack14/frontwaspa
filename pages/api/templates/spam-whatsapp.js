@@ -482,12 +482,11 @@ async function processSpamInBackground({
 
     // Continuar con el siguiente
   }
-}
 
-// ✅ Marcar como completado
-console.log(`[SPAM ${spamId}] ✅ Proceso completado`);
-completeSpam(spamId);
-  } catch (error) {
+  // ✅ Marcar como completado
+  console.log(`[SPAM ${spamId}] ✅ Proceso completado`);
+  completeSpam(spamId);
+} catch (error) {
   console.error(`[SPAM ${spamId}] ❌ Error fatal en el proceso:`, error);
   // Marcar como completado con errores
   completeSpam(spamId);
