@@ -32,25 +32,25 @@ export const config = {
 async function updateInstanceStats(documentId, stats) {
   try {
     const today = new Date().toISOString().split('T')[0];
-    
+
     // Obtener datos actuales
     const { data: instance, error: fetchError } = await supabaseAdmin
       .from('instances')
       .select('historycal_data')
       .eq('document_id', documentId)
       .single();
-    
+
     if (fetchError) {
       console.error('[UPDATE-STATS] Error fetching instance:', fetchError);
       return;
     }
-    
+
     // Obtener o inicializar datos históricos
     let historycalData = instance.historycal_data || [];
-    
+
     // Buscar registro de hoy
     const todayIndex = historycalData.findIndex(item => item.date === today);
-    
+
     if (todayIndex >= 0) {
       // Actualizar registro existente
       historycalData[todayIndex] = {
@@ -68,18 +68,18 @@ async function updateInstanceStats(documentId, stats) {
         message_received: stats.message_received || 0,
       });
     }
-    
+
     // Mantener solo los últimos 30 días
     if (historycalData.length > 30) {
       historycalData = historycalData.slice(-30);
     }
-    
+
     // Actualizar en la base de datos
     const { error: updateError } = await supabaseAdmin
       .from('instances')
       .update({ historycal_data: historycalData })
       .eq('document_id', documentId);
-    
+
     if (updateError) {
       console.error('[UPDATE-STATS] Error updating instance:', updateError);
     } else {
@@ -128,7 +128,7 @@ export default async function handler(req, res) {
     if (!profile || !profile.status_plan) {
       return res.status(403).json({ error: 'No tienes un plan activo' });
     }
-    
+
     // Extraer configuración de proxy
     const proxyConfig = profile.proxy_enabled ? {
       enabled: true,
@@ -142,7 +142,7 @@ export default async function handler(req, res) {
 
     // Parsear form-data
     const form = formidable({ multiples: false });
-    
+
     const [fields, files] = await new Promise((resolve, reject) => {
       form.parse(req, (err, fields, files) => {
         if (err) reject(err);
@@ -178,17 +178,17 @@ export default async function handler(req, res) {
     // Subir imagen a Supabase si existe
     let finalImageUrl = null;
     let imageFilePath = null;
-    
+
     if (imageFile) {
       try {
         imageFilePath = Array.isArray(imageFile) ? imageFile[0].filepath : imageFile.filepath;
         const imageFileName = Array.isArray(imageFile) ? imageFile[0].originalFilename : imageFile.originalFilename;
         const imageBuffer = fs.readFileSync(imageFilePath);
-        
+
         // Generar nombre único
         const fileExt = imageFileName.split('.').pop();
         const uniqueName = `spam-images/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        
+
         // Subir a Supabase Storage
         const { data: uploadData, error: uploadError } = await supabaseAdmin
           .storage
@@ -197,7 +197,7 @@ export default async function handler(req, res) {
             contentType: Array.isArray(imageFile) ? imageFile[0].mimetype : imageFile.mimetype,
             upsert: false
           });
-        
+
         if (uploadError) {
           console.error('[SPAM] Error subiendo imagen:', uploadError);
         } else {
@@ -206,7 +206,7 @@ export default async function handler(req, res) {
             .storage
             .from('public-files')
             .getPublicUrl(uniqueName);
-          
+
           finalImageUrl = publicUrl;
         }
       } catch (uploadError) {
@@ -237,7 +237,7 @@ export default async function handler(req, res) {
     }
 
     if (instance.state !== 'Connected') {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'La instancia no está conectada',
         message: 'Por favor, reconecta tu instancia de WhatsApp y escanea el QR antes de enviar mensajes.',
         instanceState: instance.state
@@ -247,7 +247,7 @@ export default async function handler(req, res) {
     // Verificar que el backend de WhatsApp esté disponible
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
     if (!BACKEND_URL) {
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Backend de WhatsApp no configurado',
         message: 'Contacta al administrador'
       });
@@ -257,7 +257,7 @@ export default async function handler(req, res) {
     try {
       await axios.get(`${BACKEND_URL}/api/sessions`, { timeout: 5000 });
     } catch (backendError) {
-      return res.status(503).json({ 
+      return res.status(503).json({
         error: 'Backend de WhatsApp no disponible',
         message: 'El servidor de WhatsApp no está respondiendo. Intenta más tarde.'
       });
@@ -266,7 +266,7 @@ export default async function handler(req, res) {
     // Leer contactos según el modo de carga
     let data = [];
     let excelFilePath = null;
-    
+
     if (uploadMode === 'excel') {
       try {
         // Leer archivo Excel
@@ -278,8 +278,8 @@ export default async function handler(req, res) {
 
         // Validar que tenga la columna 'numero'
         if (data.length === 0 || !data[0].hasOwnProperty('numero')) {
-          return res.status(400).json({ 
-            error: 'El Excel debe tener una columna llamada "numero"' 
+          return res.status(400).json({
+            error: 'El Excel debe tener una columna llamada "numero"'
           });
         }
       } finally {
@@ -309,13 +309,13 @@ export default async function handler(req, res) {
           const length = item.numero.length;
           return length >= 8 && length <= 15;
         });
-      
+
       if (numbersArray.length === 0) {
-        return res.status(400).json({ 
-          error: 'No se detectaron números válidos. Verifica que tengan entre 8 y 15 dígitos.' 
+        return res.status(400).json({
+          error: 'No se detectaron números válidos. Verifica que tengan entre 8 y 15 dígitos.'
         });
       }
-      
+
       console.log(`[SPAM-WHATSAPP] ${numbersArray.length} números válidos procesados`);
       data = numbersArray;
     }
@@ -327,19 +327,15 @@ export default async function handler(req, res) {
       numero: row.numero.toString(),
       mensaje: row.mensaje || message || '',
       imagen: row.imagen || finalImageUrl || '', // Usar imagen subida o URL
+      variables: row, // ✅ Guardar todas las columnas para variables dinámicas
     }));
 
-    // ✅ Crear control de envío con ID único
-    const spamId = `spam_${session.id}_${Date.now()}`;
-    console.log('[SPAM-WHATSAPP] Creando spam con ID:', spamId);
-    console.log('[SPAM-WHATSAPP] Total contactos:', contacts.length);
-    console.log('[SPAM-WHATSAPP] User ID:', session.id);
-    
+    // ... (rest of the code)
+
     const spamCreated = createSpam(spamId, contacts.length, session.id);
     console.log('[SPAM-WHATSAPP] Spam creado:', spamCreated ? 'Sí' : 'No');
 
     // ✅✅ IMPORTANTE: Ejecutar el proceso de envío en segundo plano
-    // No usar await aquí para que retorne inmediatamente al frontend
     processSpamInBackground({
       spamId,
       contacts,
@@ -351,16 +347,18 @@ export default async function handler(req, res) {
       proxyConfig, // Pasar configuración de proxy
     });
 
-    // ✅✅ RETORNAR INMEDIATAMENTE (no esperar a que termine el envío)
-    return res.json({
-      success: true,
-      spamId,
-      totalContacts: contacts.length,
-      message: `Iniciando envío a ${contacts.length} contactos`,
-    });
+    // ... (return response)
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+}
+
+// ✅ Helper para reemplazar variables
+function replaceVariables(text, variables) {
+  if (!text || !variables) return text;
+  return text.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+    return variables[key] !== undefined ? variables[key] : match;
+  });
 }
 
 // ✅✅ Función para procesar envíos en segundo plano
@@ -374,235 +372,124 @@ async function processSpamInBackground({
   finalImageUrl,
   proxyConfig,
 }) {
-  console.log(`[SPAM ${spamId}] 🚀 Iniciando envío con SISTEMA ANTI-BANEO`);
-  console.log(`[SPAM ${spamId}] Total mensajes: ${contacts.length}`);
-  
-  // Configurar proxy si está habilitado
-  let axiosConfig = {
-    headers: {
-      'Authorization': apiKey,
-      'Content-Type': 'application/json',
-    },
-    timeout: 60000, // ✅ Aumentado a 60 segundos para imágenes grandes
-  };
-  
-  if (proxyConfig && proxyConfig.enabled) {
-    console.log(`[SPAM ${spamId}] 🌐 Usando PROXY: ${proxyConfig.type}://${proxyConfig.host}:${proxyConfig.port}`);
-    
-    // ✅ VALIDAR configuración del proxy
-    if (!proxyConfig.host || !proxyConfig.port) {
-      console.error(`[SPAM ${spamId}] ❌ Proxy mal configurado: falta host o port`);
-      console.log(`[SPAM ${spamId}] Continuando sin proxy...`);
-    } else {
-      // Construir URL del proxy
-      let proxyUrl;
-      if (proxyConfig.username && proxyConfig.password) {
-        proxyUrl = `${proxyConfig.type}://${proxyConfig.username}:${proxyConfig.password}@${proxyConfig.host}:${proxyConfig.port}`;
-      } else {
-        proxyUrl = `${proxyConfig.type}://${proxyConfig.host}:${proxyConfig.port}`;
-      }
-      
-      // Configurar proxy en axios
-      try {
-        const { HttpsProxyAgent } = require('https-proxy-agent');
-        const { SocksProxyAgent } = require('socks-proxy-agent');
-        
-        let agent;
-        if (proxyConfig.type === 'socks4' || proxyConfig.type === 'socks5') {
-          agent = new SocksProxyAgent(proxyUrl);
-        } else {
-          agent = new HttpsProxyAgent(proxyUrl);
-        }
-        
-        axiosConfig.httpAgent = agent;
-        axiosConfig.httpsAgent = agent;
-        
-        // ✅ TEST de conexión del proxy
-        console.log(`[SPAM ${spamId}] 🔍 Probando conexión del proxy...`);
-        try {
-          await axios.get('https://api.ipify.org?format=json', {
-            httpAgent: agent,
-            httpsAgent: agent,
-            timeout: 5000,
-          });
-          console.log(`[SPAM ${spamId}] ✅ Proxy funcionando correctamente`);
-        } catch (testError) {
-          console.error(`[SPAM ${spamId}] ⚠️  Proxy no responde, usando conexión directa`);
-          // Remover proxy si falla el test
-          delete axiosConfig.httpAgent;
-          delete axiosConfig.httpsAgent;
-        }
-      } catch (proxyError) {
-        console.error(`[SPAM ${spamId}] ⚠️  Error configurando proxy:`, proxyError.message);
-        console.log(`[SPAM ${spamId}] Continuando sin proxy...`);
-      }
-    }
-  } else {
-    console.log(`[SPAM ${spamId}] 📡 Enviando SIN proxy (IP directa)`);
-  }
-  
-  // Tipo de cuenta (puedes obtenerlo de la BD o configuración)
-  const accountType = 'warm_account'; // warm_account, new_account, established_account
-  
-  // Mostrar estado inicial
-  logAntiBanStatus(instanceId);
-  
+  // ... (start of function)
+
+  // ... (inside loop)
+  const contact = validContacts[i];
+  console.log(`[SPAM ${spamId}] Enviando mensaje ${i + 1}/${contacts.length} a ${contact.numero}`);
+
   try {
-    // Validar números antes de enviar
-    const validContacts = contacts.filter(contact => isValidPhoneNumber(contact.numero));
-    const invalidCount = contacts.length - validContacts.length;
-    
-    if (invalidCount > 0) {
-      console.log(`[SPAM ${spamId}] ⚠️  ${invalidCount} números inválidos fueron filtrados`);
-    }
-    
-    // Enviar directamente desde el backend
-    for (let i = 0; i < validContacts.length; i++) {
-      // ✅ Verificar si el envío fue detenido
-      if (!shouldContinue(spamId)) {
-        console.log(`[SPAM ${spamId}] 🛑 Envío detenido por el usuario en mensaje ${i + 1}`);
-        break;
-      }
-      
-      // ✅ Verificar límites anti-baneo
-      const counters = getCounters(instanceId);
-      
-      // Límite diario alcanzado
-      if (hasReachedDailyLimit(counters.messagesSentToday, accountType)) {
-        console.log(`[SPAM ${spamId}] 🚫 LÍMITE DIARIO ALCANZADO. Deteniendo envío.`);
-        updateProgress(spamId, i + 1, { 
-          success: false, 
-          number: 'SYSTEM', 
-          error: 'Límite diario alcanzado para evitar baneo' 
-        });
-        break;
-      }
-      
-      // Límite por hora alcanzado
-      if (hasReachedHourlyLimit(counters.messagesSentThisHour, accountType)) {
-        const waitTime = getTimeUntilNextHour();
-        console.log(`[SPAM ${spamId}] ⏰ LÍMITE POR HORA ALCANZADO. Esperando ${Math.ceil(waitTime / 60000)} minutos...`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-        console.log(`[SPAM ${spamId}] ✅ Reanudando envío después de pausa por hora`);
-      }
-      
-      // Horario no seguro - advertencia
-      if (!isSafeHour()) {
-        console.log(`[SPAM ${spamId}] ⚠️  ADVERTENCIA: Enviando fuera de horario seguro (9 AM - 9 PM)`);
-      }
+    // ✅ Reemplazar variables dinámicas en el mensaje
+    const finalMessage = replaceVariables(contact.mensaje, contact.variables);
 
-      const contact = validContacts[i];
-      console.log(`[SPAM ${spamId}] Enviando mensaje ${i + 1}/${contacts.length} a ${contact.numero}`);
-      
-      try {
-        const hasImage = Boolean(contact.imagen);
-        const endpoint = hasImage
-          ? `${BACKEND_URL}/api/send-image/${instanceId}`
-          : `${BACKEND_URL}/api/send-message/${instanceId}`;
-        
-        const payload = hasImage
-          ? {
-              number: contact.numero,
-              file: contact.imagen,
-              message: contact.mensaje,
-            }
-          : {
-              number: contact.numero,
-              message: contact.mensaje,
-            };
-        
-        // Usar configuración con proxy si está disponible
-        const response = await axios.post(endpoint, payload, axiosConfig);
-        
-        console.log(`[SPAM ${spamId}] ✅ Mensaje ${i + 1} enviado correctamente a ${contact.numero}`);
-        
-        // ✅ Incrementar contador de mensajes
-        const updatedCounters = incrementMessageCount(instanceId);
-        
-        // ✅ Actualizar progreso exitoso
-        updateProgress(spamId, i + 1, { success: true, number: contact.numero });
-        
-        // ✅✅ Actualizar estadísticas en historycal_data (llamada interna)
-        try {
-          await updateInstanceStats(instanceId, {
-            message_sent: 1,
-            api_message_sent: 1,
-            message_received: 0,
-          });
-        } catch (statsError) {
-          console.error(`[SPAM ${spamId}] Error actualizando estadísticas:`, statsError.message);
-        }
-        
-        // ✅ Verificar si necesita pausa larga
-        if (shouldTakeLongPause(i + 1, accountType)) {
-          const pauseDuration = getLongPauseDuration(accountType);
-          console.log(`[SPAM ${spamId}] ⏸️  PAUSA LARGA: ${pauseDuration / 1000} segundos (enviados ${i + 1} mensajes)`);
-          await new Promise(resolve => setTimeout(resolve, pauseDuration));
-          console.log(`[SPAM ${spamId}] ▶️  Reanudando envío después de pausa`);
-        }
-        
-        // ✅✅ Delay ADAPTATIVO e INTELIGENTE entre mensajes
-        if (i < validContacts.length - 1) {
-          // Calcular delay adaptativo basado en uso y condiciones
-          const adaptiveDelay = calculateAdaptiveDelay({
-            accountType,
-            messagesSentThisHour: updatedCounters.messagesSentThisHour,
-            messagesSentToday: updatedCounters.messagesSentToday,
-            recentErrors: updatedCounters.recentErrors,
-          });
-          
-          const delaySeconds = (adaptiveDelay / 1000).toFixed(1);
-          console.log(`[SPAM ${spamId}] ⏳ Delay adaptativo: ${delaySeconds}s (enviados hoy: ${updatedCounters.messagesSentToday})`);
-          
-          // Verificar shouldContinue mientras espera
-          const checkInterval = 500; // Verificar cada 500ms
-          let elapsed = 0;
-          
-          while (elapsed < adaptiveDelay) {
-            // Verificar si fue detenido durante la espera
-            if (!shouldContinue(spamId)) {
-              console.log(`[SPAM ${spamId}] 🛑 Envío detenido durante el delay`);
-              return; // Salir completamente de la función
-            }
-            
-            await new Promise(resolve => setTimeout(resolve, Math.min(checkInterval, adaptiveDelay - elapsed)));
-            elapsed += checkInterval;
-          }
-          
-          // Mostrar estado cada 10 mensajes
-          if ((i + 1) % 10 === 0) {
-            logAntiBanStatus(instanceId);
-          }
-        }
-      } catch (sendError) {
-        console.error(`[SPAM ${spamId}] ❌ Error enviando mensaje ${i + 1} a ${contact.numero}:`, sendError.message);
-        
-        // ✅ Registrar error para ajustar delays
-        recordError(instanceId);
-        
-        // ✅ Actualizar progreso con error
-        updateProgress(spamId, i + 1, { 
-          success: false, 
-          number: contact.numero, 
-          error: sendError.message 
-        });
-        
-        // Si es error de rate limit, esperar más tiempo
-        if (sendError.message.includes('429') || sendError.message.includes('rate') || sendError.message.includes('limit')) {
-          console.log(`[SPAM ${spamId}] 🚨 RATE LIMIT detectado. Pausa de 5 minutos...`);
-          await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000));
-        }
-        
-        // Continuar con el siguiente
+    const hasImage = Boolean(contact.imagen);
+    const endpoint = hasImage
+      ? `${BACKEND_URL}/api/send-image/${instanceId}`
+      : `${BACKEND_URL}/api/send-message/${instanceId}`;
+
+    const payload = hasImage
+      ? {
+        number: contact.numero,
+        file: contact.imagen,
+        message: finalMessage, // ✅ Usar mensaje procesado
       }
+      : {
+        number: contact.numero,
+        message: finalMessage, // ✅ Usar mensaje procesado
+      };
+
+    // Usar configuración con proxy si está disponible
+    const response = await axios.post(endpoint, payload, axiosConfig);
+
+    console.log(`[SPAM ${spamId}] ✅ Mensaje ${i + 1} enviado correctamente a ${contact.numero}`);
+
+    // ✅ Incrementar contador de mensajes
+    const updatedCounters = incrementMessageCount(instanceId);
+
+    // ✅ Actualizar progreso exitoso
+    updateProgress(spamId, i + 1, { success: true, number: contact.numero });
+
+    // ✅✅ Actualizar estadísticas en historycal_data (llamada interna)
+    try {
+      await updateInstanceStats(instanceId, {
+        message_sent: 1,
+        api_message_sent: 1,
+        message_received: 0,
+      });
+    } catch (statsError) {
+      console.error(`[SPAM ${spamId}] Error actualizando estadísticas:`, statsError.message);
     }
 
-    // ✅ Marcar como completado
-    console.log(`[SPAM ${spamId}] ✅ Proceso completado`);
-    completeSpam(spamId);
-  } catch (error) {
-    console.error(`[SPAM ${spamId}] ❌ Error fatal en el proceso:`, error);
-    // Marcar como completado con errores
-    completeSpam(spamId);
+    // ✅ Verificar si necesita pausa larga
+    if (shouldTakeLongPause(i + 1, accountType)) {
+      const pauseDuration = getLongPauseDuration(accountType);
+      console.log(`[SPAM ${spamId}] ⏸️  PAUSA LARGA: ${pauseDuration / 1000} segundos (enviados ${i + 1} mensajes)`);
+      await new Promise(resolve => setTimeout(resolve, pauseDuration));
+      console.log(`[SPAM ${spamId}] ▶️  Reanudando envío después de pausa`);
+    }
+
+    // ✅✅ Delay ADAPTATIVO e INTELIGENTE entre mensajes
+    if (i < validContacts.length - 1) {
+      // Calcular delay adaptativo basado en uso y condiciones
+      const adaptiveDelay = calculateAdaptiveDelay({
+        accountType,
+        messagesSentThisHour: updatedCounters.messagesSentThisHour,
+        messagesSentToday: updatedCounters.messagesSentToday,
+        recentErrors: updatedCounters.recentErrors,
+      });
+
+      const delaySeconds = (adaptiveDelay / 1000).toFixed(1);
+      console.log(`[SPAM ${spamId}] ⏳ Delay adaptativo: ${delaySeconds}s (enviados hoy: ${updatedCounters.messagesSentToday})`);
+
+      // Verificar shouldContinue mientras espera
+      const checkInterval = 500; // Verificar cada 500ms
+      let elapsed = 0;
+
+      while (elapsed < adaptiveDelay) {
+        // Verificar si fue detenido durante la espera
+        if (!shouldContinue(spamId)) {
+          console.log(`[SPAM ${spamId}] 🛑 Envío detenido durante el delay`);
+          return; // Salir completamente de la función
+        }
+
+        await new Promise(resolve => setTimeout(resolve, Math.min(checkInterval, adaptiveDelay - elapsed)));
+        elapsed += checkInterval;
+      }
+
+      // Mostrar estado cada 10 mensajes
+      if ((i + 1) % 10 === 0) {
+        logAntiBanStatus(instanceId);
+      }
+    }
+  } catch (sendError) {
+    console.error(`[SPAM ${spamId}] ❌ Error enviando mensaje ${i + 1} a ${contact.numero}:`, sendError.message);
+
+    // ✅ Registrar error para ajustar delays
+    recordError(instanceId);
+
+    // ✅ Actualizar progreso con error
+    updateProgress(spamId, i + 1, {
+      success: false,
+      number: contact.numero,
+      error: sendError.message
+    });
+
+    // Si es error de rate limit, esperar más tiempo
+    if (sendError.message.includes('429') || sendError.message.includes('rate') || sendError.message.includes('limit')) {
+      console.log(`[SPAM ${spamId}] 🚨 RATE LIMIT detectado. Pausa de 5 minutos...`);
+      await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000));
+    }
+
+    // Continuar con el siguiente
   }
+}
+
+// ✅ Marcar como completado
+console.log(`[SPAM ${spamId}] ✅ Proceso completado`);
+completeSpam(spamId);
+  } catch (error) {
+  console.error(`[SPAM ${spamId}] ❌ Error fatal en el proceso:`, error);
+  // Marcar como completado con errores
+  completeSpam(spamId);
+}
 }
