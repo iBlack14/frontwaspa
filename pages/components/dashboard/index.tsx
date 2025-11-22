@@ -22,222 +22,235 @@ import {
   ChevronRightIcon,
   ArrowLeftOnRectangleIcon,
   RectangleStackIcon,
+  Bars3Icon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 
 function SidebarLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  // ✅ Una sola llamada a useSession
   const { data: session, status } = useSession();
   const email = session?.user?.email;
   const username = session?.username;
   const photourl = session?.user?.image;
 
   const [hasMounted, setHasMounted] = useState(false);
-  const isMobileInitial = typeof window !== 'undefined' && window.innerWidth < 768;
-  const [isMobile, setIsMobile] = useState(isMobileInitial);
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    if (typeof window === 'undefined') {
-      return isMobileInitial;
-    }
-    const savedState = localStorage.getItem('sidebarCollapsed');
-    return savedState !== null ? JSON.parse(savedState) : isMobileInitial;
-  });
+  const [isMobile, setIsMobile] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setHasMounted(true);
-    const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setIsMobileMenuOpen(false);
+        // Recuperar estado colapsado en desktop
+        const savedState = localStorage.getItem('sidebarCollapsed');
+        setIsCollapsed(savedState ? JSON.parse(savedState) : false);
+      } else {
+        setIsCollapsed(false); // En móvil no colapsamos, usamos drawer
+      }
     };
-    checkIfMobile();
-    window.addEventListener('resize', checkIfMobile);
-    return () => window.removeEventListener('resize', checkIfMobile);
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  useEffect(() => {
-    const savedState = localStorage.getItem('sidebarCollapsed');
-    if (savedState !== null) {
-      setIsCollapsed(JSON.parse(savedState));
-    } else {
-      setIsCollapsed(isMobile);
-    }
-  }, [isMobile]);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('sidebarCollapsed', JSON.stringify(isCollapsed));
-    }
-  }, [isCollapsed]);
+  const toggleCollapse = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    localStorage.setItem('sidebarCollapsed', JSON.stringify(newState));
+  };
 
   const handleLogout = async () => {
     try {
-      // Sign out from next-auth
       await signOut({ redirect: false });
-
-      // Clear any local storage/session data if needed
       if (typeof window !== 'undefined') {
         localStorage.removeItem('sidebarCollapsed');
       }
-
-      // Force redirect to home page
       window.location.href = '/';
     } catch (error) {
       console.error('Error during logout:', error);
-      // Fallback to window.location if router fails
       window.location.href = '/';
     }
-  };
-
-  const menuItems = [
-    { name: 'Home', icon: <HomeIcon className="w-6 h-6" />, path: '/home', action: () => handleNavigation('/home') },
-    { name: 'Instances', icon: <ServerIcon className="w-6 h-6" />, path: '/instances', action: () => handleNavigation('/instances') },
-    { name: 'Messages', icon: <ChatBubbleLeftRightIcon className="w-6 h-6" />, path: '/messages', action: () => handleNavigation('/messages') },
-    { name: 'Profile', icon: <UserIcon className="w-6 h-6" />, path: '/profile', action: () => handleNavigation('/profile') },
-    { name: 'Templates', icon: <RectangleStackIcon className="w-6 h-6" />, path: '/templates', action: () => handleNavigation('/templates') },
-    { name: 'Subscription', icon: <InboxIcon className="w-6 h-6" />, path: '/subscription', action: () => handleNavigation('/subscription') },
-    { name: 'Documentations', icon: <DocumentTextIcon className="w-6 h-6" />, path: '/docs', action: () => handleNavigation('/docs') },
-    { name: 'Suite', icon: <BriefcaseIcon className="w-6 h-6" />, path: '/suite', action: () => handleNavigation('/suite') },
-    { name: 'Logout', icon: <ArrowLeftOnRectangleIcon className="w-6 h-6" />, path: '/login', action: handleLogout },
-  ];
-
-
-  const toggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
   };
 
   const handleNavigation = (path: string) => {
     router.push(path);
+    if (isMobile) setIsMobileMenuOpen(false);
   };
 
-  if (!hasMounted) {
-    return null;
-  }
+  const menuItems = [
+    { name: 'Home', icon: <HomeIcon className="w-6 h-6" strokeWidth={1.5} />, path: '/home', action: () => handleNavigation('/home') },
+    { name: 'Instances', icon: <ServerIcon className="w-6 h-6" strokeWidth={1.5} />, path: '/instances', action: () => handleNavigation('/instances') },
+    { name: 'Messages', icon: <ChatBubbleLeftRightIcon className="w-6 h-6" strokeWidth={1.5} />, path: '/messages', action: () => handleNavigation('/messages') },
+    { name: 'Profile', icon: <UserIcon className="w-6 h-6" strokeWidth={1.5} />, path: '/profile', action: () => handleNavigation('/profile') },
+    { name: 'Templates', icon: <RectangleStackIcon className="w-6 h-6" strokeWidth={1.5} />, path: '/templates', action: () => handleNavigation('/templates') },
+    { name: 'Subscription', icon: <InboxIcon className="w-6 h-6" strokeWidth={1.5} />, path: '/subscription', action: () => handleNavigation('/subscription') },
+    { name: 'Documentations', icon: <DocumentTextIcon className="w-6 h-6" strokeWidth={1.5} />, path: '/docs', action: () => handleNavigation('/docs') },
+    { name: 'Suite', icon: <BriefcaseIcon className="w-6 h-6" strokeWidth={1.5} />, path: '/suite', action: () => handleNavigation('/suite') },
+    { name: 'Logout', icon: <ArrowLeftOnRectangleIcon className="w-6 h-6" strokeWidth={1.5} />, path: '/login', action: handleLogout },
+  ];
+
+  if (!hasMounted) return null;
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <div
-        className={`bg-white dark:bg-zinc-900 text-gray-900 dark:text-white h-full border-r border-gray-200 dark:border-zinc-800 ${isCollapsed ? 'w-20' : 'w-64'
-          } transition-width duration-300 ease-in-out flex flex-col shadow-lg dark:shadow-xl overflow-y-auto`}
-      >
-        <div className="p-4 flex items-center border-zinc-700">
-          <div className="flex items-center">
-            {isCollapsed ? (
-              <div className="h-10 w-10 rounded-full bg-emerald-600 flex items-center justify-center">
-                <Image
-                  src={wazilrest_logo}
-                  alt="Background Logo"
-                  height={250}
-                  width={250}
-                  quality={100}
-                  priority
-                  className="mx-auto"
-                />
-              </div>
-            ) : (
-              <div className="flex items-center">
-                <Image
-                  src={fondo_transparent}
-                  alt="Background Logo"
-                  height={250}
-                  width={250}
-                  quality={100}
-                  priority
-                  className="mx-auto"
-                />
-              </div>
-            )}
-          </div>
-          <div className="ml-auto flex items-center gap-2">
-            {!isCollapsed && <ThemeToggle />}
-            <button onClick={toggleCollapse} className="px-1 text-zinc-400 hover:text-white transition-colors duration-200">
-              {isCollapsed ? <ChevronRightIcon className="w-5 h-5" /> : <ChevronLeftIcon className="w-5 h-5" />}
+    <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-[#0f172a]">
+      {/* Mobile Header */}
+      {isMobile && (
+        <div className="fixed top-0 left-0 right-0 h-16 bg-white/80 dark:bg-[#1e293b]/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 z-40 flex items-center justify-between px-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+            >
+              <Bars3Icon className="w-6 h-6" strokeWidth={1.5} />
             </button>
+            <span className="font-bold text-lg text-slate-800 dark:text-white">Connect BLXK</span>
           </div>
+          <ThemeToggle />
+        </div>
+      )}
+
+      {/* Sidebar Overlay for Mobile */}
+      {isMobile && isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm transition-opacity"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div
+        className={`
+          ${isMobile ? 'fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-in-out' : 'relative h-full transition-all duration-300 ease-in-out'}
+          ${isMobile ? (isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full') : (isCollapsed ? 'w-20' : 'w-72')}
+          bg-white dark:bg-[#1e293b] border-r border-slate-200 dark:border-slate-800 flex flex-col shadow-xl
+        `}
+      >
+        {/* Sidebar Header */}
+        <div className="h-20 flex items-center justify-between px-6 border-b border-slate-100 dark:border-slate-800/50">
+          {!isCollapsed && (
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                <span className="text-white font-bold text-lg">C</span>
+              </div>
+              <span className="font-bold text-lg text-slate-800 dark:text-white tracking-tight">Connect BLXK</span>
+            </div>
+          )}
+          {isCollapsed && !isMobile && (
+            <div className="mx-auto h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              <span className="text-white font-bold text-lg">C</span>
+            </div>
+          )}
+
+          {isMobile ? (
+            <button onClick={() => setIsMobileMenuOpen(false)} className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+              <XMarkIcon className="w-6 h-6" strokeWidth={1.5} />
+            </button>
+          ) : (
+            !isCollapsed && (
+              <button onClick={toggleCollapse} className="p-1.5 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all">
+                <ChevronLeftIcon className="w-5 h-5" strokeWidth={2} />
+              </button>
+            )
+          )}
         </div>
 
-        <div className="flex-grow py-6 px-3 overflow-y-auto">
+        {/* Collapse Button (Desktop Only - Centered when collapsed) */}
+        {!isMobile && isCollapsed && (
+          <div className="flex justify-center py-4 border-b border-slate-100 dark:border-slate-800/50">
+            <button onClick={toggleCollapse} className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all">
+              <ChevronRightIcon className="w-5 h-5" strokeWidth={2} />
+            </button>
+          </div>
+        )}
+
+        {/* Menu Items */}
+        <div className="flex-1 overflow-y-auto py-6 px-3 space-y-1 custom-scrollbar">
           {menuItems.map((item, index) => {
             const isActive = pathname === item.path;
             return (
               <div
                 key={index}
                 onClick={item.action}
-                className={`relative group flex ${isCollapsed ? 'flex-col items-center justify-center' : 'flex-row items-center'
-                  } ${isCollapsed ? 'mx-2 px-3 py-4' : 'px-4 py-3.5'} mb-2 rounded-xl cursor-pointer transition-all duration-300 ${isActive
-                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30 scale-105'
-                    : 'hover:bg-gray-100 dark:hover:bg-zinc-800/80 text-gray-700 dark:text-gray-300 hover:scale-102'
-                  } ${item.name === 'Logout' ? 'mt-auto hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400' : ''}`}
+                className={`
+                  group flex items-center cursor-pointer transition-all duration-200 rounded-xl
+                  ${isCollapsed && !isMobile ? 'justify-center p-3' : 'px-4 py-3'}
+                  ${isActive
+                    ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/25'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-indigo-600 dark:hover:text-indigo-400'
+                  }
+                  ${item.name === 'Logout' ? 'mt-8 hover:!bg-red-50 dark:hover:!bg-red-900/10 hover:!text-red-600 dark:hover:!text-red-400' : ''}
+                `}
               >
-                <div className={`${isCollapsed ? 'mb-0' : 'mr-4'} flex-shrink-0 ${isActive ? 'text-white' : ''}`}>
-                  {item.name === 'Logout' ? (
-                    <ArrowLeftOnRectangleIcon className={`w-6 h-6 ${isActive ? 'text-white' : 'text-gray-600 dark:text-gray-400'}`} />
-                  ) : (
-                    <div className={isActive ? 'text-white' : ''}>
-                      {item.icon}
-                    </div>
-                  )}
+                <div className={`${isActive ? 'text-white' : ''}`}>
+                  {item.icon}
                 </div>
 
+                {(!isCollapsed || isMobile) && (
+                  <span className="ml-3 font-medium text-[15px]">{item.name}</span>
+                )}
+
+                {/* Tooltip for Collapsed State */}
                 {isCollapsed && !isMobile && (
-                  <div
-                    className={`absolute left-full ml-3 top-1/2 transform -translate-y-1/2 hidden group-hover:block ${item.name === 'Logout' ? 'bg-red-600' : 'bg-emerald-600'
-                      } text-white text-sm px-4 py-2 rounded-lg shadow-xl z-50 whitespace-nowrap`}
-                  >
+                  <div className="absolute left-16 ml-2 px-3 py-1.5 bg-slate-800 text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 whitespace-nowrap shadow-xl">
                     {item.name}
-                    <div className={`absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent ${item.name === 'Logout' ? 'border-r-red-600' : 'border-r-emerald-600'
-                      }`}></div>
                   </div>
-                )}
-
-                {!isCollapsed && (
-                  <div className="flex items-center flex-1">
-                    <span className={`text-base font-medium ${isActive ? 'text-white' : ''}`}>{item.name}</span>
-                  </div>
-                )}
-
-                {!isCollapsed && isActive && (
-                  <div className="w-1 h-6 bg-white rounded-full ml-auto"></div>
                 )}
               </div>
             );
           })}
         </div>
 
-        <div
-          className={`p-4 flex items-center ${isCollapsed ? 'justify-center' : ''} border-t border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900/50`}
-        >
-          <div className="h-8 w-8 rounded-full bg-emerald-500 flex items-center justify-center overflow-hidden shadow-md">
-            {photourl ? (
-              <Image
-                src={photourl}
-                alt="User Photo"
-                height={40}
-                width={40}
-                quality={100}
-                className="rounded-full"
-              />
-            ) : (
-              <div className="bg-emerald-600 text-white text-sm font-bold h-full w-full flex items-center justify-center">
-                {email ? email.charAt(0).toUpperCase() : 'N/A'}
+        {/* User Profile */}
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#162032]">
+          <div className={`flex items-center ${isCollapsed && !isMobile ? 'justify-center' : 'gap-3'}`}>
+            <div className="relative">
+              <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-indigo-400 to-purple-400 p-[2px] shadow-sm">
+                {photourl ? (
+                  <Image
+                    src={photourl}
+                    alt="User"
+                    height={40}
+                    width={40}
+                    className="rounded-full bg-white dark:bg-slate-900"
+                  />
+                ) : (
+                  <div className="h-full w-full rounded-full bg-white dark:bg-slate-900 flex items-center justify-center text-indigo-600 font-bold text-sm">
+                    {email ? email.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                )}
+              </div>
+              <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full"></span>
+            </div>
+
+            {(!isCollapsed || isMobile) && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">
+                  {username || 'Usuario'}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                  {email}
+                </p>
               </div>
             )}
+
+            {(!isCollapsed || isMobile) && !isMobile && (
+              <ThemeToggle />
+            )}
           </div>
-          {!isCollapsed && (
-            <div className="ml-3">
-              <div className="text-sm font-medium text-gray-100">{username}</div>
-              <div className="text-xs text-gray-400">{email}</div>
-            </div>
-          )}
         </div>
       </div>
 
-      <div className="flex-1 bg-gray-50 dark:bg-zinc-800 h-full overflow-y-auto">
-        {status === 'loading' && (
-          <div className="fixed inset-0 flex items-center justify-center bg-transparent z-50">
-            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-500"></div>
-          </div>
-        )}
-        {status === 'authenticated' && children}
+      {/* Main Content Area */}
+      <div className={`flex-1 h-full overflow-hidden flex flex-col bg-slate-50 dark:bg-[#0f172a] transition-all duration-300 ${isMobile ? 'pt-16' : ''}`}>
+        <div className="flex-1 overflow-y-auto p-4 md:p-6">
+          {children}
+        </div>
       </div>
     </div>
   );
@@ -246,8 +259,9 @@ function SidebarLayout({ children }: { children: React.ReactNode }) {
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <SidebarLayout>
-      <Breadcrumb />
-      <div className="p-2">{children}</div>
+      {/* Breadcrumb removed from here as it might be better placed inside pages or redesigned */}
+      {/* <Breadcrumb /> */}
+      {children}
     </SidebarLayout>
   );
 }
