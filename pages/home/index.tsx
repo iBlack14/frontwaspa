@@ -5,18 +5,21 @@ import axios from 'axios';
 import { useRouter } from 'next/router';
 import Sidebar from '../components/dashboard/index';
 import { Toaster, toast } from 'sonner';
-import { 
+import {
   ChevronDownIcon,
   ChatBubbleBottomCenterTextIcon,
   PaperAirplaneIcon,
   InboxArrowDownIcon,
   ServerIcon,
   CheckCircleIcon,
-  XCircleIcon
+  XCircleIcon,
+  CpuChipIcon,
+  ClockIcon,
+  BoltIcon
 } from '@heroicons/react/24/outline';
 import type { ChartOptions } from 'chart.js';
 
-// ✅ Lazy load Chart.js - Solo se carga cuando hay datos
+// ✅ Lazy load Chart.js
 const LazyChart = lazy(() => import('@/components/ChartComponent'));
 
 interface CustomSession {
@@ -40,7 +43,7 @@ interface WhatsAppSession {
   }[];
   name?: string;
   profilePicUrl?: string | null;
-  number?: string | null; 
+  number?: string | null;
 }
 
 function DashboardContent() {
@@ -64,25 +67,21 @@ function DashboardContent() {
     } else if (status === 'authenticated') {
       fetchUserSessions();
       fetchCacheStats();
-      // Actualizar estadísticas cada 30 segundos
       const interval = setInterval(fetchCacheStats, 30000);
       return () => clearInterval(interval);
     }
   }, [status, router]);
-  
-  // Función para obtener estadísticas de cache
+
   const fetchCacheStats = async () => {
     try {
       const res = await axios.get('/api/system/cache-stats');
       setCacheStats(res.data.cache);
       setSystemInfo(res.data.system);
     } catch (error) {
-      // Silencioso - no mostrar error si falla
       console.log('Cache stats not available');
     }
   };
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -100,18 +99,16 @@ function DashboardContent() {
 
       const fetchedSessions: WhatsAppSession[] = res.data.instances.map((item: any) => ({
         id: item.id,
-        documentId: item.document_id || item.documentId, // Supabase usa snake_case
+        documentId: item.document_id || item.documentId,
         webhook_url: item.webhook_url || null,
         state: item.state,
         is_active: item.is_active,
         historycal_data: item.historycal_data || [],
-        // ✅ Datos del perfil que ya vienen en la respuesta
         name: item.profile_name || null,
         profilePicUrl: item.profile_pic_url || null,
         number: item.phone_number || null,
       }));
 
-      // 🔄 Inicializar datos históricos si alguna instancia no tiene datos
       const instancesWithoutData = fetchedSessions.filter(
         (instance) => !instance.historycal_data || instance.historycal_data.length === 0
       );
@@ -119,7 +116,6 @@ function DashboardContent() {
       if (instancesWithoutData.length > 0) {
         try {
           await axios.post('/api/instances/initialize-stats', {});
-          // Recargar datos después de inicializar
           const updatedRes = await axios.get('/api/instances');
           const updatedSessions: WhatsAppSession[] = updatedRes.data.instances.map((item: any) => ({
             id: item.id,
@@ -133,15 +129,13 @@ function DashboardContent() {
             number: item.phone_number || null,
           }));
           setInstances(updatedSessions);
-          
-          // Set default selected instance
+
           if (updatedSessions.length > 0) {
             setSelectedInstanceId(updatedSessions[0].documentId);
             setHistoryData(updatedSessions[0].historycal_data || []);
           }
         } catch (initError) {
           console.error('Error initializing stats:', initError);
-          // Si falla la inicialización, usar los datos originales
           setInstances(fetchedSessions);
           if (fetchedSessions.length > 0) {
             setSelectedInstanceId(fetchedSessions[0].documentId);
@@ -171,10 +165,8 @@ function DashboardContent() {
     setIsDropdownOpen(false);
   };
 
-  // Get the selected instance (los datos del perfil ya están en la instancia)
   const selectedInstance = instances.find((instance) => instance.documentId === selectedInstanceId);
 
-  // Calculate total metrics across all instances
   const calculateTotalMetrics = () => {
     let totalSent = 0;
     let totalApiSent = 0;
@@ -202,60 +194,44 @@ function DashboardContent() {
     }),
     datasets: [
       {
-        label: 'Mensajes Enviados',
+        label: 'Enviados',
         data: (historyData || []).map((data) => data.message_sent),
-        borderColor: 'rgb(16, 185, 129)',
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-        borderWidth: 3,
+        borderColor: '#6366f1', // Indigo 500
+        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+        borderWidth: 2,
         tension: 0.4,
         fill: true,
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        pointBackgroundColor: 'rgb(16, 185, 129)',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointHoverBackgroundColor: '#fff',
-        pointHoverBorderColor: 'rgb(16, 185, 129)',
+        pointRadius: 0,
+        pointHoverRadius: 6,
       },
       {
-        label: 'Mensajes API',
+        label: 'API',
         data: (historyData || []).map((data) => data.api_message_sent),
-        borderColor: 'rgb(168, 85, 247)',
+        borderColor: '#a855f7', // Purple 500
         backgroundColor: 'rgba(168, 85, 247, 0.1)',
-        borderWidth: 3,
+        borderWidth: 2,
         tension: 0.4,
         fill: true,
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        pointBackgroundColor: 'rgb(168, 85, 247)',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointHoverBackgroundColor: '#fff',
-        pointHoverBorderColor: 'rgb(168, 85, 247)',
+        pointRadius: 0,
+        pointHoverRadius: 6,
       },
       {
-        label: 'Mensajes Recibidos',
+        label: 'Recibidos',
         data: (historyData || []).map((data) => data.message_received),
-        borderColor: 'rgb(249, 115, 22)',
-        backgroundColor: 'rgba(249, 115, 22, 0.1)',
-        borderWidth: 3,
+        borderColor: '#10b981', // Emerald 500
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        borderWidth: 2,
         tension: 0.4,
         fill: true,
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        pointBackgroundColor: 'rgb(249, 115, 22)',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointHoverBackgroundColor: '#fff',
-        pointHoverBorderColor: 'rgb(249, 115, 22)',
+        pointRadius: 0,
+        pointHoverRadius: 6,
       },
     ],
   };
 
   const chartOptions: ChartOptions<'line'> = {
     responsive: true,
-    maintainAspectRatio: true,
-    aspectRatio: 2.5,
+    maintainAspectRatio: false,
     interaction: {
       mode: 'index',
       intersect: false,
@@ -264,486 +240,271 @@ function DashboardContent() {
       legend: {
         display: false,
       },
-      title: {
-        display: false,
-      },
       tooltip: {
-        enabled: true,
-        backgroundColor: 'rgba(24, 24, 27, 0.95)',
-        titleColor: '#fff',
-        bodyColor: '#a1a1aa',
-        borderColor: 'rgba(63, 63, 70, 0.5)',
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        titleColor: '#1e293b',
+        bodyColor: '#475569',
+        borderColor: '#e2e8f0',
         borderWidth: 1,
-        padding: 12,
-        displayColors: true,
-        boxWidth: 8,
-        boxHeight: 8,
+        padding: 10,
+        boxPadding: 4,
         usePointStyle: true,
-        callbacks: {
-          label: (context: any) => {
-            const datasetLabel = context.dataset.label || '';
-            const value = context.parsed.y;
-            return ` ${datasetLabel}: ${value} mensajes`;
-          },
-        },
-      },
-      datalabels: {
-        display: (context: any) => {
-          const value = context.dataset.data[context.dataIndex];
-          return value > 0;
-        },
-        align: 'top' as const,
-        offset: 8,
-        formatter: (value: number) => value > 0 ? value : '',
-        color: '#fff',
-        font: {
-          weight: 'bold' as const,
-          size: 11,
-        },
-        backgroundColor: 'rgba(24, 24, 27, 0.8)',
-        borderRadius: 4,
-        padding: {
-          top: 4,
-          bottom: 4,
-          left: 6,
-          right: 6,
-        },
+        titleFont: { size: 13, weight: 'bold' },
+        bodyFont: { size: 12 },
       },
     },
     scales: {
       x: {
-        grid: {
-          display: true,
-          color: 'rgba(63, 63, 70, 0.3)',
-        },
-        ticks: {
-          color: '#a1a1aa',
-          font: {
-            size: 11,
-          },
-          padding: 8,
-        },
-        border: {
-          display: false,
-        },
+        grid: { display: false },
+        ticks: { color: '#94a3b8', font: { size: 11 } },
+        border: { display: false },
       },
       y: {
         beginAtZero: true,
-        grid: {
-          display: true,
-          color: 'rgba(63, 63, 70, 0.3)',
-        },
-        ticks: {
-          color: '#a1a1aa',
-          font: {
-            size: 11,
-          },
-          padding: 8,
-          stepSize: 5,
-        },
-        border: {
-          display: false,
-        },
+        grid: { color: '#f1f5f9' },
+        ticks: { color: '#94a3b8', font: { size: 11 }, maxTicksLimit: 5 },
+        border: { display: false },
       },
     },
   };
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 dark:bg-transparent min-h-screen">
+    <div className="p-6 space-y-8 bg-slate-50 dark:bg-transparent min-h-screen">
       <Toaster richColors position="top-right" />
-      
+
       {loading ? (
         <div className="flex items-center justify-center h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-emerald-500 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-zinc-400 text-lg">Cargando instancias...</p>
-          </div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
         </div>
       ) : instances.length === 0 ? (
-        <div className="flex items-center justify-center h-[400px]">
-          <div className="text-center bg-white dark:bg-zinc-800/50 p-12 rounded-2xl border border-gray-200 dark:border-zinc-700 shadow-lg dark:shadow-none">
-            <ServerIcon className="w-20 h-20 mx-auto text-gray-400 dark:text-zinc-600 mb-4" />
-            <p className="text-gray-800 dark:text-zinc-300 text-xl mb-2">No tienes instancias disponibles</p>
-            <p className="text-gray-500 dark:text-zinc-500">Crea una nueva instancia para comenzar</p>
+        <div className="flex flex-col items-center justify-center h-[400px] bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+          <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-full mb-4">
+            <ServerIcon className="w-10 h-10 text-indigo-500" strokeWidth={1.5} />
           </div>
+          <h3 className="text-lg font-semibold text-slate-800 dark:text-white">No hay instancias</h3>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Crea una nueva instancia para comenzar</p>
         </div>
       ) : (
         <>
-          {/* Header with metrics cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Total Instances Card */}
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 rounded-xl p-6 shadow-lg dark:shadow-xl transform transition-transform hover:scale-105">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-blue-50 dark:text-blue-100 text-sm font-medium mb-1">Total Instancias</p>
-                  <p className="text-white text-3xl font-bold">{totalInstances}</p>
-                  <p className="text-blue-100 dark:text-blue-200 text-xs mt-1">{activeInstances} activas</p>
-                </div>
-                <ServerIcon className="w-12 h-12 text-blue-100 dark:text-blue-200 opacity-80" />
-              </div>
+          {/* Header & Instance Selector */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">Dashboard</h1>
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Bienvenido de nuevo, {session?.user?.name || 'Usuario'}</p>
             </div>
 
-            {/* Messages Sent Card */}
-            <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-700 rounded-xl p-6 shadow-lg dark:shadow-xl transform transition-transform hover:scale-105">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-emerald-50 dark:text-emerald-100 text-sm font-medium mb-1">Mensajes Enviados</p>
-                  <p className="text-white text-3xl font-bold">{metrics.totalSent.toLocaleString()}</p>
-                  <p className="text-emerald-100 dark:text-emerald-200 text-xs mt-1">Total acumulado</p>
+            {/* Delicate Instance Dropdown */}
+            <div className="relative z-50" ref={dropdownRef}>
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center gap-3 bg-white dark:bg-[#1e293b] px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all duration-200 min-w-[240px]"
+              >
+                {selectedInstance?.profilePicUrl ? (
+                  <img src={selectedInstance.profilePicUrl} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-xs">
+                    {selectedInstance?.name?.[0] || 'I'}
+                  </div>
+                )}
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate max-w-[120px]">
+                    {selectedInstance?.name || 'Instancia'}
+                  </p>
+                  <p className="text-xs text-slate-400 flex items-center gap-1">
+                    <span className={`w-1.5 h-1.5 rounded-full ${selectedInstance?.state === 'Connected' ? 'bg-emerald-400' : 'bg-red-400'}`}></span>
+                    {selectedInstance?.state}
+                  </p>
                 </div>
-                <PaperAirplaneIcon className="w-12 h-12 text-emerald-100 dark:text-emerald-200 opacity-80" />
-              </div>
-            </div>
+                <ChevronDownIcon className={`w-4 h-4 text-slate-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
 
-            {/* API Messages Card */}
-            <div className="bg-gradient-to-br from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 rounded-xl p-6 shadow-lg dark:shadow-xl transform transition-transform hover:scale-105">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-purple-50 dark:text-purple-100 text-sm font-medium mb-1">Mensajes API</p>
-                  <p className="text-white text-3xl font-bold">{metrics.totalApiSent.toLocaleString()}</p>
-                  <p className="text-purple-100 dark:text-purple-200 text-xs mt-1">Vía API</p>
+              {isDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-[#1e293b] rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden py-2">
+                  {instances.map((inst) => (
+                    <div
+                      key={inst.documentId}
+                      onClick={() => handleInstanceSelect(inst.documentId)}
+                      className={`px-4 py-3 flex items-center gap-3 cursor-pointer transition-colors ${inst.documentId === selectedInstanceId
+                          ? 'bg-indigo-50 dark:bg-indigo-900/20 border-l-2 border-indigo-500'
+                          : 'hover:bg-slate-50 dark:hover:bg-slate-800 border-l-2 border-transparent'
+                        }`}
+                    >
+                      <div className={`w-2 h-2 rounded-full ${inst.state === 'Connected' ? 'bg-emerald-400' : 'bg-red-400'}`}></div>
+                      <span className="text-sm font-medium text-slate-700 dark:text-slate-200 flex-1 truncate">
+                        {inst.name || inst.documentId}
+                      </span>
+                      {inst.documentId === selectedInstanceId && <CheckCircleIcon className="w-4 h-4 text-indigo-500" />}
+                    </div>
+                  ))}
                 </div>
-                <ChatBubbleBottomCenterTextIcon className="w-12 h-12 text-purple-100 dark:text-purple-200 opacity-80" />
-              </div>
-            </div>
-
-            {/* Messages Received Card */}
-            <div className="bg-gradient-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700 rounded-xl p-6 shadow-lg dark:shadow-xl transform transition-transform hover:scale-105">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-orange-50 dark:text-orange-100 text-sm font-medium mb-1">Mensajes Recibidos</p>
-                  <p className="text-white text-3xl font-bold">{metrics.totalReceived.toLocaleString()}</p>
-                  <p className="text-orange-100 dark:text-orange-200 text-xs mt-1">Total recibidos</p>
-                </div>
-                <InboxArrowDownIcon className="w-12 h-12 text-orange-100 dark:text-orange-200 opacity-80" />
-              </div>
+              )}
             </div>
           </div>
 
-          {/* Cache & System Stats - NUEVO */}
-          {cacheStats && (
-            <div className="bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-xl p-6 border border-zinc-700 shadow-xl">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-white text-lg font-bold flex items-center gap-2">
-                  <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
-                  </svg>
-                  Sistema & Cache
-                </h3>
-                <span className="text-zinc-400 text-xs">Actualiza cada 30s</span>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Cache LRU */}
-                <div className="bg-zinc-900/50 rounded-lg p-4 border border-zinc-700">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-zinc-400 text-sm">Cache LRU</span>
-                    <span className={`text-xs px-2 py-1 rounded ${
-                      parseFloat(cacheStats.usage) > 80 ? 'bg-red-900/30 text-red-400' :
-                      parseFloat(cacheStats.usage) > 50 ? 'bg-yellow-900/30 text-yellow-400' :
-                      'bg-green-900/30 text-green-400'
-                    }`}>
-                      {cacheStats.usage}
-                    </span>
-                  </div>
-                  <div className="text-2xl font-bold text-white mb-1">
-                    {cacheStats.size}/{cacheStats.maxSize}
-                  </div>
-                  <div className="w-full bg-zinc-800 rounded-full h-2 mb-2">
-                    <div
-                      className={`h-2 rounded-full transition-all ${
-                        parseFloat(cacheStats.usage) > 80 ? 'bg-red-500' :
-                        parseFloat(cacheStats.usage) > 50 ? 'bg-yellow-500' :
-                        'bg-green-500'
-                      }`}
-                      style={{ width: cacheStats.usage }}
-                    />
-                  </div>
-                  <span className="text-zinc-500 text-xs">spams activos</span>
+          {/* Metrics Grid - Pastel & Delicate */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Total Instances */}
+            <div className="bg-blue-50/50 dark:bg-blue-900/10 p-6 rounded-3xl border border-blue-100 dark:border-blue-800/30 transition-transform hover:-translate-y-1 duration-300">
+              <div className="flex justify-between items-start mb-4">
+                <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-2xl">
+                  <ServerIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" strokeWidth={1.5} />
                 </div>
-
-                {/* Memoria del Sistema */}
-                {systemInfo && (
-                  <div className="bg-zinc-900/50 rounded-lg p-4 border border-zinc-700">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-zinc-400 text-sm">Memoria Heap</span>
-                      <span className="text-xs px-2 py-1 rounded bg-blue-900/30 text-blue-400">
-                        {((systemInfo.memoryUsage.heapUsed / systemInfo.memoryUsage.heapTotal) * 100).toFixed(1)}%
-                      </span>
-                    </div>
-                    <div className="text-2xl font-bold text-white mb-1">
-                      {(systemInfo.memoryUsage.heapUsed / 1024 / 1024).toFixed(0)} MB
-                    </div>
-                    <div className="w-full bg-zinc-800 rounded-full h-2 mb-2">
-                      <div
-                        className="bg-blue-500 h-2 rounded-full transition-all"
-                        style={{ width: `${(systemInfo.memoryUsage.heapUsed / systemInfo.memoryUsage.heapTotal) * 100}%` }}
-                      />
-                    </div>
-                    <span className="text-zinc-500 text-xs">de {(systemInfo.memoryUsage.heapTotal / 1024 / 1024).toFixed(0)} MB total</span>
-                  </div>
-                )}
-
-                {/* Uptime */}
-                {systemInfo && (
-                  <div className="bg-zinc-900/50 rounded-lg p-4 border border-zinc-700">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-zinc-400 text-sm">Uptime</span>
-                      <span className="text-xs px-2 py-1 rounded bg-purple-900/30 text-purple-400">
-                        {systemInfo.platform}
-                      </span>
-                    </div>
-                    <div className="text-2xl font-bold text-white mb-1">
-                      {Math.floor(systemInfo.uptime / 3600)}h {Math.floor((systemInfo.uptime % 3600) / 60)}m
-                    </div>
-                    <div className="flex items-center gap-2 mt-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="text-zinc-500 text-xs">Node {systemInfo.nodeVersion}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Instance Selector with Profile - MEJORADO */}
-          <div className="bg-gradient-to-br from-white to-gray-50 dark:from-zinc-800 dark:to-zinc-900 rounded-2xl p-6 border border-gray-200 dark:border-zinc-700 shadow-xl dark:shadow-2xl">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-emerald-500/20 blur-lg rounded-full"></div>
-                  <div className="relative bg-gradient-to-br from-emerald-500 to-emerald-600 p-2.5 rounded-xl shadow-lg">
-                    <ServerIcon className="w-5 h-5 text-white" />
-                  </div>
-                </div>
-                <h2 className="text-gray-900 dark:text-white text-xl font-bold">
-                  Instancia Activa
-                </h2>
-              </div>
-              <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                <span className="text-emerald-700 dark:text-emerald-400 text-sm font-semibold">
-                  {activeInstances}/{totalInstances} conectadas
+                <span className="bg-white dark:bg-blue-900/30 px-2 py-1 rounded-lg text-xs font-medium text-blue-600 dark:text-blue-300 shadow-sm">
+                  Total
                 </span>
               </div>
+              <h3 className="text-3xl font-bold text-slate-800 dark:text-white mb-1">{totalInstances}</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Instancias activas: <span className="font-semibold text-blue-600">{activeInstances}</span></p>
             </div>
 
-            <div className="relative z-50" ref={dropdownRef}>
-              {/* Enhanced Dropdown Trigger */}
-              <div
-                className="flex items-center justify-between p-5 bg-white dark:bg-zinc-900 border-2 border-gray-200 dark:border-zinc-700 rounded-2xl cursor-pointer hover:border-emerald-500 hover:shadow-lg transition-all duration-300 group"
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    {selectedInstance?.profilePicUrl ? (
-                      <>
-                        <div className="absolute inset-0 bg-emerald-500/30 blur-md rounded-full"></div>
-                        <img
-                          src={selectedInstance.profilePicUrl}
-                          alt="Profile"
-                          className="relative w-16 h-16 rounded-full object-cover border-4 border-emerald-500 shadow-xl ring-2 ring-emerald-500/20"
-                          onError={(e) => (e.currentTarget.src = '/logo/profile.png')}
-                        />
-                      </>
-                    ) : (
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-zinc-700 dark:to-zinc-800 flex items-center justify-center border-4 border-gray-300 dark:border-zinc-600 shadow-lg">
-                        <ServerIcon className="w-8 h-8 text-gray-500 dark:text-zinc-400" />
-                      </div>
-                    )}
-                    {selectedInstance && (
-                      <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-3 border-white dark:border-zinc-900 ${
-                        selectedInstance.state === 'Connected' ? 'bg-emerald-500' : 'bg-red-500'
-                      } shadow-lg`}></div>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-gray-900 dark:text-white font-bold text-xl mb-1">
-                      {selectedInstance?.name || 'Sin nombre'}
-                    </p>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                      {selectedInstance?.number && (
-                        <span className="text-gray-600 dark:text-zinc-400 text-sm font-medium flex items-center gap-1">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                          </svg>
-                          {selectedInstance.number}
-                        </span>
-                      )}
-                      {selectedInstance && (
-                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full ${
-                          selectedInstance.state === 'Connected'
-                            ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-                            : 'bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30'
-                        }`}>
-                          {selectedInstance.state === 'Connected' ? (
-                            <CheckCircleIcon className="w-4 h-4" />
-                          ) : (
-                            <XCircleIcon className="w-4 h-4" />
-                          )}
-                          {selectedInstance.state}
-                        </span>
-                      )}
-                    </div>
-                    {selectedInstance?.documentId && (
-                      <p className="text-gray-500 dark:text-zinc-500 text-xs mt-1 font-mono">
-                        ID: {selectedInstance.documentId}
-                      </p>
-                    )}
-                  </div>
+            {/* Sent Messages */}
+            <div className="bg-indigo-50/50 dark:bg-indigo-900/10 p-6 rounded-3xl border border-indigo-100 dark:border-indigo-800/30 transition-transform hover:-translate-y-1 duration-300">
+              <div className="flex justify-between items-start mb-4">
+                <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl">
+                  <PaperAirplaneIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" strokeWidth={1.5} />
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="hidden sm:block text-right mr-2">
-                    <p className="text-xs text-gray-500 dark:text-zinc-500 font-medium">Cambiar</p>
-                    <p className="text-xs text-gray-400 dark:text-zinc-600">instancia</p>
-                  </div>
-                  <ChevronDownIcon
-                    className={`w-7 h-7 text-gray-400 dark:text-zinc-500 group-hover:text-emerald-500 transition-all duration-300 ${
-                      isDropdownOpen ? 'rotate-180' : ''
-                    }`}
-                  />
-                </div>
+                <span className="bg-white dark:bg-indigo-900/30 px-2 py-1 rounded-lg text-xs font-medium text-indigo-600 dark:text-indigo-300 shadow-sm">
+                  Enviados
+                </span>
               </div>
+              <h3 className="text-3xl font-bold text-slate-800 dark:text-white mb-1">{metrics.totalSent.toLocaleString()}</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Total acumulado</p>
+            </div>
 
-              {/* Enhanced Dropdown Menu */}
-              {isDropdownOpen && (
-                <div className="absolute z-[100] mt-2 w-full bg-white dark:bg-zinc-900 border-2 border-gray-200 dark:border-zinc-700 rounded-xl shadow-2xl max-h-80 overflow-y-auto">
-                  {instances.map((instance) => {
-                    const isSelected = instance.documentId === selectedInstanceId;
-                    return (
-                      <div
-                        key={instance.documentId}
-                        className={`flex items-center gap-4 p-4 cursor-pointer transition-all ${
-                          isSelected
-                            ? 'bg-emerald-600/20 border-l-4 border-emerald-500'
-                            : 'hover:bg-zinc-800 border-l-4 border-transparent'
-                        }`}
-                        onClick={() => handleInstanceSelect(instance.documentId)}
-                      >
-                        {instance.profilePicUrl ? (
-                          <img
-                            src={instance.profilePicUrl}
-                            alt="Profile"
-                            className="w-10 h-10 rounded-full object-cover border-2 border-emerald-500"
-                            onError={(e) => (e.currentTarget.src = '/logo/profile.png')}
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-zinc-700 flex items-center justify-center">
-                            <ServerIcon className="w-5 h-5 text-zinc-400" />
-                          </div>
-                        )}
-                        <div className="flex-1">
-                          <p className="text-white font-medium">
-                            {instance.name || instance.documentId}
-                          </p>
-                          {instance.number && (
-                            <p className="text-zinc-400 text-sm">{instance.number}</p>
-                          )}
-                        </div>
-                        <span
-                          className={`flex items-center gap-1 text-xs px-3 py-1 rounded-full font-medium ${
-                            instance.state === 'Connected'
-                              ? 'bg-emerald-500/20 text-emerald-400'
-                              : 'bg-red-500/20 text-red-400'
-                          }`}
-                        >
-                          {instance.state === 'Connected' ? (
-                            <CheckCircleIcon className="w-4 h-4" />
-                          ) : (
-                            <XCircleIcon className="w-4 h-4" />
-                          )}
-                          {instance.state}
-                        </span>
-                      </div>
-                    );
-                  })}
+            {/* API Messages */}
+            <div className="bg-purple-50/50 dark:bg-purple-900/10 p-6 rounded-3xl border border-purple-100 dark:border-purple-800/30 transition-transform hover:-translate-y-1 duration-300">
+              <div className="flex justify-between items-start mb-4">
+                <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-2xl">
+                  <ChatBubbleBottomCenterTextIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" strokeWidth={1.5} />
                 </div>
-              )}
+                <span className="bg-white dark:bg-purple-900/30 px-2 py-1 rounded-lg text-xs font-medium text-purple-600 dark:text-purple-300 shadow-sm">
+                  API
+                </span>
+              </div>
+              <h3 className="text-3xl font-bold text-slate-800 dark:text-white mb-1">{metrics.totalApiSent.toLocaleString()}</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Automatizados</p>
+            </div>
+
+            {/* Received Messages */}
+            <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-6 rounded-3xl border border-emerald-100 dark:border-emerald-800/30 transition-transform hover:-translate-y-1 duration-300">
+              <div className="flex justify-between items-start mb-4">
+                <div className="p-3 bg-emerald-100 dark:bg-emerald-900/30 rounded-2xl">
+                  <InboxArrowDownIcon className="w-6 h-6 text-emerald-600 dark:text-emerald-400" strokeWidth={1.5} />
+                </div>
+                <span className="bg-white dark:bg-emerald-900/30 px-2 py-1 rounded-lg text-xs font-medium text-emerald-600 dark:text-emerald-300 shadow-sm">
+                  Recibidos
+                </span>
+              </div>
+              <h3 className="text-3xl font-bold text-slate-800 dark:text-white mb-1">{metrics.totalReceived.toLocaleString()}</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Total entrantes</p>
             </div>
           </div>
 
-          {/* Chart Section */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-white via-gray-50 to-gray-100 dark:from-zinc-900 dark:via-zinc-900 dark:to-black rounded-3xl border border-gray-200 dark:border-zinc-800 shadow-xl dark:shadow-2xl">
-            {/* Decorative gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-purple-500/5 pointer-events-none"></div>
-            
-            <div className="relative z-10 p-8">
-              {/* Header */}
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-emerald-500/20 blur-xl rounded-full"></div>
-                    <div className="relative bg-gradient-to-br from-emerald-500 to-emerald-600 p-3 rounded-2xl shadow-lg">
-                      <ChatBubbleBottomCenterTextIcon className="w-7 h-7 text-white" />
-                    </div>
-                  </div>
-                  <div>
-                    <h2 className="text-gray-900 dark:text-white text-2xl font-bold tracking-tight">Historial de Mensajes</h2>
-                    <p className="text-gray-600 dark:text-zinc-400 text-sm mt-1">Estadísticas de los últimos 30 días</p>
-                  </div>
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            {/* History Chart - Floating Container */}
+            <div className="lg:col-span-2 bg-white dark:bg-[#1e293b] rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-white">Actividad Reciente</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Rendimiento de los últimos 30 días</p>
                 </div>
-                
-                {historyData.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-2 bg-gradient-to-r from-emerald-500/10 to-emerald-600/10 border border-emerald-500/20 px-4 py-2.5 rounded-xl backdrop-blur-sm">
-                      <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-lg shadow-emerald-500/50"></div>
-                      <span className="text-emerald-600 dark:text-emerald-400 text-sm font-medium">Enviados</span>
-                    </div>
-                    <div className="flex items-center gap-2 bg-gradient-to-r from-purple-500/10 to-purple-600/10 border border-purple-500/20 px-4 py-2.5 rounded-xl backdrop-blur-sm">
-                      <div className="w-2.5 h-2.5 bg-purple-500 rounded-full animate-pulse shadow-lg shadow-purple-500/50"></div>
-                      <span className="text-purple-600 dark:text-purple-400 text-sm font-medium">API</span>
-                    </div>
-                    <div className="flex items-center gap-2 bg-gradient-to-r from-orange-500/10 to-orange-600/10 border border-orange-500/20 px-4 py-2.5 rounded-xl backdrop-blur-sm">
-                      <div className="w-2.5 h-2.5 bg-orange-500 rounded-full animate-pulse shadow-lg shadow-orange-500/50"></div>
-                      <span className="text-orange-600 dark:text-orange-400 text-sm font-medium">Recibidos</span>
-                    </div>
+                <div className="flex gap-2">
+                  <span className="flex items-center gap-1 text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">
+                    <div className="w-2 h-2 rounded-full bg-indigo-500"></div> Enviados
+                  </span>
+                  <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500"></div> Recibidos
+                  </span>
+                </div>
+              </div>
+
+              <div className="h-[350px] w-full">
+                {historyData.length > 0 ? (
+                  <Suspense fallback={<div className="h-full w-full flex items-center justify-center bg-slate-50 rounded-2xl"><div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500"></div></div>}>
+                    <LazyChart data={chartData} options={chartOptions} />
+                  </Suspense>
+                ) : (
+                  <div className="h-full w-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
+                    <ChatBubbleBottomCenterTextIcon className="w-12 h-12 text-slate-300 dark:text-slate-600 mb-2" />
+                    <p className="text-slate-400 dark:text-slate-500 text-sm">No hay datos suficientes</p>
                   </div>
                 )}
               </div>
+            </div>
 
-              {/* Chart Container */}
-              {historyData.length > 0 ? (
-                <div className="relative bg-white/50 dark:bg-black/20 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 dark:border-zinc-800/50">
-                  {/* Grid pattern overlay */}
-                  <div className="absolute inset-0 opacity-5" style={{
-                    backgroundImage: 'linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px)',
-                    backgroundSize: '20px 20px'
-                  }}></div>
-                  
-                  <div className="relative z-10">
-                    <Suspense
-                      fallback={
-                        <div className="flex items-center justify-center h-[500px]">
-                          <div className="text-center">
-                            <div className="relative">
-                              <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full"></div>
-                              <div className="relative animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-emerald-500 mx-auto mb-4"></div>
-                            </div>
-                            <div className="text-gray-600 dark:text-zinc-400 font-medium">Cargando estadísticas...</div>
-                          </div>
-                        </div>
-                      }
-                    >
-                      <LazyChart data={chartData} options={chartOptions} />
-                    </Suspense>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-[450px] bg-gray-100/50 dark:bg-black/20 backdrop-blur-sm rounded-2xl border-2 border-dashed border-gray-300 dark:border-zinc-800/50">
-                  <div className="text-center max-w-md">
-                    <div className="relative inline-block mb-6">
-                      <div className="absolute inset-0 bg-gray-300/20 dark:bg-zinc-700/20 blur-3xl rounded-full"></div>
-                      <div className="relative bg-gray-200/50 dark:bg-zinc-800/50 p-6 rounded-3xl border border-gray-300 dark:border-zinc-700/50">
-                        <ChatBubbleBottomCenterTextIcon className="w-20 h-20 text-gray-400 dark:text-zinc-600" />
-                      </div>
+            {/* System Stats - Compact Vertical Stack */}
+            <div className="space-y-6">
+              {/* System Info Card */}
+              <div className="bg-white dark:bg-[#1e293b] rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
+                <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                  <CpuChipIcon className="w-5 h-5 text-slate-400" />
+                  Estado del Sistema
+                </h3>
+
+                <div className="space-y-4">
+                  {/* Memory */}
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-slate-500">Memoria</span>
+                      <span className="font-medium text-slate-700 dark:text-slate-300">
+                        {systemInfo ? `${((systemInfo.memoryUsage.heapUsed / systemInfo.memoryUsage.heapTotal) * 100).toFixed(0)}%` : '0%'}
+                      </span>
                     </div>
-                    <h3 className="text-gray-800 dark:text-zinc-300 text-xl font-semibold mb-2">No hay datos históricos</h3>
-                    <p className="text-gray-600 dark:text-zinc-500 text-sm leading-relaxed">
-                      Las estadísticas aparecerán automáticamente cuando comiences a enviar y recibir mensajes
-                    </p>
+                    <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+                        style={{ width: systemInfo ? `${(systemInfo.memoryUsage.heapUsed / systemInfo.memoryUsage.heapTotal) * 100}%` : '0%' }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* Cache */}
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-slate-500">Cache</span>
+                      <span className="font-medium text-slate-700 dark:text-slate-300">
+                        {cacheStats ? cacheStats.usage : '0%'}
+                      </span>
+                    </div>
+                    <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                        style={{ width: cacheStats ? cacheStats.usage : '0%' }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* Uptime */}
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-50 dark:border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <ClockIcon className="w-4 h-4 text-slate-400" />
+                      <span className="text-sm text-slate-500">Uptime</span>
+                    </div>
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      {systemInfo ? `${Math.floor(systemInfo.uptime / 3600)}h ${Math.floor((systemInfo.uptime % 3600) / 60)}m` : '--'}
+                    </span>
                   </div>
                 </div>
-              )}
+              </div>
+
+              {/* Quick Actions / Info */}
+              <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-6 text-white shadow-lg shadow-indigo-500/20">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                    <BoltIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg">Estado Global</h3>
+                    <p className="text-indigo-100 text-xs">Actualizado en tiempo real</p>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center bg-white/10 rounded-xl p-3 backdrop-blur-sm">
+                  <span className="text-sm font-medium text-indigo-50">Conexiones</span>
+                  <span className="text-xl font-bold">{activeInstances}/{totalInstances}</span>
+                </div>
+              </div>
             </div>
           </div>
         </>
@@ -760,7 +521,6 @@ export default function Dashboard() {
   );
 }
 
-// Forzar SSR para evitar errores de pre-renderizado durante el build
 export async function getServerSideProps() {
   return {
     props: {},
