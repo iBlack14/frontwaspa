@@ -202,7 +202,18 @@ function MessagesContent() {
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const response = await axios.get(`${backendUrl}/api/messages/chats/${instanceId}`);
-      setChats(response.data.chats || []);
+
+      // Deduplicate chats based on chat_id
+      const uniqueChats = response.data.chats.reduce((acc: Chat[], current: Chat) => {
+        const x = acc.find(item => item.chat_id === current.chat_id);
+        if (!x) {
+          return acc.concat([current]);
+        } else {
+          return acc;
+        }
+      }, []);
+
+      setChats(uniqueChats || []);
     } catch (error) {
       console.error('Error fetching chats:', error);
     }

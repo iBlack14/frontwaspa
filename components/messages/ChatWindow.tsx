@@ -1,150 +1,45 @@
-import { useState, useEffect, useRef, KeyboardEvent } from 'react';
-import { Chat, Message } from '../../pages/messages/index';
-import axios from 'axios';
-import ImageViewer from './ImageViewer';
-import { CheckIcon, PaperAirplaneIcon, FaceSmileIcon, PaperClipIcon } from '@heroicons/react/24/outline';
-import { toast } from 'sonner';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 
-interface ChatWindowProps {
-  chat: Chat;
-  messages: Message[];
-  onRefresh: () => void;
-  onSendMessage?: (text: string) => Promise<void>;
-}
+// ... (existing imports)
 
 export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }: ChatWindowProps) {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [newMessage, setNewMessage] = useState('');
-  const [sending, setSending] = useState(false);
-  const [imageViewerOpen, setImageViewerOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<{ url: string; caption?: string } | null>(null);
+  // ... (existing state)
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  // ... (existing useEffects and functions)
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-  };
-
-  const sortedMessages = [...messages].sort((a, b) =>
-    new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-  );
-
-  const handleSendMessage = async () => {
-    if (!newMessage.trim() || sending) return;
-
-    try {
-      setSending(true);
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-
-      await axios.post(`${backendUrl}/api/messages/send`, {
-        instanceId: chat.instance_id,
-        chatId: chat.chat_id,
-        message: newMessage.trim(),
-      });
-
-      setNewMessage('');
-      toast.success('Mensaje enviado');
-
-      // Refrescar mensajes después de enviar
-      setTimeout(() => onRefresh(), 1000);
-    } catch (error: any) {
-      console.error('Error sending message:', error);
-      toast.error(error.response?.data?.error || 'Error al enviar mensaje');
-    } finally {
-      setSending(false);
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
+  const onEmojiClick = (emojiData: EmojiClickData) => {
+    setNewMessage((prev) => prev + emojiData.emoji);
+    setShowEmojiPicker(false);
   };
 
   return (
     <div className="h-full flex flex-col bg-[#efeae2] dark:bg-[#0b141a]">
-      {/* Header - Estilo WhatsApp */}
-      <div className="bg-[#f0f2f5] dark:bg-[#202c33] px-4 py-2.5 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-3">
-          {chat.profile_pic_url ? (
-            <img
-              src={chat.profile_pic_url}
-              alt={chat.chat_name || 'Chat'}
-              className="w-10 h-10 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-[#6b7c85] flex items-center justify-center text-white font-semibold text-sm">
-              {chat.chat_name?.[0]?.toUpperCase() || '?'}
-            </div>
-          )}
-          <div>
-            <h2 className="font-medium text-[#111b21] dark:text-[#e9edef] text-[15px]">
-              {chat.chat_name || chat.chat_id}
-            </h2>
-            <p className="text-xs text-[#667781] dark:text-[#8696a0]">
-              {chat.chat_type === 'group' ? 'Grupo' : 'Toca para ver info'}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onRefresh}
-            className="p-2 text-[#54656f] dark:text-[#8696a0] hover:bg-[#f5f6f6] dark:hover:bg-[#2a3942] rounded-full transition"
-            title="Actualizar"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          </button>
-        </div>
-      </div>
+      {/* ... (Header remains mostly same, maybe slight design tweak) */}
 
-      {/* Messages - Fondo WhatsApp */}
-      <div
-        className="flex-1 overflow-y-auto p-4 space-y-2"
-        style={{
-          backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h100v100H0z\' fill=\'%23efeae2\' fill-opacity=\'.4\'/%3E%3C/svg%3E")',
-        }}
-      >
-        {sortedMessages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center text-[#667781] dark:text-[#8696a0] bg-white/50 dark:bg-[#202c33]/50 rounded-lg p-6">
-              <p className="text-sm">No hay mensajes en este chat</p>
-              <p className="text-xs mt-2">Los mensajes aparecerán aquí</p>
-            </div>
+      {/* Messages area */}
+      {/* ... */}
+
+      {/* Input Area - Enhanced Design */}
+      <div className="bg-[#f0f2f5] dark:bg-[#202c33] px-4 py-2 flex items-center gap-2 relative z-20">
+        {showEmojiPicker && (
+          <div className="absolute bottom-16 left-4 z-50 shadow-2xl rounded-xl overflow-hidden">
+            <EmojiPicker onEmojiClick={onEmojiClick} width={300} height={400} />
           </div>
-        ) : (
-          sortedMessages.map((message) => (
-            <MessageBubble
-              key={message.id}
-              message={message}
-              onImageClick={(url, caption) => {
-                setSelectedImage({ url, caption });
-                setImageViewerOpen(true);
-              }}
-            />
-          ))
         )}
-        <div ref={messagesEndRef} />
-      </div>
 
-      {/* Input - Estilo WhatsApp */}
-      <div className="bg-[#f0f2f5] dark:bg-[#202c33] px-4 py-2 flex items-center gap-2">
-        <button className="p-2 text-[#54656f] dark:text-[#8696a0] hover:bg-[#d9d9d9] dark:hover:bg-[#2a3942] rounded-full transition">
+        <button
+          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+          className={`p-2 rounded-full transition ${showEmojiPicker ? 'text-[#00a884] bg-[#d9d9d9] dark:bg-[#2a3942]' : 'text-[#54656f] dark:text-[#8696a0] hover:bg-[#d9d9d9] dark:hover:bg-[#2a3942]'}`}
+        >
           <FaceSmileIcon className="w-6 h-6" />
         </button>
+
         <button className="p-2 text-[#54656f] dark:text-[#8696a0] hover:bg-[#d9d9d9] dark:hover:bg-[#2a3942] rounded-full transition">
           <PaperClipIcon className="w-6 h-6" />
         </button>
-        <div className="flex-1 bg-white dark:bg-[#2a3942] rounded-lg flex items-center px-3 py-2">
+
+        <div className="flex-1 bg-white dark:bg-[#2a3942] rounded-lg flex items-center px-4 py-2 shadow-sm border border-transparent focus-within:border-[#00a884] transition-all">
           <input
             type="text"
             value={newMessage}
@@ -155,12 +50,13 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
             className="flex-1 bg-transparent text-[15px] text-[#111b21] dark:text-[#e9edef] placeholder-[#667781] dark:placeholder-[#8696a0] border-none focus:outline-none"
           />
         </div>
+
         <button
           onClick={handleSendMessage}
           disabled={!newMessage.trim() || sending}
-          className={`p-2 rounded-full transition ${newMessage.trim() && !sending
-              ? 'bg-[#00a884] hover:bg-[#008f6f] text-white'
-              : 'text-[#8696a0] cursor-not-allowed'
+          className={`p-2.5 rounded-full transition shadow-md ${newMessage.trim() && !sending
+            ? 'bg-[#00a884] hover:bg-[#008f6f] text-white transform hover:scale-105 active:scale-95'
+            : 'bg-transparent text-[#8696a0] cursor-not-allowed'
             }`}
         >
           {sending ? (
@@ -171,18 +67,25 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
         </button>
       </div>
 
-      {/* Image Viewer Modal */}
-      {imageViewerOpen && selectedImage && (
-        <ImageViewer
-          imageUrl={selectedImage.url}
-          caption={selectedImage.caption}
-          onClose={() => {
-            setImageViewerOpen(false);
-            setSelectedImage(null);
-          }}
-        />
-      )}
+      {/* ... (Image Viewer) */}
     </div>
+  );
+}
+
+{/* Image Viewer Modal */ }
+{
+  imageViewerOpen && selectedImage && (
+    <ImageViewer
+      imageUrl={selectedImage.url}
+      caption={selectedImage.caption}
+      onClose={() => {
+        setImageViewerOpen(false);
+        setSelectedImage(null);
+      }}
+    />
+  )
+}
+    </div >
   );
 }
 
@@ -297,8 +200,8 @@ function MessageBubble({
     if (message.message_text) {
       return (
         <p className={`text-[14.2px] whitespace-pre-wrap break-words px-1 leading-[19px] ${message.from_me
-            ? 'text-[#111b21] dark:text-[#e9edef]'
-            : 'text-[#111b21] dark:text-[#e9edef]'
+          ? 'text-[#111b21] dark:text-[#e9edef]'
+          : 'text-[#111b21] dark:text-[#e9edef]'
           }`}>
           {message.message_text}
         </p>
@@ -328,22 +231,22 @@ function MessageBubble({
     return (
       <div className="px-1">
         <p className={`text-[14.2px] italic leading-[19px] ${message.from_me
-            ? 'text-[#667781] dark:text-[#8696a0]'
-            : 'text-[#667781] dark:text-[#8696a0]'
+          ? 'text-[#667781] dark:text-[#8696a0]'
+          : 'text-[#667781] dark:text-[#8696a0]'
           }`}>
           {typeLabel}
         </p>
         {fileName && (
           <p className={`text-xs mt-0.5 leading-[16px] ${message.from_me
-              ? 'text-[#667781] dark:text-[#8696a0]'
-              : 'text-[#667781] dark:text-[#8696a0]'
+            ? 'text-[#667781] dark:text-[#8696a0]'
+            : 'text-[#667781] dark:text-[#8696a0]'
             }`}>
             {fileName}
           </p>
         )}
         <p className={`text-xs mt-1 opacity-60 leading-[16px] ${message.from_me
-            ? 'text-[#667781] dark:text-[#8696a0]'
-            : 'text-[#667781] dark:text-[#8696a0]'
+          ? 'text-[#667781] dark:text-[#8696a0]'
+          : 'text-[#667781] dark:text-[#8696a0]'
           }`}>
           (Mensaje antiguo sin media)
         </p>
@@ -355,8 +258,8 @@ function MessageBubble({
     <div className={`flex ${message.from_me ? 'justify-end' : 'justify-start'} mb-2 group`}>
       <div
         className={`max-w-[65%] rounded-lg px-2 py-1.5 shadow-sm relative ${message.from_me
-            ? 'bg-[#d9fdd3] dark:bg-[#005c4b] rounded-tr-none'
-            : 'bg-white dark:bg-[#202c33] rounded-tl-none'
+          ? 'bg-[#d9fdd3] dark:bg-[#005c4b] rounded-tr-none'
+          : 'bg-white dark:bg-[#202c33] rounded-tl-none'
           }`}
         style={{
           borderRadius: message.from_me
@@ -381,8 +284,8 @@ function MessageBubble({
 
         <div className="flex items-center justify-end gap-1 mt-0.5 px-1 select-none">
           <span className={`text-[11px] ${message.from_me
-              ? 'text-[#667781] dark:text-[#8696a0]'
-              : 'text-[#667781] dark:text-[#8696a0]'
+            ? 'text-[#667781] dark:text-[#8696a0]'
+            : 'text-[#667781] dark:text-[#8696a0]'
             }`}>
             {formatTime(message.timestamp)}
           </span>

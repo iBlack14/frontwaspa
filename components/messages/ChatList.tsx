@@ -97,9 +97,9 @@ function ChatItem({ chat, isSelected, onClick }: { chat: Chat; isSelected: boole
   return (
     <div
       onClick={onClick}
-      className={`flex items-center gap-3 px-4 py-3 cursor-pointer border-b border-gray-100 dark:border-[#202c33] transition-colors ${isSelected
-          ? 'bg-[#f0f2f5] dark:bg-[#2a3942]'
-          : 'bg-white dark:bg-[#111b21] hover:bg-[#f5f6f6] dark:hover:bg-[#202c33]'
+      className={`flex items-center gap-3 px-4 py-3 cursor-pointer border-b border-gray-100 dark:border-[#202c33] transition-all duration-200 ${isSelected
+        ? 'bg-[#f0f2f5] dark:bg-[#2a3942] border-l-4 border-l-[#00a884]'
+        : 'bg-white dark:bg-[#111b21] hover:bg-[#f5f6f6] dark:hover:bg-[#202c33] border-l-4 border-l-transparent'
         }`}
     >
       {/* Avatar - Estilo WhatsApp */}
@@ -119,15 +119,17 @@ function ChatItem({ chat, isSelected, onClick }: { chat: Chat; isSelected: boole
             )}
           </div>
         )}
+        {/* Online Status Indicator - Green Dot */}
+        <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-[#00a884] border-2 border-white dark:border-[#111b21] rounded-full"></span>
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-start mb-1">
-          <h3 className="font-medium text-[15px] text-[#111b21] dark:text-[#e9edef] truncate">
+          <h3 className="font-medium text-[16px] text-[#111b21] dark:text-[#e9edef] truncate">
             {chat.chat_name || chat.chat_id}
           </h3>
-          <span className="text-xs text-[#667781] dark:text-[#8696a0] ml-2 flex-shrink-0">
+          <span className={`text-xs ml-2 flex-shrink-0 ${chat.unread_count > 0 ? 'text-[#00a884] font-medium' : 'text-[#667781] dark:text-[#8696a0]'}`}>
             {formatTime(chat.last_message_at)}
           </span>
         </div>
@@ -136,7 +138,7 @@ function ChatItem({ chat, isSelected, onClick }: { chat: Chat; isSelected: boole
             {chat.last_message_text || '📎 Archivo multimedia'}
           </p>
           {chat.unread_count > 0 && (
-            <span className="ml-2 bg-[#00a884] text-white text-xs font-semibold rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center">
+            <span className="ml-2 bg-[#00a884] text-white text-xs font-semibold rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center shadow-sm">
               {chat.unread_count > 99 ? '99+' : chat.unread_count}
             </span>
           )}
