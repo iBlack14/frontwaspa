@@ -329,30 +329,28 @@ function MessagesContent() {
               onRefresh={() => fetchMessages(selectedChat.instance_id, selectedChat.chat_id)}
             />
           ) : (
-          ): (
-              <div className = "flex items-center justify-center h-full bg-[#f0f2f5] dark:bg-[#222e35] border-b-8 border-[#25d366]">
-              <div className = "text-center max-w-md px-6">
-                <div className = "w-64 h-64 mx-auto mb-8 opacity-20">
-                   <svg viewBox = "0 0 303 172" fill = "currentColor" className = "text-[#00a884] w-full h-full">
-                     <path d = "M151.5 0C67.9 0 0 67.9 0 151.5S67.9 303 151.5 303 303 235.1 303 151.5 235.1 0 151.5 0zm0 276.5c-69 0-125-56-125-125s56-125 125-125 125 56 125 125-56 125-125 125z"/>
-        </svg>
-      </div>
-      <h2 className="text-3xl font-light text-[#41525d] dark:text-[#e9edef] mb-4">
-        Connect BLXK Web
-      </h2>
-      <p className="text-sm text-[#667781] dark:text-[#8696a0] mb-8 leading-6">
-        Envía y recibe mensajes sin necesidad de mantener tu teléfono conectado.
-        <br />
-        Usa Connect BLXK en hasta 4 dispositivos vinculados y 1 teléfono a la vez.
-      </p>
-      <div className="flex items-center justify-center gap-2 text-[#8696a0] text-xs">
-        <span className="w-3 h-3 bg-[#8696a0] rounded-full opacity-30"></span>
-        🔒 Tus mensajes personales están cifrados de extremo a extremo
-      </div>
-    </div>
-            </div >
-          )
-}
+            <div className="flex items-center justify-center h-full bg-[#f0f2f5] dark:bg-[#222e35] border-b-8 border-[#25d366]">
+              <div className="text-center max-w-md px-6">
+                <div className="w-64 h-64 mx-auto mb-8 opacity-20">
+                  <svg viewBox="0 0 303 172" fill="currentColor" className="text-[#00a884] w-full h-full">
+                    <path d="M151.5 0C67.9 0 0 67.9 0 151.5S67.9 303 151.5 303 303 235.1 303 151.5 235.1 0 151.5 0zm0 276.5c-69 0-125-56-125-125s56-125 125-125 125 56 125 125-56 125-125 125z" />
+                  </svg>
+                </div>
+                <h2 className="text-3xl font-light text-[#41525d] dark:text-[#e9edef] mb-4">
+                  Connect BLXK Web
+                </h2>
+                <p className="text-sm text-[#667781] dark:text-[#8696a0] mb-8 leading-6">
+                  Envía y recibe mensajes sin necesidad de mantener tu teléfono conectado.
+                  <br />
+                  Usa Connect BLXK en hasta 4 dispositivos vinculados y 1 teléfono a la vez.
+                </p>
+                <div className="flex items-center justify-center gap-2 text-[#8696a0] text-xs">
+                  <span className="w-3 h-3 bg-[#8696a0] rounded-full opacity-30"></span>
+                  🔒 Tus mensajes personales están cifrados de extremo a extremo
+                </div>
+              </div>
+            </div>
+          )}
         </div >
       </div >
     </div >
