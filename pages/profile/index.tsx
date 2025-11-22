@@ -149,7 +149,11 @@ function ProfilePage() {
         toast.error('Error de configuración: Backend URL no definida');
         return;
       }
-      const response = await axios.get(`${backendUrl}/api/proxies`);
+      const response = await axios.get(`${backendUrl}/api/proxies`, {
+        headers: {
+          Authorization: `Bearer ${typedSession?.jwt}`
+        }
+      });
       setProxies(response.data.proxies || []);
     } catch (error: any) {
       console.error('Error fetching proxies:', error);
@@ -173,12 +177,15 @@ function ProfilePage() {
 
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      const headers = {
+        Authorization: `Bearer ${typedSession?.jwt}`
+      };
 
       if (editingProxy) {
-        await axios.put(`${backendUrl}/api/proxies/${editingProxy.id}`, proxyFormData);
+        await axios.put(`${backendUrl}/api/proxies/${editingProxy.id}`, proxyFormData, { headers });
         toast.success('Proxy actualizado');
       } else {
-        await axios.post(`${backendUrl}/api/proxies`, proxyFormData);
+        await axios.post(`${backendUrl}/api/proxies`, proxyFormData, { headers });
         toast.success('Proxy creado');
       }
 
@@ -196,7 +203,11 @@ function ProfilePage() {
 
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      await axios.delete(`${backendUrl}/api/proxies/${id}`);
+      await axios.delete(`${backendUrl}/api/proxies/${id}`, {
+        headers: {
+          Authorization: `Bearer ${typedSession?.jwt}`
+        }
+      });
       toast.success('Proxy eliminado');
       fetchProxies();
     } catch (error: any) {
@@ -208,7 +219,11 @@ function ProfilePage() {
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       toast.promise(
-        axios.post(`${backendUrl}/api/proxies/${id}/health-check`),
+        axios.post(`${backendUrl}/api/proxies/${id}/health-check`, {}, {
+          headers: {
+            Authorization: `Bearer ${typedSession?.jwt}`
+          }
+        }),
         {
           loading: 'Verificando proxy...',
           success: (response) => {
@@ -275,12 +290,15 @@ function ProfilePage() {
 
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      const headers = {
+        Authorization: `Bearer ${typedSession?.jwt}`
+      };
 
       for (const instanceId of selectedInstances) {
         await axios.post(`${backendUrl}/api/instance-proxies`, {
           instance_id: instanceId,
           proxy_id: selectedProxyForAssign.id
-        });
+        }, { headers });
       }
 
       toast.success(`Proxy asignado a ${selectedInstances.length} instancia(s)`);
