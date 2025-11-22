@@ -151,13 +151,17 @@ function ProfilePage() {
       }
       const response = await axios.get(`${backendUrl}/api/proxies`, {
         headers: {
-          Authorization: `Bearer ${typedSession?.jwt}`
+          Authorization: `Bearer ${key}`
         }
       });
       setProxies(response.data.proxies || []);
     } catch (error: any) {
       console.error('Error fetching proxies:', error);
-      toast.error('Error al cargar proxies. Verifica tu conexión.');
+      if (error.response?.status === 401) {
+        toast.error('API Key inválida. Por favor genera tu API Key en la sección General.');
+      } else {
+        toast.error('Error al cargar proxies. Verifica tu conexión.');
+      }
     } finally {
       setLoadingProxies(false);
     }
@@ -178,7 +182,7 @@ function ProfilePage() {
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const headers = {
-        Authorization: `Bearer ${typedSession?.jwt}`
+        Authorization: `Bearer ${key}`
       };
 
       if (editingProxy) {
@@ -205,7 +209,7 @@ function ProfilePage() {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       await axios.delete(`${backendUrl}/api/proxies/${id}`, {
         headers: {
-          Authorization: `Bearer ${typedSession?.jwt}`
+          Authorization: `Bearer ${key}`
         }
       });
       toast.success('Proxy eliminado');
@@ -221,7 +225,7 @@ function ProfilePage() {
       toast.promise(
         axios.post(`${backendUrl}/api/proxies/${id}/health-check`, {}, {
           headers: {
-            Authorization: `Bearer ${typedSession?.jwt}`
+            Authorization: `Bearer ${key}`
           }
         }),
         {
@@ -291,7 +295,7 @@ function ProfilePage() {
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const headers = {
-        Authorization: `Bearer ${typedSession?.jwt}`
+        Authorization: `Bearer ${key}`
       };
 
       for (const instanceId of selectedInstances) {
