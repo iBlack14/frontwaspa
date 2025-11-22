@@ -372,123 +372,136 @@ async function processSpamInBackground({
   finalImageUrl,
   proxyConfig,
 }) {
-  // ... (start of function)
+  console.log(`[SPAM ${spamId}] 🚀 Iniciando proceso en background para ${contacts.length} contactos`);
 
-  // ... (inside loop)
-  const contact = validContacts[i];
-  console.log(`[SPAM ${spamId}] Enviando mensaje ${i + 1}/${contacts.length} a ${contact.numero}`);
+  // Filtrar contactos válidos
+  const validContacts = contacts.filter(c => c.numero);
+
+  // Tipo de cuenta por defecto
+  const accountType = 'warm';
 
   try {
-    // ✅ Reemplazar variables dinámicas en el mensaje
-    const finalMessage = replaceVariables(contact.mensaje, contact.variables);
-
-    const hasImage = Boolean(contact.imagen);
-    const endpoint = hasImage
-      ? `${BACKEND_URL}/api/send-image/${instanceId}`
-      : `${BACKEND_URL}/api/send-message/${instanceId}`;
-
-    const payload = hasImage
-      ? {
-        number: contact.numero,
-        file: contact.imagen,
-        message: finalMessage, // ✅ Usar mensaje procesado
+    for (let i = 0; i < validContacts.length; i++) {
+      // Verificar si el proceso sigue activo
+      if (!shouldContinue(spamId)) {
+        console.log(`[SPAM ${spamId}] 🛑 Proceso detenido por el usuario`);
+        break;
       }
-      : {
-        number: contact.numero,
-        message: finalMessage, // ✅ Usar mensaje procesado
-      };
+      const contact = validContacts[i];
+      console.log(`[SPAM ${spamId}] Enviando mensaje ${i + 1}/${contacts.length} a ${contact.numero}`);
 
-    // Usar configuración con proxy si está disponible
-    const response = await axios.post(endpoint, payload, axiosConfig);
+      try {
+        // ✅ Reemplazar variables dinámicas en el mensaje
+        const finalMessage = replaceVariables(contact.mensaje, contact.variables);
 
-    console.log(`[SPAM ${spamId}] ✅ Mensaje ${i + 1} enviado correctamente a ${contact.numero}`);
+        const hasImage = Boolean(contact.imagen);
+        const endpoint = hasImage
+          ? `${BACKEND_URL}/api/send-image/${instanceId}`
+          : `${BACKEND_URL}/api/send-message/${instanceId}`;
 
-    // ✅ Incrementar contador de mensajes
-    const updatedCounters = incrementMessageCount(instanceId);
+        const payload = hasImage
+          ? {
+            number: contact.numero,
+            file: contact.imagen,
+            message: finalMessage, // ✅ Usar mensaje procesado
+          }
+          : {
+            number: contact.numero,
+            message: finalMessage, // ✅ Usar mensaje procesado
+          };
 
-    // ✅ Actualizar progreso exitoso
-    updateProgress(spamId, i + 1, { success: true, number: contact.numero });
+        // Usar configuración con proxy si está disponible
+        const response = await axios.post(endpoint, payload, axiosConfig);
 
-    // ✅✅ Actualizar estadísticas en historycal_data (llamada interna)
-    try {
-      await updateInstanceStats(instanceId, {
-        message_sent: 1,
-        api_message_sent: 1,
-        message_received: 0,
-      });
-    } catch (statsError) {
-      console.error(`[SPAM ${spamId}] Error actualizando estadísticas:`, statsError.message);
-    }
+        console.log(`[SPAM ${spamId}] ✅ Mensaje ${i + 1} enviado correctamente a ${contact.numero}`);
 
-    // ✅ Verificar si necesita pausa larga
-    if (shouldTakeLongPause(i + 1, accountType)) {
-      const pauseDuration = getLongPauseDuration(accountType);
-      console.log(`[SPAM ${spamId}] ⏸️  PAUSA LARGA: ${pauseDuration / 1000} segundos (enviados ${i + 1} mensajes)`);
-      await new Promise(resolve => setTimeout(resolve, pauseDuration));
-      console.log(`[SPAM ${spamId}] ▶️  Reanudando envío después de pausa`);
-    }
+        // ✅ Incrementar contador de mensajes
+        const updatedCounters = incrementMessageCount(instanceId);
 
-    // ✅✅ Delay ADAPTATIVO e INTELIGENTE entre mensajes
-    if (i < validContacts.length - 1) {
-      // Calcular delay adaptativo basado en uso y condiciones
-      const adaptiveDelay = calculateAdaptiveDelay({
-        accountType,
-        messagesSentThisHour: updatedCounters.messagesSentThisHour,
-        messagesSentToday: updatedCounters.messagesSentToday,
-        recentErrors: updatedCounters.recentErrors,
-      });
+        // ✅ Actualizar progreso exitoso
+        updateProgress(spamId, i + 1, { success: true, number: contact.numero });
 
-      const delaySeconds = (adaptiveDelay / 1000).toFixed(1);
-      console.log(`[SPAM ${spamId}] ⏳ Delay adaptativo: ${delaySeconds}s (enviados hoy: ${updatedCounters.messagesSentToday})`);
-
-      // Verificar shouldContinue mientras espera
-      const checkInterval = 500; // Verificar cada 500ms
-      let elapsed = 0;
-
-      while (elapsed < adaptiveDelay) {
-        // Verificar si fue detenido durante la espera
-        if (!shouldContinue(spamId)) {
-          console.log(`[SPAM ${spamId}] 🛑 Envío detenido durante el delay`);
-          return; // Salir completamente de la función
+        // ✅✅ Actualizar estadísticas en historycal_data (llamada interna)
+        try {
+          await updateInstanceStats(instanceId, {
+            message_sent: 1,
+            api_message_sent: 1,
+            message_received: 0,
+          });
+        } catch (statsError) {
+          console.error(`[SPAM ${spamId}] Error actualizando estadísticas:`, statsError.message);
         }
 
-        await new Promise(resolve => setTimeout(resolve, Math.min(checkInterval, adaptiveDelay - elapsed)));
-        elapsed += checkInterval;
-      }
+        // ✅ Verificar si necesita pausa larga
+        if (shouldTakeLongPause(i + 1, accountType)) {
+          const pauseDuration = getLongPauseDuration(accountType);
+          console.log(`[SPAM ${spamId}] ⏸️  PAUSA LARGA: ${pauseDuration / 1000} segundos (enviados ${i + 1} mensajes)`);
+          await new Promise(resolve => setTimeout(resolve, pauseDuration));
+          console.log(`[SPAM ${spamId}] ▶️  Reanudando envío después de pausa`);
+        }
 
-      // Mostrar estado cada 10 mensajes
-      if ((i + 1) % 10 === 0) {
-        logAntiBanStatus(instanceId);
+        // ✅✅ Delay ADAPTATIVO e INTELIGENTE entre mensajes
+        if (i < validContacts.length - 1) {
+          // Calcular delay adaptativo basado en uso y condiciones
+          const adaptiveDelay = calculateAdaptiveDelay({
+            accountType,
+            messagesSentThisHour: updatedCounters.messagesSentThisHour,
+            messagesSentToday: updatedCounters.messagesSentToday,
+            recentErrors: updatedCounters.recentErrors,
+          });
+
+          const delaySeconds = (adaptiveDelay / 1000).toFixed(1);
+          console.log(`[SPAM ${spamId}] ⏳ Delay adaptativo: ${delaySeconds}s (enviados hoy: ${updatedCounters.messagesSentToday})`);
+
+          // Verificar shouldContinue mientras espera
+          const checkInterval = 500; // Verificar cada 500ms
+          let elapsed = 0;
+
+          while (elapsed < adaptiveDelay) {
+            // Verificar si fue detenido durante la espera
+            if (!shouldContinue(spamId)) {
+              console.log(`[SPAM ${spamId}] 🛑 Envío detenido durante el delay`);
+              return; // Salir completamente de la función
+            }
+
+            await new Promise(resolve => setTimeout(resolve, Math.min(checkInterval, adaptiveDelay - elapsed)));
+            elapsed += checkInterval;
+          }
+
+          // Mostrar estado cada 10 mensajes
+          if ((i + 1) % 10 === 0) {
+            logAntiBanStatus(instanceId);
+          }
+        }
+      } catch (sendError) {
+        console.error(`[SPAM ${spamId}] ❌ Error enviando mensaje ${i + 1} a ${contact.numero}:`, sendError.message);
+
+        // ✅ Registrar error para ajustar delays
+        recordError(instanceId);
+
+        // ✅ Actualizar progreso con error
+        updateProgress(spamId, i + 1, {
+          success: false,
+          number: contact.numero,
+          error: sendError.message
+        });
+
+        // Si es error de rate limit, esperar más tiempo
+        if (sendError.message.includes('429') || sendError.message.includes('rate') || sendError.message.includes('limit')) {
+          console.log(`[SPAM ${spamId}] 🚨 RATE LIMIT detectado. Pausa de 5 minutos...`);
+          await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000));
+        }
+
+        // Continuar con el siguiente
       }
     }
-  } catch (sendError) {
-    console.error(`[SPAM ${spamId}] ❌ Error enviando mensaje ${i + 1} a ${contact.numero}:`, sendError.message);
 
-    // ✅ Registrar error para ajustar delays
-    recordError(instanceId);
-
-    // ✅ Actualizar progreso con error
-    updateProgress(spamId, i + 1, {
-      success: false,
-      number: contact.numero,
-      error: sendError.message
-    });
-
-    // Si es error de rate limit, esperar más tiempo
-    if (sendError.message.includes('429') || sendError.message.includes('rate') || sendError.message.includes('limit')) {
-      console.log(`[SPAM ${spamId}] 🚨 RATE LIMIT detectado. Pausa de 5 minutos...`);
-      await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000));
-    }
-
-    // Continuar con el siguiente
+    // ✅ Marcar como completado
+    console.log(`[SPAM ${spamId}] ✅ Proceso completado`);
+    completeSpam(spamId);
+  } catch (error) {
+    console.error(`[SPAM ${spamId}] ❌ Error fatal en el proceso:`, error);
+    // Marcar como completado con errores
+    completeSpam(spamId);
   }
-
-  // ✅ Marcar como completado
-  console.log(`[SPAM ${spamId}] ✅ Proceso completado`);
-  completeSpam(spamId);
-} catch (error) {
-  console.error(`[SPAM ${spamId}] ❌ Error fatal en el proceso:`, error);
-  // Marcar como completado con errores
-  completeSpam(spamId);
-}
 }
