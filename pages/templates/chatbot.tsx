@@ -129,7 +129,56 @@ function ChatbotContent() {
     setEditingRuleId(null);
   };
 
-  // ... (existing removeRule, toggleRule, handleSubmit, loadTemplate)
+  const removeRule = (id: string) => {
+    setRules(rules.filter(r => r.id !== id));
+    if (editingRuleId === id) {
+      cancelEditing();
+    }
+    toast.success('Regla eliminada');
+  };
+
+  const toggleRule = (id: string) => {
+    setRules(rules.map(r =>
+      r.id === id ? { ...r, isActive: !r.isActive } : r
+    ));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedInstance) {
+      toast.error('Selecciona una instancia');
+      return;
+    }
+
+    try {
+      const { data } = await axios.post('/api/templates/chatbot', {
+        instanceId: selectedInstance,
+        chatbotName,
+        welcomeMessage,
+        defaultResponse,
+        rules,
+        isActive: chatbotActive
+      });
+
+      if (data.success) {
+        toast.success('Configuración guardada correctamente');
+      }
+    } catch (error) {
+      console.error('Error saving chatbot:', error);
+      toast.error('Error al guardar la configuración');
+    }
+  };
+
+  const loadTemplate = (template: any) => {
+    setWelcomeMessage(template.welcomeMessage);
+    setDefaultResponse(template.defaultResponse);
+    setRules(template.rules.map((r: any) => ({
+      ...r,
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      isActive: true
+    })));
+    toast.success(`Plantilla "${template.name}" cargada`);
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-transparent p-6 sm:p-8">
@@ -219,10 +268,10 @@ function ChatbotContent() {
               <div
                 key={rule.id}
                 className={`rounded-2xl p-4 border transition-all duration-300 ${editingRuleId === rule.id
-                    ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800'
-                    : rule.isActive
-                      ? 'bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/10 dark:to-teal-900/10 border-emerald-200 dark:border-emerald-800/30'
-                      : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 opacity-60'
+                  ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800'
+                  : rule.isActive
+                    ? 'bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/10 dark:to-teal-900/10 border-emerald-200 dark:border-emerald-800/30'
+                    : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 opacity-60'
                   }`}
               >
                 <div className="flex items-start justify-between">
