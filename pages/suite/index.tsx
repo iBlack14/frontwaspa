@@ -1,17 +1,40 @@
-'use client';
-import { SessionProvider, useSession } from 'next-auth/react';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import Sidebard from '../components/dashboard/index';
-import { Toaster, toast } from 'sonner';
-import { ArrowTopRightOnSquareIcon, PlusIcon, ClipboardIcon, ArrowPathIcon, StopIcon, EyeIcon, EyeSlashIcon, PlayIcon, TrashIcon, SparklesIcon, RocketLaunchIcon, BoltIcon, StarIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
-import axios from 'axios';
+import Head from 'next/head';
 import Image from 'next/image';
-import { api } from '../../lib/api-client';
+import { Toaster, toast } from 'sonner';
+import axios from 'axios';
+import Sidebard from '../components/dashboard/index';
+import {
+  CubeIcon,
+  PlusIcon,
+  TrashIcon,
+  PlayIcon,
+  StopIcon,
+  ArrowTopRightOnSquareIcon,
+  CpuChipIcon,
+  ServerIcon,
+  SignalIcon,
+  ClipboardIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  SparklesIcon,
+  RocketLaunchIcon,
+  BoltIcon,
+  StarIcon,
+  CheckCircleIcon
+} from '@heroicons/react/24/outline';
+import { Session } from 'next-auth';
 
-interface CustomSession {
+interface CustomSession extends Session {
+  user?: {
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+  };
+  expires: string;
   id?: string;
-  firstName?: string;
   username?: string;
   jwt?: string;
 }
@@ -61,15 +84,13 @@ function DashboardContent() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [formValues, setFormValues] = useState<ProductField>({});
   const [resourceUsage, setResourceUsage] = useState<ResourceUsage | null>(null);
-  const [isLoading, setIsLoading] = useState(false); // Para manejar estados de carga
-  const [userPlan, setUserPlan] = useState<string>('free'); // Plan del usuario
-  const [planLimits, setPlanLimits] = useState<any>(null); // Límites del plan
-  const [selectedPlanForInstance, setSelectedPlanForInstance] = useState<string>(''); // Plan seleccionado para la instancia
+  const [isLoading, setIsLoading] = useState(false);
+  const [userPlan, setUserPlan] = useState<string>('free');
+  const [planLimits, setPlanLimits] = useState<any>(null);
+  const [selectedPlanForInstance, setSelectedPlanForInstance] = useState<string>('');
 
-  // State to control visibility of sensitive fields for credentials
   const [showFields, setShowFields] = useState<{ [key: string]: boolean }>({});
 
-  // Helper to toggle visibility
   const toggleShow = (key: string) => {
     setShowFields(prev => ({
       ...prev,
@@ -77,18 +98,15 @@ function DashboardContent() {
     }));
   };
 
-  // Trae los workspaces cada 5 segundos
   const fetchWorkspaces = async () => {
     if (!typedSession?.id) return;
     try {
-      const data = await api.get(`/api/suite?token=${typedSession.jwt}`, {
+      const { data } = await axios.get(`/api/suite?token=${typedSession.jwt}`, {
         headers: {
           Authorization: `Bearer ''`,
         },
-        showErrorToast: false, // Manejamos el error manualmente
       });
 
-      // Verificar que data tenga la estructura esperada
       if (!data || !Array.isArray(data) || data.length === 0 || !data[0].suites) {
         console.warn('No workspaces found or invalid structure');
         setWorkspaceStruture([]);
@@ -105,7 +123,6 @@ function DashboardContent() {
       }));
       setWorkspaceStruture(fetchedWorkspaces);
 
-      // Actualizar el workspace seleccionado si existe
       if (selectedWorkspace) {
         const updatedSelectedWorkspace = fetchedWorkspaces.find(
           ws => ws.documentId === selectedWorkspace.documentId
@@ -126,8 +143,7 @@ function DashboardContent() {
       const res = await axios.get('/api/user/get');
       const plan = res.data.plan_type || 'free';
       setUserPlan(plan);
-      
-      // Definir límites según plan
+
       const limits = {
         free: { memory: '256M', cpu: 256, workflows: 5, executions: 50, instances: 1 },
         basic: { memory: '512M', cpu: 512, workflows: 10, executions: 100, instances: 1 },
@@ -144,7 +160,7 @@ function DashboardContent() {
   const fetchProducts = async () => {
     try {
       setLoadingProducts(true);
-      const data = await api.get('/api/products');
+      const { data } = await axios.get('/api/products');
       setProducts(data);
       setError(null);
     } catch (err: any) {
@@ -161,20 +177,20 @@ function DashboardContent() {
       setResourceUsage(null);
       return;
     }
-    
+
     try {
       const res = await axios.post('/api/suite/usage', {
         name_service: selectedWorkspace.name,
       }, {
         headers: { 'Content-Type': 'application/json' },
       });
-      
+
       const data = res.data;
       if (data) {
         setResourceUsage({
           cpu: data.cpu || 0,
           memory: {
-            usage: data.memory.usage / 1024 / 1024, // Convert bytes to MB
+            usage: data.memory.usage / 1024 / 1024,
             percent: data.memory.percent,
           },
           network: {
@@ -200,7 +216,7 @@ function DashboardContent() {
     if (status === 'authenticated') {
       fetchWorkspaces();
       fetchProducts();
-      fetchUserPlan(); // Cargar plan del usuario
+      fetchUserPlan();
     }
   }, [status]);
 
@@ -212,13 +228,10 @@ function DashboardContent() {
     }
   }, [selectedWorkspace]);
 
-  // Accesibilidad del modal
   useEffect(() => {
     if (isModalOpen) {
-      // Guardar el elemento que tenía el foco antes de abrir el modal
       const previousActiveElement = document.activeElement as HTMLElement;
-      
-      // Focus en el primer input del modal
+
       setTimeout(() => {
         const firstInput = document.querySelector<HTMLInputElement>('input[type="text"]');
         if (firstInput) {
@@ -226,14 +239,12 @@ function DashboardContent() {
         }
       }, 100);
 
-      // Cerrar modal con tecla Esc
       const handleEscape = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
           handleCloseModal();
         }
       };
 
-      // Trap focus dentro del modal
       const handleTabKey = (e: KeyboardEvent) => {
         if (e.key === 'Tab') {
           const modal = document.querySelector('[role="dialog"]');
@@ -258,15 +269,13 @@ function DashboardContent() {
       document.addEventListener('keydown', handleEscape);
       document.addEventListener('keydown', handleTabKey);
 
-      // Prevenir scroll del body
       document.body.style.overflow = 'hidden';
 
       return () => {
         document.removeEventListener('keydown', handleEscape);
         document.removeEventListener('keydown', handleTabKey);
         document.body.style.overflow = 'unset';
-        
-        // Restaurar foco al elemento anterior
+
         if (previousActiveElement) {
           previousActiveElement.focus();
         }
@@ -277,11 +286,9 @@ function DashboardContent() {
   const createNewWorkSpace = async (productName: string, fields: ProductField) => {
     try {
       setIsLoading(true);
-      
-      // Extraer service_name de los campos
+
       const serviceName = fields.service_name || fields.Service_Name || '';
 
-      // Validaciones
       if (!serviceName) {
         toast.error('Por favor ingresa un nombre para el servicio');
         setIsLoading(false);
@@ -306,7 +313,6 @@ function DashboardContent() {
         return;
       }
 
-      // Verificar límites del plan
       if (planLimits && workspace.length >= planLimits.instances) {
         toast.error(`Has alcanzado el límite de ${planLimits.instances} instancia(s) para tu plan ${userPlan}`);
         setIsLoading(false);
@@ -317,14 +323,14 @@ function DashboardContent() {
 
       await axios.post(
         '/api/suite/create-n8n',
-        { 
+        {
           service_name: serviceName,
           product_name: productName,
-          plan: selectedPlanForInstance // Enviar el plan seleccionado
+          plan: selectedPlanForInstance
         },
         { headers: { 'Content-Type': 'application/json' } }
       );
-      
+
       toast.success('✅ Instancia de n8n creada con éxito', { id: 'creating' });
       fetchWorkspaces();
       handleCloseModal();
@@ -345,7 +351,7 @@ function DashboardContent() {
       });
     });
     setFormValues(initialValues);
-    setSelectedPlanForInstance(''); // Resetear plan seleccionado
+    setSelectedPlanForInstance('');
     setIsModalOpen(true);
   };
 
@@ -387,10 +393,8 @@ function DashboardContent() {
 
       toast.success(`${selectedWorkspace?.name} iniciada con éxito`);
 
-      // Actualizar inmediatamente el estado del workspace seleccionado
       setSelectedWorkspace(prev => prev ? { ...prev, activo: true } : null);
 
-      // Actualizar también la lista de workspaces
       setWorkspaceStruture(prev =>
         prev.map(ws =>
           ws.documentId === selectedWorkspace.documentId
@@ -399,7 +403,6 @@ function DashboardContent() {
         )
       );
 
-      // Hacer fetch completo para sincronizar con el servidor
       fetchWorkspaces();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Error al inicializar una suite');
@@ -422,10 +425,8 @@ function DashboardContent() {
 
       toast.success(`${selectedWorkspace?.name} pausada con éxito`);
 
-      // Actualizar inmediatamente el estado del workspace seleccionado
       setSelectedWorkspace(prev => prev ? { ...prev, activo: false } : null);
 
-      // Actualizar también la lista de workspaces
       setWorkspaceStruture(prev =>
         prev.map(ws =>
           ws.documentId === selectedWorkspace.documentId
@@ -434,7 +435,6 @@ function DashboardContent() {
         )
       );
 
-      // Hacer fetch completo para sincronizar con el servidor
       fetchWorkspaces();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Error al pausar una suite');
@@ -457,13 +457,11 @@ function DashboardContent() {
 
       toast.success(`${selectedWorkspace?.name} eliminada con éxito`);
 
-      // Remover el workspace de la lista y limpiar selección
       setWorkspaceStruture(prev =>
         prev.filter(ws => ws.documentId !== selectedWorkspace.documentId)
       );
       setSelectedWorkspace(null);
 
-      // Hacer fetch completo para sincronizar con el servidor
       fetchWorkspaces();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Error al eliminar una suite');
@@ -473,611 +471,420 @@ function DashboardContent() {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-slate-50 dark:bg-transparent">
       <Toaster richColors position="top-right" expand={true} closeButton />
 
-      {/* Left Sidebar (Fixed Width) */}
-      <div className="w-80 p-6 text-gray-900 dark:text-white bg-gradient-to-b from-gray-50 to-white dark:from-zinc-900 dark:to-zinc-800 border-r border-gray-200 dark:border-zinc-700">
+      {/* Left Sidebar */}
+      <div className="w-80 p-6 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-emerald-600 to-cyan-600 bg-clip-text text-transparent">Bienvenido</h1>
-          <p className="text-lg text-gray-600 dark:text-zinc-400">{username} 👋</p>
+          <h1 className="text-2xl font-bold mb-1 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Connect BLXK</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Suite Management</p>
         </div>
 
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <SparklesIcon className="w-6 h-6 text-emerald-500" />
-            Tu Suite
+        <div className="mb-8">
+          <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-800/30">
+            <p className="text-xs font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1">Bienvenido</p>
+            <p className="text-lg font-bold text-slate-800 dark:text-white truncate">{username} 👋</p>
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+            Tus Instancias
           </h2>
           <button
             onClick={() => setSelectedWorkspace(null)}
-            className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-4 py-2.5 rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transform hover:scale-105 active:scale-95"
+            className="p-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-800/50 transition-colors"
+            title="Crear nueva instancia"
           >
             <PlusIcon className="w-5 h-5" />
-            {workspace.length === 0 ? 'Crear' : ''}
           </button>
         </div>
 
-        <div className="mb-5">
+        <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
           {error && (
-            <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-              <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+              <p className="text-red-600 dark:text-red-400 text-xs">{error}</p>
             </div>
           )}
+
           {workspace.length > 0 ? (
-            <div className="flex flex-col gap-2">
-              {workspace.map((workspaces) => (
-                <button
-                  key={workspaces.documentId}
-                  className={`group flex justify-between items-center py-3 px-4 text-left transition-all duration-300 rounded-xl ${selectedWorkspace?.documentId === workspaces.documentId
-                    ? 'bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 dark:from-emerald-500/30 dark:to-cyan-500/30 border-2 border-emerald-500 dark:border-emerald-400 shadow-lg shadow-emerald-500/20'
-                    : 'bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 hover:border-emerald-300 dark:hover:border-emerald-600 hover:shadow-md'
-                    }`}
-                  onClick={() => setSelectedWorkspace(workspaces)}
-                >
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="relative">
-                      <span
-                        className={`inline-block w-3 h-3 rounded-full ${workspaces.activo ? 'bg-emerald-500' : 'bg-red-500'
-                        } animate-pulse`}
-                        title={workspaces.activo ? 'Activo' : 'Inactivo'}
-                      />
-                      {workspaces.activo && (
-                        <span className="absolute inset-0 w-3 h-3 rounded-full bg-emerald-500 animate-ping opacity-75"></span>
-                      )}
-                    </div>
-                    <span className="text-gray-900 dark:text-white font-medium group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
-                      {workspaces.name || 'Sin nombre'}
-                    </span>
+            workspace.map((workspaces) => (
+              <button
+                key={workspaces.documentId}
+                onClick={() => setSelectedWorkspace(workspaces)}
+                className={`w-full group flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 ${selectedWorkspace?.documentId === workspaces.documentId
+                  ? 'bg-white dark:bg-slate-800 border-2 border-indigo-500 shadow-lg shadow-indigo-500/10'
+                  : 'bg-white dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md'
+                  }`}
+              >
+                <div className="relative flex-shrink-0">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${workspaces.activo
+                    ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-400'
+                    }`}>
+                    <CubeIcon className="w-6 h-6" />
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${workspaces.activo 
-                    ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' 
-                    : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                  }`}>
+                  {workspaces.activo && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-slate-800 rounded-full"></span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`font-semibold truncate ${selectedWorkspace?.documentId === workspaces.documentId
+                    ? 'text-indigo-600 dark:text-indigo-400'
+                    : 'text-slate-700 dark:text-slate-200'
+                    }`}>
+                    {workspaces.name || 'Sin nombre'}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                    <span className={`w-1.5 h-1.5 rounded-full ${workspaces.activo ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
                     {workspaces.activo ? 'Online' : 'Offline'}
-                  </span>
-                </button>
-              ))}
-            </div>
+                  </p>
+                </div>
+              </button>
+            ))
           ) : (
-            <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-800 dark:to-zinc-900 border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-xl text-center">
-              <SparklesIcon className="w-12 h-12 mx-auto mb-3 text-gray-400 dark:text-zinc-500" />
-              <p className="text-gray-600 dark:text-zinc-400 text-sm">No tienes suites aún.</p>
-              <p className="text-gray-500 dark:text-zinc-500 text-xs mt-1">Crea tu primera instancia</p>
+            <div className="text-center py-8 px-4 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
+              <SparklesIcon className="w-8 h-8 mx-auto mb-2 text-slate-400" />
+              <p className="text-sm text-slate-500">No tienes instancias</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Right Content Area (Dynamic) */}
-      <div className="flex-1 bg-gradient-to-br from-gray-50 to-white dark:from-zinc-900 dark:to-zinc-800 p-8 text-gray-900 dark:text-white overflow-y-auto">
-
+      {/* Right Content Area */}
+      <div className="flex-1 p-8 overflow-y-auto">
         {selectedWorkspace ? (
-          selectedWorkspace.name === 'n8n_free_treal' ? (
-
-            <div>
-              <div className="mb-6 flex flex-row items-center gap-8">
-                <div className="text-2xl flex items-center gap-2">
-                  <span className="font-semibold">Nombre:</span>
-                  <span>{selectedWorkspace.name || 'Sin nombre'}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {selectedWorkspace.url ? (
-                    <span className="flex items-center gap-1">
-                      <a
-                        href={selectedWorkspace.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-emerald-400 hover:text-emerald-300"
-                        title="Abrir en nueva pestaña"
-                      >
-                        <ArrowTopRightOnSquareIcon className="w-9 h-9" />
-                      </a>
+          <div className="max-w-5xl mx-auto animate-fadeIn">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+              <div>
+                <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-3">
+                  {selectedWorkspace.name}
+                  {selectedWorkspace.activo && (
+                    <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded-full uppercase tracking-wide">
+                      Activo
                     </span>
-                  ) : (
-                    <span className="text-zinc-400"></span>
                   )}
-                </div>
+                </h2>
+                {selectedWorkspace.url && (
+                  <a
+                    href={selectedWorkspace.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline text-sm font-medium"
+                  >
+                    {selectedWorkspace.url}
+                    <ArrowTopRightOnSquareIcon className="w-4 h-4" />
+                  </a>
+                )}
               </div>
-              <div className="text-gray-700 dark:text-zinc-300">
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold text-lg block mb-2">
-                  ¡Bienvenidos! Este espacio es para ustedes, disfruten su prueba gratuita de <b>n8n</b> 🚀
-                </span>
-                Recuerden que esta instancia es para pruebas y la infraestructura es administrada por el equipo de soporte.<br />
-                <span className="text-amber-400 font-semibold">
-                  Si contratan un plan, podrán migrar sus flujos y disfrutar de más beneficios.
-                </span>
+
+              <div className="flex items-center gap-3">
+                {selectedWorkspace.activo ? (
+                  <button
+                    onClick={pause}
+                    disabled={isLoading}
+                    className="flex items-center gap-2 px-4 py-2 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-xl hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors font-medium disabled:opacity-50"
+                  >
+                    <StopIcon className="w-5 h-5" />
+                    {isLoading ? 'Pausando...' : 'Pausar'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={init}
+                    disabled={isLoading}
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-xl hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors font-medium disabled:opacity-50"
+                  >
+                    <PlayIcon className="w-5 h-5" />
+                    {isLoading ? 'Iniciando...' : 'Iniciar'}
+                  </button>
+                )}
+                <button
+                  onClick={dele}
+                  disabled={isLoading}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-xl hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors font-medium disabled:opacity-50"
+                >
+                  <TrashIcon className="w-5 h-5" />
+                  {isLoading ? 'Eliminando...' : 'Eliminar'}
+                </button>
               </div>
-              <button
-                onClick={() => setSelectedWorkspace(null)}
-                className="mt-4 bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 transition"
-              >
-                Volver
-              </button>
             </div>
 
-          ) : (
-            <div>
-
-              <div className="mb-6 flex flex-row items-center gap-8">
-                <div className="text-2xl flex items-center gap-2">
-                  <span className="font-semibold">Nombre:</span>
-                  <span>{selectedWorkspace.name || 'Sin nombre'}</span>
+            {/* Resource Usage */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-white dark:bg-[#1e293b] p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
+                    <CpuChipIcon className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-bold text-slate-700 dark:text-slate-200">CPU</h3>
                 </div>
-                <div className="flex items-center gap-2">
-                  {selectedWorkspace.url ? (
-                    <span className="flex items-center gap-1">
-                      <a
-                        href={selectedWorkspace.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-emerald-400 hover:text-emerald-300"
-                        title="Abrir en nueva pestaña"
-                      >
-                        <ArrowTopRightOnSquareIcon className="w-9 h-9" />
-                      </a>
-                    </span>
-                  ) : (
-                    <span className="text-zinc-400"></span>
-                  )}
+                <div className="text-3xl font-bold text-slate-800 dark:text-white mb-1">
+                  {resourceUsage?.cpu || 0}%
                 </div>
-                <div className="flex flex-row gap-3">
-                  {selectedWorkspace.activo ? (
-                    <button
-                      className={`flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded transition text-sm ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      title="Parar"
-                      onClick={pause}
-                      disabled={isLoading}
-                    >
-                      <StopIcon className="w-7 h-7" />
-                      {isLoading ? 'Pausando...' : ''}
-                    </button>
-                  ) : (
-                    <button
-                      className={`flex items-center gap-1 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded transition text-sm ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      title="Iniciar"
-                      onClick={init}
-                      disabled={isLoading}
-                    >
-                      <PlayIcon className="w-7 h-7" />
-                      {isLoading ? 'Iniciando...' : ''}
-                    </button>
-                  )}
-                  <button
-                    className={`flex items-center gap-1 bg-zinc-700 hover:bg-zinc-800 text-white px-3 py-1 rounded transition text-sm ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    title="Eliminar"
-                    onClick={dele}
-                    disabled={isLoading}
-                  >
-                    <TrashIcon className="w-7 h-7" />
-                    {isLoading ? 'Eliminando...' : ''}
-                  </button>
+                <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2">
+                  <div className="bg-blue-500 h-2 rounded-full transition-all duration-500" style={{ width: `${resourceUsage?.cpu || 0}%` }}></div>
                 </div>
               </div>
 
-              <div className="bg-gray-100 dark:bg-zinc-800 rounded-lg p-6 shadow-md dark:shadow-none mb-4">
-                <h3 className="text-lg font-semibold mb-2">Uso de Recursos</h3>
-                <div className="mb-3">
-
-                </div>
-                <div className="mb-3">
-                  <span className="block text-gray-600 dark:text-zinc-400 mb-1">Memoria</span>
-                  <div className="w-full bg-gray-300 dark:bg-zinc-700 rounded-full h-4">
-                    <div
-                      className="bg-emerald-400 h-4 rounded-full"
-                      style={{ width: `${resourceUsage?.memory.percent || 0}%` }}
-                    />
+              <div className="bg-white dark:bg-[#1e293b] p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg">
+                    <ServerIcon className="w-6 h-6" />
                   </div>
-                  <span className="text-sm text-gray-700 dark:text-zinc-300">
-                    {resourceUsage
-                      ? `${resourceUsage.memory.usage.toFixed(2)} MB / ${(resourceUsage.memory.usage / (resourceUsage.memory.percent / 100)).toFixed(2)} MB`
-                      : 'Cargando...'}
-                  </span>
+                  <h3 className="font-bold text-slate-700 dark:text-slate-200">Memoria</h3>
+                </div>
+                <div className="text-3xl font-bold text-slate-800 dark:text-white mb-1">
+                  {resourceUsage ? `${resourceUsage.memory.usage.toFixed(0)}MB` : '0MB'}
+                </div>
+                <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2 mb-1">
+                  <div className="bg-purple-500 h-2 rounded-full transition-all duration-500" style={{ width: `${resourceUsage?.memory.percent || 0}%` }}></div>
+                </div>
+                <p className="text-xs text-slate-500">{resourceUsage?.memory.percent || 0}% utilizado</p>
+              </div>
 
+              <div className="bg-white dark:bg-[#1e293b] p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-lg">
+                    <SignalIcon className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-bold text-slate-700 dark:text-slate-200">Red</h3>
+                </div>
+                <div className="flex justify-between items-end">
+                  <div>
+                    <p className="text-xs text-slate-500 uppercase">Entrada</p>
+                    <p className="text-lg font-bold text-slate-800 dark:text-white">{resourceUsage?.network.in || 0} KB</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-slate-500 uppercase">Salida</p>
+                    <p className="text-lg font-bold text-slate-800 dark:text-white">{resourceUsage?.network.out || 0} KB</p>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-
-                  {selectedWorkspace.credencials && (
-                    <div className="bg-gray-100 dark:bg-zinc-800 rounded-lg py-6 mb-4">
-                      <h3 className="text-lg font-semibold mb-2">Credenciales</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {Object.entries(selectedWorkspace.credencials)
-                          .filter(([key]) => key !== 'username' && key !== 'password' && key !== 'setup_required' && key !== 'note')
-                          .map(([key, value], idx, arr) => {
-                            // Si es el último y hay un número impar, que ocupe todo el ancho
-                            const isLast = idx === arr.length - 1 && arr.length % 2 !== 0;
-                            const isSensitive = key === 'urlInterna';
-                            const show = !!showFields[key];
-                            return (
-                              <div
-                                key={key}
-                                className={`flex flex-col bg-gray-200 dark:bg-zinc-900 rounded-md p-4 ${isLast ? 'md:col-span-2' : ''}`}
-                              >
-                                <span className="text-gray-700 dark:text-zinc-400 font-semibold mb-1">{key}:</span>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-gray-900 dark:text-zinc-200 break-all text-base bg-gray-300 dark:bg-zinc-800 rounded px-3 py-1 select-all w-full block">
-                                    {isSensitive && !show ? '••••••••' : String(value)}
-                                  </span>
-                                {isSensitive && (
-                                  <button
-                                    className="bg-gray-400 dark:bg-zinc-700 hover:bg-gray-500 dark:hover:bg-zinc-600 text-white px-2 py-1 rounded transition text-xs flex items-center gap-1"
-                                    title={show ? 'Ocultar' : 'Mostrar'}
-                                    type="button"
-                                    onClick={() => toggleShow(key)}
-                                  >
-                                    {show ? (
-                                      <EyeIcon className="w-6 h-6" />
-                                    ) : (
-                                      <EyeSlashIcon className="w-6 h-6" />
-
-                                    )}
-                                  </button>
-                                )}
-                                <button
-                                  className="bg-zinc-700 hover:bg-zinc-600 text-white px-2 py-1 rounded transition text-xs flex items-center gap-1"
-                                  title="Copiar"
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(String(value));
-                                    toast.success('Copiado al portapapeles');
-                                  }}
-                                  type="button"
-                                >
-                                  <ClipboardIcon className="w-6 h-6" />
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
+            {/* Credentials */}
+            {selectedWorkspace.credencials && (
+              <div className="bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+                  <h3 className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">
+                    <ClipboardIcon className="w-5 h-5 text-slate-500" />
+                    Credenciales de Acceso
+                  </h3>
+                </div>
+                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {Object.entries(selectedWorkspace.credencials).map(([key, value]) => (
+                    <div key={key} className="group">
+                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        {key.replace(/_/g, ' ')}
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showFields[key] ? 'text' : 'password'}
+                          value={value}
+                          readOnly
+                          className="w-full pl-4 pr-20 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                        />
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                          <button
+                            onClick={() => toggleShow(key)}
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+                            title={showFields[key] ? 'Ocultar' : 'Mostrar'}
+                          >
+                            {showFields[key] ? (
+                              <EyeSlashIcon className="w-4 h-4" />
+                            ) : (
+                              <EyeIcon className="w-4 h-4" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(value);
+                              toast.success('Copiado al portapapeles');
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
+                            title="Copiar"
+                          >
+                            <ClipboardIcon className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  )}
-
-
+                  ))}
                 </div>
-              </div>
-
-
-
-
-
-
-
-
-
-
-
-
-              <button
-                onClick={() => setSelectedWorkspace(null)}
-                className="mt-4 bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 transition"
-              >
-                Volver
-              </button>
-            </div>
-
-          )
-
-        ) : (
-          <div className="animate-fadeIn">
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">Crear Nueva Suite</h2>
-              <p className="text-gray-600 dark:text-zinc-400">Selecciona un producto para comenzar</p>
-            </div>
-            {loadingProducts ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="bg-white dark:bg-zinc-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-zinc-700 animate-pulse"
-                  >
-                    {/* Skeleton Image */}
-                    <div className="flex-1 flex items-center justify-center mb-4 bg-gray-200 dark:bg-zinc-700 rounded-xl h-32"></div>
-                    {/* Skeleton Title */}
-                    <div className="h-6 bg-gray-200 dark:bg-zinc-700 rounded-lg mb-4 w-3/4 mx-auto"></div>
-                    {/* Skeleton Button */}
-                    <div className="h-4 bg-gray-200 dark:bg-zinc-700 rounded-lg w-1/2 mx-auto"></div>
-                  </div>
-                ))}
-              </div>
-            ) : error ? (
-              <div className="p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-                <p className="text-red-600 dark:text-red-400">{error}</p>
-              </div>
-            ) : products.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {products.map((product, index) => (
-                  <div
-                    key={index}
-                    className="group bg-white dark:bg-zinc-800 rounded-2xl p-6 shadow-lg hover:shadow-2xl dark:shadow-none border border-gray-200 dark:border-zinc-700 flex flex-col h-full cursor-pointer transition-all duration-300 hover:scale-105 hover:border-emerald-400 dark:hover:border-emerald-500"
-                    onClick={() => handleOpenModal(product)}
-                  >
-                    <div className="flex-1 flex items-center justify-center mb-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-900 dark:to-zinc-800 rounded-xl p-6">
-                      <Image
-                        src={product.img}
-                        alt={product.name}
-                        width={300}
-                        height={200}
-                        className="object-contain w-full h-32 transition-transform duration-300 group-hover:scale-110"
-                      />
-                    </div>
-                    <h3 className="text-xl font-bold text-center text-gray-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{product.name}</h3>
-                    <div className="mt-4 text-center">
-                      <span className="inline-flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400 font-semibold">
-                        Crear instancia
-                        <ArrowTopRightOnSquareIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-20">
-                <SparklesIcon className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-zinc-500" />
-                <p className="text-gray-600 dark:text-zinc-400 text-lg">No hay productos disponibles.</p>
               </div>
             )}
           </div>
+        ) : (
+          <div className="h-full flex flex-col items-center justify-center text-center animate-fadeIn">
+            <div className="w-24 h-24 bg-indigo-50 dark:bg-indigo-900/20 rounded-full flex items-center justify-center mb-6">
+              <RocketLaunchIcon className="w-12 h-12 text-indigo-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">
+              Selecciona una instancia
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-8">
+              Elige una instancia del menú lateral para ver sus detalles, métricas y gestionar su estado.
+            </p>
+            <button
+              onClick={() => {
+                toast.info('Usa el botón + en el menú lateral para crear una nueva instancia');
+              }}
+              className="px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md transition-all font-medium"
+            >
+              Crear Nueva Instancia
+            </button>
+          </div>
         )}
-
-        
       </div>
 
-      {/* Modal */}
-      {isModalOpen && selectedProduct && (
-        <div
-          className="fixed inset-0 flex items-center justify-center z-50 bg-black/60 backdrop-blur-sm animate-fadeIn"
-          onClick={handleCloseModal}
-          role="presentation"
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="modal-title"
-            className="bg-white dark:bg-zinc-800 p-8 rounded-2xl shadow-2xl w-full max-w-2xl border border-gray-200 dark:border-zinc-700 animate-slideInRight max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-6">
+      {/* Modal de Creación */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn" role="dialog" aria-modal="true">
+          <div className="bg-white dark:bg-[#1e293b] rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-100 dark:border-slate-800 animate-scaleIn">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
               <div>
-                <h2 id="modal-title" className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Crear Nueva Instancia</h2>
-                <p className="text-sm text-gray-600 dark:text-zinc-400">
-                  Configura tu instancia de{' '}
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">{selectedProduct.name}</span>
-                </p>
+                <h3 className="text-xl font-bold text-slate-800 dark:text-white">Nueva Instancia</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Configura tu nuevo servicio</p>
               </div>
-              {planLimits && (
-                <div className="text-right">
-                  <span className="text-xs bg-gradient-to-r from-emerald-100 to-cyan-100 dark:from-emerald-900/30 dark:to-cyan-900/30 text-emerald-700 dark:text-emerald-400 px-3 py-1.5 rounded-full font-semibold">
-                    {workspace.length}/{planLimits.instances} usadas
-                  </span>
-                </div>
-              )}
-            </div>
-            
-            {/* Selector de Plan */}
-            <div className="mb-6 p-6 bg-gradient-to-br from-cyan-50 via-blue-50 to-purple-50 dark:from-cyan-900/20 dark:via-blue-900/20 dark:to-purple-900/20 border-2 border-cyan-200 dark:border-cyan-800 rounded-2xl shadow-inner">
-              <label id="plan-selector-label" className="block text-gray-900 dark:text-white mb-3 font-semibold text-lg">
-                1️⃣ Selecciona tu Plan
-                <span className="text-red-500 ml-1">*</span>
-              </label>
-              <div role="radiogroup" aria-labelledby="plan-selector-label" className="grid grid-cols-1 gap-3">
-                {[
-                  { 
-                    value: 'free', 
-                    name: 'Free', 
-                    desc: '256MB RAM, 256 CPU, 1 instancia',
-                    subtitle: 'Ideal para pruebas',
-                    icon: SparklesIcon,
-                    styles: {
-                      border: 'border-gray-400',
-                      bg: 'bg-gray-50 dark:bg-gray-900/30',
-                      ring: 'ring-gray-500',
-                      hover: 'hover:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800/50',
-                      iconColor: 'text-gray-600 dark:text-gray-400'
-                    }
-                  },
-                  { 
-                    value: 'basic', 
-                    name: 'Basic', 
-                    desc: '512MB RAM, 512 CPU, 1 instancia',
-                    subtitle: 'Para proyectos pequeños',
-                    icon: BoltIcon,
-                    styles: {
-                      border: 'border-blue-400',
-                      bg: 'bg-blue-50 dark:bg-blue-900/30',
-                      ring: 'ring-blue-500',
-                      hover: 'hover:border-blue-500 hover:bg-blue-100 dark:hover:bg-blue-800/50',
-                      iconColor: 'text-blue-600 dark:text-blue-400'
-                    }
-                  },
-                  { 
-                    value: 'premium', 
-                    name: 'Premium', 
-                    desc: '1GB RAM, 1024 CPU, 3 instancias',
-                    subtitle: 'Para equipos medianos',
-                    icon: StarIcon,
-                    badge: 'Recomendado',
-                    styles: {
-                      border: 'border-purple-400',
-                      bg: 'bg-purple-50 dark:bg-purple-900/30',
-                      ring: 'ring-purple-500',
-                      hover: 'hover:border-purple-500 hover:bg-purple-100 dark:hover:bg-purple-800/50',
-                      iconColor: 'text-purple-600 dark:text-purple-400'
-                    }
-                  },
-                  { 
-                    value: 'pro', 
-                    name: 'Pro', 
-                    desc: '2GB RAM, 2048 CPU, 10 instancias',
-                    subtitle: 'Máximo rendimiento',
-                    icon: RocketLaunchIcon,
-                    badge: 'Popular',
-                    styles: {
-                      border: 'border-emerald-400',
-                      bg: 'bg-emerald-50 dark:bg-emerald-900/30',
-                      ring: 'ring-emerald-500',
-                      hover: 'hover:border-emerald-500 hover:bg-emerald-100 dark:hover:bg-emerald-800/50',
-                      iconColor: 'text-emerald-600 dark:text-emerald-400'
-                    }
-                  },
-                ].map((plan) => {
-                  const PlanIcon = plan.icon;
-                  const isSelected = selectedPlanForInstance === plan.value;
-                  
-                  return (
-                    <button
-                      key={plan.value}
-                      type="button"
-                      role="radio"
-                      aria-checked={isSelected}
-                      onClick={() => setSelectedPlanForInstance(plan.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          setSelectedPlanForInstance(plan.value);
-                        }
-                      }}
-                      disabled={isLoading}
-                      className={`relative p-4 rounded-xl border-2 transition-all duration-300 text-left group ${
-                        isSelected
-                          ? `${plan.styles.border} ${plan.styles.bg} ring-2 ${plan.styles.ring} shadow-lg transform scale-[1.02]`
-                          : `border-gray-300 dark:border-zinc-700 ${plan.styles.hover}`
-                      } disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 ${plan.styles.ring}`}
-                    >
-                      {plan.badge && (
-                        <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs font-bold rounded-full shadow-md">
-                          {plan.badge}
-                        </span>
-                      )}
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-3 flex-1">
-                          <div className={`p-2 rounded-lg ${plan.styles.bg} ${plan.styles.iconColor} transition-transform group-hover:scale-110`}>
-                            <PlanIcon className="w-6 h-6" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-bold text-gray-900 dark:text-white text-lg flex items-center gap-2">
-                              {plan.name}
-                            </div>
-                            <div className="text-xs text-gray-500 dark:text-zinc-500 mt-0.5 font-medium">
-                              {plan.subtitle}
-                            </div>
-                            <div className="text-sm text-gray-600 dark:text-zinc-400 mt-2">
-                              {plan.desc}
-                            </div>
-                          </div>
-                        </div>
-                        {isSelected && (
-                          <CheckCircleIcon className="w-7 h-7 text-emerald-500 flex-shrink-0 animate-in zoom-in duration-200" />
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-              {!selectedPlanForInstance && (
-                <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                  <p className="text-amber-700 dark:text-amber-400 text-sm flex items-center gap-2">
-                    <span className="text-lg">⚠️</span>
-                    <span className="font-medium">Debes seleccionar un plan para continuar</span>
-                  </p>
-                </div>
-              )}
-            </div>
-            {planLimits && workspace.length >= planLimits.instances && (
-              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <p className="text-red-700 dark:text-red-400 text-sm">
-                  ⚠️ Has alcanzado el límite de tu plan <b>{userPlan}</b>. Actualiza tu plan para crear más instancias.
-                </p>
-              </div>
-            )}
-            {/* Campos de Configuración */}
-            <div className="mb-3">
-              <label className="block text-gray-900 dark:text-white mb-3 font-semibold text-lg">
-                2️⃣ Configura tu Instancia
-              </label>
-            </div>
-            <div className="space-y-4">
-              {selectedProduct.fields.map((field, index) => (
-                <div key={index}>
-                  {Object.entries(field).map(([key, value]) => {
-                    // Solo mostrar el campo service_name, ocultar service_url
-                    if (key !== 'service_name') return null;
-                    
-                    return (
-                      <div key={key} className="mb-4">
-                        <label className="block text-gray-700 dark:text-zinc-300 mb-2 font-medium">
-                          Nombre del Servicio
-                          <span className="text-red-500 ml-1">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={formValues[key] || ''}
-                          onChange={(e) => handleInputChange(key, e.target.value)}
-                          className={`w-full bg-white dark:bg-zinc-700 text-gray-900 dark:text-white border rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 transition-all ${
-                            /[A-Z]/.test(formValues[key] || '')
-                              ? 'border-red-500 focus:ring-red-500'
-                              : 'border-gray-300 dark:border-zinc-600 focus:ring-emerald-500'
-                          }`}
-                          placeholder="ej: mi_instancia_n8n"
-                          disabled={isLoading}
-                        />
-                      {key === 'service_name' && (
-                        <div className="mt-2 space-y-2">
-                          <p className="text-xs text-gray-500 dark:text-zinc-400">
-                            💡 Usa solo minúsculas, números y guiones bajos (_)
-                          </p>
-                          
-                          
-                          {/[A-Z]/.test(formValues[key] || '') && (
-                            <p className="text-red-500 text-sm flex items-center gap-1">
-                              ❌ No debe contener mayúsculas
-                            </p>
-                          )}
-                          {(formValues[key] || '').trim() === 'n8n_free_treal' && (
-                            <p className="text-red-500 text-sm flex items-center gap-1">
-                              ❌ El nombre <b>n8n_free_treal</b> está reservado
-                            </p>
-                          )}
-                          {formValues[key] && formValues[key].length < 3 && (
-                            <p className="text-orange-500 text-sm flex items-center gap-1">
-                              ⚠️ Mínimo 3 caracteres
-                            </p>
-                          )}
-                          {formValues[key] && formValues[key].length >= 3 && !/[A-Z]/.test(formValues[key]) && formValues[key] !== 'n8n_free_treal' && (
-                            <p className="text-emerald-500 text-sm flex items-center gap-1">
-                              ✅ Nombre válido
-                            </p>
-                          )}
-                        </div>
-                      )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-zinc-700">
               <button
                 onClick={handleCloseModal}
-                disabled={isLoading}
-                className="bg-gray-200 dark:bg-zinc-600 text-gray-700 dark:text-white px-6 py-3 rounded-xl hover:bg-gray-300 dark:hover:bg-zinc-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+              <div className="space-y-8">
+                {/* Plan Selection */}
+                <div>
+                  <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <BoltIcon className="w-4 h-4" />
+                    Selecciona un Plan
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {['basic', 'premium', 'enterprise'].map((plan) => (
+                      <button
+                        key={plan}
+                        onClick={() => setSelectedPlanForInstance(plan)}
+                        className={`relative p-4 rounded-2xl border-2 text-left transition-all duration-200 ${selectedPlanForInstance === plan
+                          ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                          : 'border-slate-100 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-800 bg-white dark:bg-slate-800/50'
+                          }`}
+                      >
+                        {selectedPlanForInstance === plan && (
+                          <div className="absolute -top-2 -right-2 bg-indigo-500 text-white p-1 rounded-full shadow-sm">
+                            <CheckCircleIcon className="w-4 h-4" />
+                          </div>
+                        )}
+                        <div className="mb-2">
+                          {plan === 'basic' && <StarIcon className="w-6 h-6 text-slate-400" />}
+                          {plan === 'premium' && <SparklesIcon className="w-6 h-6 text-indigo-500" />}
+                          {plan === 'enterprise' && <RocketLaunchIcon className="w-6 h-6 text-purple-500" />}
+                        </div>
+                        <p className="font-bold text-slate-800 dark:text-white capitalize mb-1">{plan}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {plan === 'basic' && 'Para iniciantes'}
+                          {plan === 'premium' && 'Para profesionales'}
+                          {plan === 'enterprise' && 'Para grandes equipos'}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Products */}
+                <div>
+                  <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <CubeIcon className="w-4 h-4" />
+                    Productos Disponibles
+                  </h4>
+                  {loadingProducts ? (
+                    <div className="flex justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {products.map((product) => (
+                        <button
+                          key={product.name}
+                          onClick={() => handleOpenModal(product)}
+                          className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 ${selectedProduct?.name === product.name
+                            ? 'border-indigo-500 ring-2 ring-indigo-500/20'
+                            : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-lg'
+                            }`}
+                        >
+                          <div className="aspect-video relative bg-slate-100 dark:bg-slate-800">
+                            <div className="absolute inset-0 flex items-center justify-center text-slate-300 dark:text-slate-600">
+                              <CubeIcon className="w-12 h-12" />
+                            </div>
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                              <p className="text-white font-medium">Seleccionar</p>
+                            </div>
+                          </div>
+                          <div className="p-4 bg-white dark:bg-slate-800">
+                            <h3 className="font-bold text-slate-800 dark:text-white">{product.name}</h3>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Form Fields */}
+                {selectedProduct && (
+                  <div className="animate-fadeIn">
+                    <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                      <ClipboardIcon className="w-4 h-4" />
+                      Configuración
+                    </h4>
+                    <div className="space-y-4">
+                      {selectedProduct.fields.map((field, index) => (
+                        <div key={index}>
+                          {Object.keys(field).map((key) => {
+                            if (key === 'service_name' || key === 'Service_Name') return (
+                              <div key={key}>
+                                <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
+                                  Nombre del Servicio <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={formValues[key] || ''}
+                                  onChange={(e) => handleInputChange(key, e.target.value)}
+                                  className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                                  placeholder="ej: mi-instancia-n8n"
+                                />
+                                <p className="text-xs text-slate-400 mt-2">
+                                  Solo minúsculas, números y guiones bajos. Mínimo 3 caracteres.
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex justify-end gap-3">
+              <button
+                onClick={handleCloseModal}
+                className="px-6 py-3 rounded-xl font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleConfirm}
-                disabled={isLoading || !selectedPlanForInstance || (planLimits && workspace.length >= planLimits.instances)}
-                title={!selectedPlanForInstance ? 'Debes seleccionar un plan primero' : (planLimits && workspace.length >= planLimits.instances) ? 'Has alcanzado el límite de tu plan' : 'Crear nueva instancia'}
-                className="relative bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-8 py-3 rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transform hover:scale-105 active:scale-95 disabled:transform-none font-bold group"
+                disabled={isLoading || !selectedPlanForInstance}
+                className="px-8 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:-translate-y-0.5"
               >
-                {isLoading ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Creando...
-                  </>
-                ) : (
-                  <>
-                    <SparklesIcon className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                    Crear Instancia
-                  </>
-                )}
+                {isLoading ? 'Creando...' : 'Crear Instancia'}
               </button>
             </div>
           </div>
