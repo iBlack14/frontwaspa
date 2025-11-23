@@ -493,7 +493,7 @@ function DashboardContent() {
             Tus Instancias
           </h2>
           <button
-            onClick={() => setSelectedWorkspace(null)}
+            onClick={() => setIsModalOpen(true)}
             className="p-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-800/50 transition-colors"
             title="Crear nueva instancia"
           >
@@ -728,9 +728,7 @@ function DashboardContent() {
               Elige una instancia del menú lateral para ver sus detalles, métricas y gestionar su estado.
             </p>
             <button
-              onClick={() => {
-                toast.info('Usa el botón + en el menú lateral para crear una nueva instancia');
-              }}
+              onClick={() => setIsModalOpen(true)}
               className="px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md transition-all font-medium"
             >
               Crear Nueva Instancia
@@ -901,3 +899,4 @@ export default function Dashboard() {
     </Sidebard>
   );
 }
+
