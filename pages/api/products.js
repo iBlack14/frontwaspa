@@ -6,9 +6,7 @@ export default async function handler(req, res) {
   const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL; // Server-side env variable
   const token_read = process.env.NEXT_PUBLIC_BACKEND_READ_TOKEN; // Server-side env variable
   const weebhook = process.env.NEXT_PUBLIC_N8N_WORKSPACE;
-  
-
-    const weebhook_info = process.env.INFO_SERVICE_WEBHOOK;
+  const weebhook_info = process.env.INFO_SERVICE_WEBHOOK;
 
   try {
     if (method === 'GET') {
@@ -17,42 +15,45 @@ export default async function handler(req, res) {
         .from('products')
         .select('*')
 
-      // Si hay error o no hay productos, devolver productos por defecto
-      if (error || !products || products.length === 0) {
-        console.warn('No products found in database, returning default products');
-        
-        // Productos por defecto
-        const defaultProducts = [
-          {
-            id: 1,
-            name: 'N8N',
-            fields: [
-              {
-                service_name: ''
-              }
-            ],
-            img: 'https://n8n.io/favicon.ico',
-            price: '0',
-            description: 'Plataforma de automatización de flujos de trabajo'
-          }
-        ];
-        
-        return res.status(200).json(defaultProducts);
+      // Si hay error, devolver array vacío o manejarlo. 
+      // Si products es null, inicializarlo como array vacío para el check de abajo.
+      let finalProducts = products || [];
+
+      if (error) {
+        console.warn('Error fetching products from database:', error);
+      }
+
+      // Verificar si N8N ya existe en los productos (case insensitive)
+      const n8nExists = finalProducts.some(p => p.name && p.name.toLowerCase() === 'n8n');
+
+      // Si no existe, agregarlo
+      if (!n8nExists) {
+        finalProducts.push({
+          id: 999, // ID temporal/ficticio para el frontend
+          name: 'N8N',
+          fields: [
+            {
+              service_name: ''
+            }
+          ],
+          img: ['https://n8n.io/favicon.ico'], // Array como espera el map de abajo
+          price: '0',
+          description: 'Plataforma de automatización de flujos de trabajo'
+        });
       }
 
       // Formatear respuesta
-      const payload = products.map((item) => ({
+      const payload = finalProducts.map((item) => ({
         id: item.id,
         name: item.name,
         fields: item.fields,
-        img: item.img && item.img.length > 0 ? item.img[0] : null,
+        // Manejar tanto array (Supabase) como string (Hardcoded) si fuera necesario
+        img: Array.isArray(item.img) && item.img.length > 0 ? item.img[0] : (typeof item.img === 'string' ? item.img : null),
         price: item.price,
         description: item.description
       }));
-      
+
       return res.status(200).json(payload);
-
-
 
     } else if (method === 'POST') {
       // Create new instance
@@ -73,8 +74,6 @@ export default async function handler(req, res) {
       } else {
         return res.status(400).json({ message });
       }
-
-
 
     }
 

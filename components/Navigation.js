@@ -9,7 +9,7 @@ export default function Navigation() {
   useEffect(() => {
     // Obtener contador de mensajes no leídos
     fetchUnreadCount();
-    
+
     // Actualizar cada 30 segundos
     const interval = setInterval(fetchUnreadCount, 30000);
     return () => clearInterval(interval);
@@ -30,6 +30,7 @@ export default function Navigation() {
   const navItems = [
     { name: 'Dashboard', path: '/', icon: '📊' },
     { name: 'Instancias', path: '/instances', icon: '📱' },
+    { name: 'Apps', path: '/apps', icon: '🧩' },
     { name: 'Mensajes', path: '/messages', icon: '📨', badge: unreadCount },
     { name: 'Configuración', path: '/settings', icon: '⚙️' },
   ];
@@ -43,11 +44,10 @@ export default function Navigation() {
               <Link
                 key={item.path}
                 href={item.path}
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium relative ${
-                  router.pathname === item.path
+                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium relative ${router.pathname === item.path
                     ? 'border-blue-500 text-gray-900'
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                }`}
+                  }`}
               >
                 <span className="mr-2">{item.icon}</span>
                 {item.name}
