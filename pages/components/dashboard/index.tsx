@@ -24,6 +24,7 @@ import {
   RectangleStackIcon,
   Bars3Icon,
   XMarkIcon,
+  Squares2X2Icon,
 } from '@heroicons/react/24/outline';
 
 function SidebarLayout({ children }: { children: React.ReactNode }) {
@@ -91,6 +92,7 @@ function SidebarLayout({ children }: { children: React.ReactNode }) {
     { name: 'Templates', icon: <RectangleStackIcon className="w-6 h-6" strokeWidth={1.5} />, path: '/templates', action: () => handleNavigation('/templates') },
     { name: 'Subscription', icon: <InboxIcon className="w-6 h-6" strokeWidth={1.5} />, path: '/subscription', action: () => handleNavigation('/subscription') },
     { name: 'Documentations', icon: <DocumentTextIcon className="w-6 h-6" strokeWidth={1.5} />, path: '/docs', action: () => handleNavigation('/docs') },
+    { name: 'Apps', icon: <Squares2X2Icon className="w-6 h-6" strokeWidth={1.5} />, path: '/apps', action: () => handleNavigation('/apps') },
     { name: 'Suite', icon: <BriefcaseIcon className="w-6 h-6" strokeWidth={1.5} />, path: '/suite', action: () => handleNavigation('/suite') },
     { name: 'Logout', icon: <ArrowLeftOnRectangleIcon className="w-6 h-6" strokeWidth={1.5} />, path: '/login', action: handleLogout },
   ];
