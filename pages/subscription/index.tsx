@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 import Sidebard from '../components/dashboard/index';
-import { CheckCircleIcon, XCircleIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon, XCircleIcon, SparklesIcon, StarIcon, ShieldCheckIcon, BoltIcon } from '@heroicons/react/24/outline';
 import { Toaster, toast } from 'sonner';
 
 interface CustomSession {
@@ -43,7 +43,7 @@ function SubscriptionContent() {
     {
       id: 1,
       name: 'Plan Básico',
-      description: 'Perfecto para comenzar con WhatsApp Business',
+      description: 'Perfecto para comenzar',
       price: '29.99',
       features: [
         '1 instancia de WhatsApp',
@@ -56,7 +56,7 @@ function SubscriptionContent() {
     {
       id: 2,
       name: 'Plan Profesional',
-      description: 'Ideal para negocios en crecimiento',
+      description: 'Para negocios en crecimiento',
       price: '59.99',
       features: [
         '5 instancias de WhatsApp',
@@ -72,7 +72,7 @@ function SubscriptionContent() {
     {
       id: 3,
       name: 'Plan Empresarial',
-      description: 'Para empresas que necesitan máxima capacidad',
+      description: 'Máxima capacidad y control',
       price: '149.99',
       features: [
         'Instancias ilimitadas',
@@ -130,136 +130,132 @@ function SubscriptionContent() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <Toaster richColors />
-      
+    <div className="min-h-screen bg-slate-50 dark:bg-transparent p-6 sm:p-8">
+      <Toaster richColors position="top-right" />
+
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-          <SparklesIcon className="w-8 h-8 text-cyan-500" />
+      <div className="mb-10 text-center max-w-2xl mx-auto">
+        <div className="inline-flex items-center justify-center p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl mb-4">
+          <SparklesIcon className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+        </div>
+        <h1 className="text-4xl font-bold text-slate-800 dark:text-white mb-3 tracking-tight">
           Suscripción y Planes
         </h1>
-        <p className="text-gray-600 dark:text-zinc-400">
-          Gestiona tu suscripción y elige el plan que mejor se adapte a tus necesidades
+        <p className="text-lg text-slate-500 dark:text-slate-400 leading-relaxed">
+          Elige el plan perfecto para potenciar tu negocio con WhatsApp. Escala sin límites.
         </p>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-100 dark:bg-red-900/20 border border-red-400 dark:border-red-800 rounded-lg">
-          <p className="text-red-700 dark:text-red-400">{error}</p>
+        <div className="mb-8 max-w-4xl mx-auto p-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30 rounded-2xl flex items-center gap-3">
+          <XCircleIcon className="w-6 h-6 text-red-500" />
+          <p className="text-red-700 dark:text-red-400 font-medium">{error}</p>
         </div>
       )}
 
       {/* Current Plan Status */}
-      <div className="mb-8 p-6 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg shadow-md">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-          Estado Actual de tu Plan
-        </h2>
-        
-        {isLoadingProfile ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500"></div>
-          </div>
-        ) : userProfile ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-zinc-400 mb-1">Usuario</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                {userProfile.username}
-              </p>
+      <div className="max-w-4xl mx-auto mb-12">
+        <div className="bg-white dark:bg-[#1e293b] border border-slate-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
+            <ShieldCheckIcon className="w-6 h-6 text-emerald-500" />
+            Estado de tu Suscripción
+          </h2>
+
+          {isLoadingProfile ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
             </div>
-            
-            <div className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-zinc-400 mb-1">Tipo de Plan</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
-                {userProfile.plan_type}
-              </p>
-            </div>
-            
-            <div className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-zinc-400 mb-1">Estado</p>
-              <div className="flex items-center gap-2">
-                {userProfile.status_plan ? (
-                  <>
-                    <CheckCircleIcon className="w-6 h-6 text-green-500" />
-                    <span className="text-lg font-semibold text-green-600 dark:text-green-400">
-                      Activo
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <XCircleIcon className="w-6 h-6 text-red-500" />
-                    <span className="text-lg font-semibold text-red-600 dark:text-red-400">
-                      Inactivo
-                    </span>
-                  </>
-                )}
+          ) : userProfile ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Usuario</p>
+                <p className="text-lg font-bold text-slate-800 dark:text-white truncate">
+                  {userProfile.username}
+                </p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{userProfile.email}</p>
+              </div>
+
+              <div className="p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Plan Actual</p>
+                <div className="flex items-center gap-2">
+                  <StarIcon className="w-5 h-5 text-amber-400" />
+                  <p className="text-lg font-bold text-slate-800 dark:text-white capitalize">
+                    {userProfile.plan_type}
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Estado</p>
+                <div className="flex items-center gap-2">
+                  {userProfile.status_plan ? (
+                    <div className="flex items-center gap-2 bg-emerald-100 dark:bg-emerald-900/30 px-3 py-1 rounded-full">
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                      <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">Activo</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 bg-red-100 dark:bg-red-900/30 px-3 py-1 rounded-full">
+                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                      <span className="text-sm font-bold text-red-700 dark:text-red-400">Inactivo</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ) : (
-          <p className="text-gray-600 dark:text-zinc-400">No se pudo cargar la información del perfil</p>
-        )}
+          ) : (
+            <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+              No se pudo cargar la información del perfil
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Available Plans */}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-          Planes Disponibles
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {plans.map((plan) => (
             <div
               key={plan.id}
-              className={`relative p-6 border rounded-lg shadow-lg transition-all duration-300 hover:scale-105 flex flex-col ${
-                plan.recommended
-                  ? 'border-cyan-500 bg-gradient-to-br from-cyan-900/20 to-blue-900/20 ring-2 ring-cyan-500'
-                  : 'border-zinc-700 bg-gradient-to-br from-zinc-900 to-zinc-800 hover:shadow-cyan-600/50'
-              }`}
+              className={`relative p-8 rounded-3xl transition-all duration-300 flex flex-col ${plan.recommended
+                  ? 'bg-white dark:bg-[#1e293b] border-2 border-indigo-500 shadow-xl shadow-indigo-500/10 transform scale-105 z-10'
+                  : 'bg-white dark:bg-[#1e293b] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-lg hover:-translate-y-1'
+                }`}
             >
               {/* Recommended Badge */}
               {plan.recommended && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-xs font-bold px-4 py-1 rounded-full shadow-lg">
-                    ⭐ RECOMENDADO
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg flex items-center gap-1">
+                    <SparklesIcon className="w-3 h-3" />
+                    MÁS POPULAR
                   </span>
                 </div>
               )}
 
               {/* Plan Header */}
-              <div className="text-center mb-6">
-                <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
-                <p className="text-sm text-zinc-400">{plan.description}</p>
+              <div className="text-center mb-8">
+                <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">{plan.name}</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed px-4">{plan.description}</p>
               </div>
 
               {/* Price */}
-              <div className="text-center mb-6">
+              <div className="text-center mb-8">
                 <div className="flex items-baseline justify-center">
-                  <span className="text-4xl font-bold text-cyan-400">${plan.price}</span>
-                  <span className="text-zinc-400 ml-2">/mes</span>
+                  <span className="text-5xl font-extrabold text-slate-800 dark:text-white tracking-tight">${plan.price}</span>
+                  <span className="text-slate-400 ml-2 font-medium">/mes</span>
                 </div>
               </div>
 
               {/* Features */}
-              <div className="flex-1 mb-6">
-                <ul className="space-y-3">
+              <div className="flex-1 mb-8">
+                <ul className="space-y-4">
                   {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-start">
-                      <svg
-                        className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-0.5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      <span className="text-sm text-zinc-300">{feature}</span>
+                    <li key={index} className="flex items-start gap-3">
+                      <div className={`mt-0.5 p-0.5 rounded-full ${plan.recommended ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400' : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'}`}>
+                        <CheckCircleIcon className="w-4 h-4" />
+                      </div>
+                      <span className="text-sm text-slate-600 dark:text-slate-300 font-medium">{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -268,12 +264,12 @@ function SubscriptionContent() {
               {/* Action Button */}
               <button
                 onClick={() => handleSelectPlan(plan.id, plan.name)}
-                className={`w-full px-4 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg ${
-                  plan.recommended
-                    ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:from-cyan-600 hover:to-blue-600 hover:shadow-cyan-500/50'
-                    : 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:from-cyan-700 hover:to-blue-700 hover:shadow-cyan-600/50'
-                }`}
+                className={`w-full py-4 rounded-xl font-bold transition-all duration-300 transform hover:-translate-y-0.5 flex items-center justify-center gap-2 ${plan.recommended
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25'
+                    : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white'
+                  }`}
               >
+                {plan.recommended ? <BoltIcon className="w-5 h-5" /> : null}
                 Seleccionar Plan
               </button>
             </div>
@@ -282,19 +278,21 @@ function SubscriptionContent() {
       </div>
 
       {/* Help Section */}
-      <div className="mt-12 p-6 bg-cyan-50 dark:bg-cyan-900/10 border border-cyan-200 dark:border-cyan-800 rounded-lg">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-          ¿Necesitas ayuda?
-        </h3>
-        <p className="text-gray-600 dark:text-zinc-400 mb-4">
-          Si tienes alguna pregunta sobre los planes o necesitas asistencia, no dudes en contactarnos.
-        </p>
-        <a
-          href="mailto:support@wazilrest.com"
-          className="inline-block bg-cyan-600 text-white px-6 py-2 rounded-lg hover:bg-cyan-700 transition-colors"
-        >
-          Contactar Soporte
-        </a>
+      <div className="mt-16 max-w-3xl mx-auto text-center">
+        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/10 dark:to-purple-900/10 border border-indigo-100 dark:border-indigo-800/30 rounded-3xl p-8">
+          <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-3">
+            ¿Necesitas un plan a medida?
+          </h3>
+          <p className="text-slate-600 dark:text-slate-400 mb-6">
+            Si tienes requerimientos especiales o necesitas una integración personalizada, nuestro equipo está listo para ayudarte.
+          </p>
+          <a
+            href="mailto:support@wazilrest.com"
+            className="inline-flex items-center gap-2 bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 px-6 py-3 rounded-xl font-bold shadow-sm hover:shadow-md transition-all border border-indigo-100 dark:border-indigo-800/50"
+          >
+            Contactar Soporte
+          </a>
+        </div>
       </div>
     </div>
   );
