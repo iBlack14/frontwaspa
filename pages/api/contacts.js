@@ -12,10 +12,22 @@ export default async function handler(req, res) {
 
     const { instanceId, search } = req.query;
 
-    if (!process.env.SUPABASE_SERVICE_KEY) {
-        console.error('SUPABASE_SERVICE_KEY is missing');
-        return res.status(500).json({ error: 'Configuration error: Missing service key' });
+    // Intentar obtener la key de varias variables de entorno comunes
+    const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseKey) {
+        console.error('CRITICAL: Supabase key is missing in environment variables');
+        return res.status(500).json({
+            error: 'Configuration error',
+            details: 'Supabase key is missing. Check SUPABASE_SERVICE_KEY or SUPABASE_SERVICE_ROLE_KEY.'
+        });
     }
+
+    // Reinicializar cliente con la key encontrada (por si la global falló)
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        supabaseKey
+    );
 
     if (!instanceId) {
         return res.status(400).json({ error: 'instanceId is required' });
@@ -32,7 +44,10 @@ export default async function handler(req, res) {
         // Agregar filtro de búsqueda si existe
         if (search) {
             const searchStr = Array.isArray(search) ? search[0] : search;
-            const searchTerm = `%${searchStr}%`;
+            // Sanitize search string to prevent syntax errors in 'or'
+            const safeSearch = searchStr.replace(/[,()]/g, '');
+            const searchTerm = `%${safeSearch}%`;
+
             // Usar ilike para búsqueda insensible a mayúsculas
             query = query.or(`name.ilike.${searchTerm},push_name.ilike.${searchTerm},jid.ilike.${searchTerm}`);
         }
@@ -43,8 +58,12 @@ export default async function handler(req, res) {
             .limit(50);
 
         if (error) {
-            console.error('Supabase error fetching contacts:', error);
-            return res.status(500).json({ error: error.message, details: error });
+            console.error('Supabase query error:', error);
+            return res.status(500).json({
+                error: 'Database query failed',
+                details: error.message,
+                hint: error.hint
+            });
         }
 
         // Formatear contactos
@@ -57,7 +76,10 @@ export default async function handler(req, res) {
 
         return res.status(200).json({ contacts: formattedContacts });
     } catch (error) {
-        console.error('Unexpected error in contacts API:', error);
-        return res.status(500).json({ error: 'Internal server error', details: error.message });
+        console.error('Unexpected handler error:', error);
+        return res.status(500).json({
+            error: 'Internal server error',
+            details: error.message
+        });
     }
 }

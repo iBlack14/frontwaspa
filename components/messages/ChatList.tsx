@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { UserIcon, UserGroupIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { toast } from 'sonner';
 
 interface Chat {
   id: string;
@@ -58,8 +59,18 @@ export default function ChatList({ chats, selectedChat, onSelectChat, instanceId
         try {
           const res = await axios.get(`/api/contacts?instanceId=${instanceId}&search=${searchQuery}`);
           setSearchResults(res.data.contacts || []);
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error searching contacts:', error);
+          // Mostrar error detallado si está disponible
+          const errorMsg = error.response?.data?.error || error.message || 'Error al buscar';
+          const errorDetails = error.response?.data?.details || '';
+
+          // Solo mostrar toast si es un error real y no cancelación
+          if (error.code !== 'ERR_CANCELED') {
+            toast.error(`Error: ${errorMsg}`, {
+              description: typeof errorDetails === 'string' ? errorDetails : JSON.stringify(errorDetails).slice(0, 100)
+            });
+          }
         } finally {
           setIsSearching(false);
         }
