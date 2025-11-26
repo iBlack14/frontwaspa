@@ -93,13 +93,28 @@ function SidebarLayout({ children }: { children: React.ReactNode }) {
     fetchInstances();
 
     // 2. Subscribe to new messages (Global Listener)
+    if (!session || !(session as any).jwt) return;
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
     // Create a specific client for notifications with Realtime ENABLED
+    // IMPORTANT: persistSession: false prevents "Multiple GoTrueClient" warnings
+    // IMPORTANT: Authorization header ensures we pass RLS policies
     const notifClient = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false
+      },
       realtime: {
         params: {
-          eventsPerSecond: 10 // Allow some events
+          eventsPerSecond: 10
+        }
+      },
+      global: {
+        headers: {
+          Authorization: `Bearer ${(session as any).jwt}`
         }
       }
     });
@@ -135,12 +150,14 @@ function SidebarLayout({ children }: { children: React.ReactNode }) {
           });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Notification subscription status:', status);
+      });
 
     return () => {
       notifClient.removeChannel(channel);
     };
-  }, [status, instancesMap]);
+  }, [status, instancesMap, session]);
 
   const toggleCollapse = () => {
     const newState = !isCollapsed;
