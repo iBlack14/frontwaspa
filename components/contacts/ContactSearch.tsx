@@ -44,9 +44,9 @@ export default function ContactSearch({ instanceId, onContactSelect }: ContactSe
 
   const searchContacts = async (query: string) => {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+      // Use Next.js API proxy to handle backend authentication
       const response = await fetch(
-        `${backendUrl}/api/contacts/search/${instanceId}?q=${encodeURIComponent(query)}`
+        `/api/contacts/search?instanceId=${encodeURIComponent(instanceId)}&q=${encodeURIComponent(query)}`
       );
 
       if (!response.ok) {
