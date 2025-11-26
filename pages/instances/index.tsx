@@ -309,14 +309,17 @@ function DashboardContent() {
                         <p className="text-sm text-slate-500 dark:text-slate-400 font-mono mt-0.5">
                           {session.phoneNumber || 'Sin número'}
                         </p>
-                        <div className="flex items-center gap-2 mt-1 group/id cursor-pointer" onClick={() => {
+                        <div className="flex items-center gap-2 mt-2 group/id cursor-pointer w-fit" onClick={() => {
                           navigator.clipboard.writeText(session.documentId);
                           toast.success('ID copiado al portapapeles');
                         }}>
-                          <p className="text-xs text-slate-400 dark:text-slate-500 font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-                            ID: {session.documentId}
-                          </p>
-                          <ClipboardDocumentIcon className="w-3 h-3 text-slate-400 opacity-0 group-hover/id:opacity-100 transition-opacity" />
+                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ID</span>
+                            <p className="text-xs text-slate-600 dark:text-slate-300 font-mono">
+                              {session.documentId.substring(0, 8)}...{session.documentId.substring(session.documentId.length - 4)}
+                            </p>
+                            <ClipboardDocumentIcon className="w-3 h-3 text-slate-400 group-hover/id:text-indigo-500 transition-colors" />
+                          </div>
                         </div>
                         <span className={`inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-lg text-xs font-medium ${session.state === 'Connected'
                           ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'
