@@ -29,19 +29,29 @@ export function initWebSocket(server) {
   return io;
 }
 
-// Función para enviar mensajes a una sala específica
-export function broadcastMessage(room, message) {
-  if (io) {
-    io.to(room).emit('new_message', message);
+// Función para enviar mensajes a TODOS los clientes conectados
+export function broadcastMessage(message) {
+  // En Next.js, el servidor Socket.io se guarda en res.socket.server.io
+  // Necesitamos acceder a él de forma global
+  if (global.io) {
+    global.io.emit('new_message', message);
+    console.log('[WEBSOCKET] Mensaje broadcast enviado:', message.type);
   } else {
-    console.warn('Socket.io no está inicializado');
+    console.warn('[WEBSOCKET] Socket.io no está inicializado aún');
   }
 }
 
 // Función para obtener la instancia de io
 export function getIO() {
-  if (!io) {
-    throw new Error('Socket.io no está inicializado');
+  if (!global.io) {
+    console.warn('[WEBSOCKET] Socket.io no está inicializado');
+    return null;
   }
-  return io;
+  return global.io;
+}
+
+// Función para establecer la instancia global de io
+export function setIO(ioInstance) {
+  global.io = ioInstance;
+  console.log('[WEBSOCKET] Socket.io establecido globalmente');
 }

@@ -10,94 +10,109 @@ const MessageNotifier = () => {
     // Map para rastrear mensajes notificados y prevenir duplicados
     const notifiedMessages = new Map();
 
-    // Inicializar conexión con el servidor Socket.io
-    const socketInstance = io(process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000', {
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    });
-
-    // Manejar eventos de conexión
-    socketInstance.on('connect', () => {
-      console.log('Conectado al servidor de WebSocket');
-      setIsConnected(true);
-
-      // Unirse a la sala del usuario actual (si está autenticado)
-      const userId = localStorage.getItem('userId');
-      if (userId) {
-        socketInstance.emit('join_room', `user_${userId}`);
+    // Función para inicializar Socket.io
+    const initializeSocket = async () => {
+      try {
+        // Inicializar el servidor Socket.io
+        await fetch('/api/socket');
+        console.log('[WEBSOCKET] Servidor Socket.io inicializado');
+      } catch (error) {
+        console.error('[WEBSOCKET] Error al inicializar servidor:', error);
       }
-    });
 
-    // Manejar mensajes entrantes
-    socketInstance.on('new_message', (message) => {
-      console.log('Nuevo mensaje recibido:', message);
+      // Inicializar conexión con el servidor Socket.io
+      const socketInstance = io(process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000', {
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+      });
 
-      // Crear clave única para el mensaje
-      const messageKey = `${message.instanceId}-${message.messageId || message.chatId}-${message.timestamp || Date.now()}`;
+      // Manejar eventos de conexión
+      socketInstance.on('connect', () => {
+        console.log('Conectado al servidor de WebSocket');
+        setIsConnected(true);
 
-      // Verificar si ya se notificó este mensaje en los últimos 5 segundos
-      if (notifiedMessages.has(messageKey)) {
-        const lastNotified = notifiedMessages.get(messageKey);
-        if (Date.now() - lastNotified < 5000) {
-          console.log('Mensaje ya notificado, ignorando duplicado');
-          return;
+        // Unirse a la sala del usuario actual (si está autenticado)
+        const userId = localStorage.getItem('userId');
+        if (userId) {
+          socketInstance.emit('join_room', `user_${userId}`);
         }
-      }
+      });
 
-      // Registrar notificación
-      notifiedMessages.set(messageKey, Date.now());
+      // Manejar mensajes entrantes
+      socketInstance.on('new_message', (message) => {
+        console.log('Nuevo mensaje recibido:', message);
 
-      // Limpiar entrada después de 5 segundos
-      setTimeout(() => {
-        notifiedMessages.delete(messageKey);
-      }, 5000);
+        // Crear clave única para el mensaje
+        const messageKey = `${message.instanceId}-${message.messageId || message.chatId}-${message.timestamp || Date.now()}`;
 
-      // Obtener ID de instancia actual de la URL
-      const pathParts = window.location.pathname.split('/');
-      const currentInstanceId = pathParts.includes('instance') ? pathParts[pathParts.indexOf('instance') + 1] : null;
+        // Verificar si ya se notificó este mensaje en los últimos 5 segundos
+        if (notifiedMessages.has(messageKey)) {
+          const lastNotified = notifiedMessages.get(messageKey);
+          if (Date.now() - lastNotified < 5000) {
+            console.log('Mensaje ya notificado, ignorando duplicado');
+            return;
+          }
+        }
 
-      // Lógica de notificación inteligente
-      const isDifferentInstance = message.instanceId && message.instanceId !== currentInstanceId;
+        // Registrar notificación
+        notifiedMessages.set(messageKey, Date.now());
 
-      // Si es de otra instancia, mostrar con opción de cambiar
-      if (isDifferentInstance) {
-        toast(`Mensaje en otra instancia: ${message.sender || 'Desconocido'}`, {
-          description: message.text || 'Nuevo mensaje',
-          duration: 4000,
-          action: {
-            label: 'Cambiar Instancia',
-            onClick: () => window.location.href = `/instance/${message.instanceId}/chat`
-          },
-        });
-        playNotificationSound();
-      }
-      // Si es la misma instancia pero no estamos en el chat
-      else if (!window.location.pathname.includes(message.chatId)) {
-        toast.success(`Nuevo mensaje de ${message.sender || 'Desconocido'}`, {
-          description: message.text || 'Nuevo mensaje',
-          duration: 4000,
-          action: {
-            label: 'Ver',
-            onClick: () => window.location.href = `/instance/${message.instanceId}/chat`
-          },
-        });
-        playNotificationSound();
-      }
-    });
+        // Limpiar entrada después de 5 segundos
+        setTimeout(() => {
+          notifiedMessages.delete(messageKey);
+        }, 5000);
 
-    // Manejar errores de conexión
-    socketInstance.on('connect_error', (error) => {
-      console.error('Error de conexión con WebSocket:', error);
-      setIsConnected(false);
-    });
+        // Obtener ID de instancia actual de la URL
+        const pathParts = window.location.pathname.split('/');
+        const currentInstanceId = pathParts.includes('instance') ? pathParts[pathParts.indexOf('instance') + 1] : null;
 
-    // Limpieza al desmontar el componente
-    return () => {
-      if (socketInstance) {
-        socketInstance.disconnect();
-      }
+        // Lógica de notificación inteligente
+        const isDifferentInstance = message.instanceId && message.instanceId !== currentInstanceId;
+
+        // Si es de otra instancia, mostrar con opción de cambiar
+        if (isDifferentInstance) {
+          toast(`Mensaje en otra instancia: ${message.sender || 'Desconocido'}`, {
+            description: message.text || 'Nuevo mensaje',
+            duration: 4000,
+            action: {
+              label: 'Cambiar Instancia',
+              onClick: () => window.location.href = `/instance/${message.instanceId}/chat`
+            },
+          });
+          playNotificationSound();
+        }
+        // Si es la misma instancia pero no estamos en el chat
+        else if (!window.location.pathname.includes(message.chatId)) {
+          toast.success(`Nuevo mensaje de ${message.sender || 'Desconocido'}`, {
+            description: message.text || 'Nuevo mensaje',
+            duration: 4000,
+            action: {
+              label: 'Ver',
+              onClick: () => window.location.href = `/instance/${message.instanceId}/chat`
+            },
+          });
+          playNotificationSound();
+        }
+      });
+
+      // Manejar errores de conexión
+      socketInstance.on('connect_error', (error) => {
+        console.error('Error de conexión con WebSocket:', error);
+        setIsConnected(false);
+      });
+
+      setSocket(socketInstance);
+
+      // Limpieza al desmontar el componente
+      return () => {
+        if (socketInstance) {
+          socketInstance.disconnect();
+        }
+      };
     };
+
+    initializeSocket();
   }, []);
 
   const playNotificationSound = () => {
