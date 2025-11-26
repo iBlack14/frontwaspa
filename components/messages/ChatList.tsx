@@ -61,21 +61,13 @@ export default function ChatList({ chats, selectedChat, onSelectChat, instanceId
           setSearchResults(res.data.contacts || []);
         } catch (error: any) {
           console.error('Error searching contacts:', error);
-          // Mostrar error detallado si está disponible
-          const errorMsg = error.response?.data?.error || error.message || 'Error al buscar';
-          const errorDetails = error.response?.data?.details || '';
-
-          // Solo mostrar toast si es un error real y no cancelación
-          if (error.code !== 'ERR_CANCELED') {
-            toast.error(`Error: ${errorMsg}`, {
-              description: typeof errorDetails === 'string' ? errorDetails : JSON.stringify(errorDetails).slice(0, 100)
-            });
-          }
+          setSearchResults([]);
         } finally {
           setIsSearching(false);
         }
       } else {
         setSearchResults([]);
+        setIsSearching(false);
       }
     }, 500);
 

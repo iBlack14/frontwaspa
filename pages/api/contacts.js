@@ -1,16 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY
-);
-
 export default async function handler(req, res) {
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
     const { instanceId, search } = req.query;
+
+    // Validar URL de Supabase
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+        console.error('CRITICAL: NEXT_PUBLIC_SUPABASE_URL is missing');
+        return res.status(500).json({ error: 'Configuration error: Missing Supabase URL' });
+    }
 
     // Intentar obtener la key de varias variables de entorno comunes
     const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -23,11 +24,17 @@ export default async function handler(req, res) {
         });
     }
 
-    // Reinicializar cliente con la key encontrada (por si la global falló)
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        supabaseKey
-    );
+    // Inicializar cliente
+    let supabase;
+    try {
+        supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL,
+            supabaseKey
+        );
+    } catch (clientError) {
+        console.error('Error initializing Supabase client:', clientError);
+        return res.status(500).json({ error: 'Initialization error', details: clientError.message });
+    }
 
     if (!instanceId) {
         return res.status(400).json({ error: 'instanceId is required' });
@@ -44,11 +51,10 @@ export default async function handler(req, res) {
         // Agregar filtro de búsqueda si existe
         if (search) {
             const searchStr = Array.isArray(search) ? search[0] : search;
-            // Sanitize search string to prevent syntax errors in 'or'
             const safeSearch = searchStr.replace(/[,()]/g, '');
             const searchTerm = `%${safeSearch}%`;
 
-            // Usar ilike para búsqueda insensible a mayúsculas
+            // Buscar por nombre, push_name o jid
             query = query.or(`name.ilike.${searchTerm},push_name.ilike.${searchTerm},jid.ilike.${searchTerm}`);
         }
 
