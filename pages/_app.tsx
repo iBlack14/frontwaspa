@@ -3,7 +3,7 @@ import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { Toaster } from 'sonner';
-// import MessageNotifier from '../components/MessageNotifier'; // Deshabilitado temporalmente - requiere servidor Socket.io
+import MessageNotifier from '../components/MessageNotifier';
 import '../src/app/globals.css';
 
 export default function App({ Component, pageProps: { session, ...pageProps } }: AppProps) {
@@ -17,7 +17,7 @@ export default function App({ Component, pageProps: { session, ...pageProps } }:
         <ThemeProvider>
           <Component {...pageProps} />
           <Toaster position="bottom-right" richColors closeButton />
-          {/* <MessageNotifier /> */}
+          <MessageNotifier />
         </ThemeProvider>
       </SessionProvider>
     </>

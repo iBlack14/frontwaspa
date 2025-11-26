@@ -53,6 +53,33 @@ export default async function handler(req, res) {
           statsUpdate.message_received = 1;
           shouldUpdate = true;
           console.log(`[WEBHOOK] 📥 Mensaje recibido detectado`);
+
+          // Emitir evento Socket.io para notificaciones
+          try {
+            const sender = data?.pushName || data?.key?.remoteJid?.split('@')[0] || 'Desconocido';
+            const messageText = data?.message?.conversation ||
+              data?.message?.extendedTextMessage?.text ||
+              data?.message?.imageMessage?.caption ||
+              data?.message?.videoMessage?.caption ||
+              '[Mensaje multimedia]';
+
+            const messageId = data?.key?.id || `${Date.now()}`;
+
+            // Notificar a los clientes conectados
+            broadcastMessage({
+              type: 'new_message',
+              messageId: messageId,
+              chatId: data?.key?.remoteJid,
+              sender: sender,
+              text: messageText,
+              timestamp: new Date().toISOString(),
+              instanceId: instanceId
+            });
+
+            console.log(`[WEBSOCKET] 🔔 Notificación enviada para mensaje de ${sender} en instancia ${instanceId}`);
+          } catch (wsError) {
+            console.error('[WEBSOCKET] Error al emitir notificación:', wsError);
+          }
         }
         break;
 
@@ -62,20 +89,20 @@ export default async function handler(req, res) {
           statsUpdate.message_received = 1;
           shouldUpdate = true;
           console.log(`[WEBHOOK] ✅ Mensaje recibido detectado`);
-          
+
           // Guardar mensaje en la base de datos
           try {
             const sender = data?.pushName || data?.key?.remoteJid?.split('@')[0] || 'Desconocido';
-            const messageText = data?.message?.conversation || 
-                               data?.message?.extendedTextMessage?.text || 
-                               data?.message?.imageMessage?.caption || 
-                               data?.message?.videoMessage?.caption || null;
-            
+            const messageText = data?.message?.conversation ||
+              data?.message?.extendedTextMessage?.text ||
+              data?.message?.imageMessage?.caption ||
+              data?.message?.videoMessage?.caption || null;
+
             const messageType = data?.message?.conversation ? 'text' :
-                               data?.message?.imageMessage ? 'image' :
-                               data?.message?.videoMessage ? 'video' :
-                               data?.message?.audioMessage ? 'audio' :
-                               data?.message?.documentMessage ? 'document' : 'other';
+              data?.message?.imageMessage ? 'image' :
+                data?.message?.videoMessage ? 'video' :
+                  data?.message?.audioMessage ? 'audio' :
+                    data?.message?.documentMessage ? 'document' : 'other';
 
             // Insertar mensaje en la base de datos
             const { error: messageError } = await supabaseAdmin
@@ -98,17 +125,18 @@ export default async function handler(req, res) {
             } else {
               console.log('[DB] Mensaje guardado correctamente');
             }
-            
+
             // Notificar a los clientes conectados
             broadcastMessage({
               type: 'new_message',
+              messageId: data?.key?.id,
               chatId: data?.key?.remoteJid,
               sender: sender,
               text: messageText || '[Mensaje multimedia]',
               timestamp: new Date().toISOString(),
               instanceId: instanceId
             });
-            
+
             console.log(`[WEBSOCKET] Notificación enviada para mensaje de ${sender}`);
           } catch (wsError) {
             console.error('[WEBSOCKET] Error al procesar mensaje:', wsError);
@@ -169,7 +197,7 @@ export default async function handler(req, res) {
       console.log(`[WEBHOOK] Nuevos valores:`, historycalData[historycalData.length - 1]);
     }
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       success: true,
       message: 'Webhook procesado correctamente',
       updated: shouldUpdate,
