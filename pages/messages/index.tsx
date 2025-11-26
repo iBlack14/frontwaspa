@@ -350,26 +350,62 @@ function MessagesContent() {
               onRefresh={() => fetchMessages(selectedChat.instance_id, selectedChat.chat_id)}
             />
           ) : (
-            <div className="flex items-center justify-center h-full bg-[#f0f2f5] dark:bg-[#222e35] border-b-8 border-[#25d366]">
-              <div className="text-center max-w-md px-6">
-                <div className="w-64 h-64 mx-auto mb-8 opacity-20">
-                  <svg viewBox="0 0 303 172" fill="currentColor" className="text-[#00a884] w-full h-full">
-                    <path d="M151.5 0C67.9 0 0 67.9 0 151.5S67.9 303 151.5 303 303 235.1 303 151.5 235.1 0 151.5 0zm0 276.5c-69 0-125-56-125-125s56-125 125-125 125 56 125 125-56 125-125 125z" />
-                  </svg>
-                </div>
-                <h2 className="text-3xl font-light text-[#41525d] dark:text-[#e9edef] mb-4">
-                  Connect BLXK Web
-                </h2>
-                <p className="text-sm text-[#667781] dark:text-[#8696a0] mb-8 leading-6">
-                  Envía y recibe mensajes sin necesidad de mantener tu teléfono conectado.
-                  <br />
-                  Usa Connect BLXK en hasta 4 dispositivos vinculados y 1 teléfono a la vez.
-                </p>
-                <div className="flex items-center justify-center gap-2 text-[#8696a0] text-xs">
-                  <span className="w-3 h-3 bg-[#8696a0] rounded-full opacity-30"></span>
-                  🔒 Tus mensajes personales están cifrados de extremo a extremo
+            <div className="flex flex-col h-full bg-[#f0f2f5] dark:bg-[#0b141a] relative overflow-hidden">
+              {/* Header with Notifications */}
+              <div className="h-16 px-6 flex items-center justify-end bg-white/50 dark:bg-[#202c33]/50 backdrop-blur-sm border-b border-slate-200/50 dark:border-slate-800/50 z-10">
+                <div className="flex items-center gap-4">
+                  <button className="relative p-2 rounded-full hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition-colors group">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-slate-600 dark:text-slate-300 group-hover:text-indigo-500 transition-colors">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                    </svg>
+                    <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-[#202c33] animate-pulse"></span>
+                  </button>
+                  <button className="relative p-2 rounded-full hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition-colors group">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-slate-600 dark:text-slate-300 group-hover:text-indigo-500 transition-colors">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 012.012 1.244l.256.512a2.25 2.25 0 002.013 1.244h3.218a2.25 2.25 0 002.013-1.244l.256-.512a2.25 2.25 0 012.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 00-2.15-1.588H6.911a2.25 2.25 0 00-2.15 1.588L2.35 13.177a2.25 2.25 0 00-.1.661z" />
+                    </svg>
+                    <span className="absolute top-2 right-2 w-2 h-2 bg-indigo-500 rounded-full ring-2 ring-white dark:ring-[#202c33]"></span>
+                  </button>
                 </div>
               </div>
+
+              {/* Main Content */}
+              <div className="flex-1 flex flex-col items-center justify-center p-8 relative">
+                {/* Background Decoration */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                  <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse"></div>
+                  <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+                </div>
+
+                {/* Hero Icon */}
+                <div className="relative mb-8 group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-xl opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
+                  <div className="relative w-32 h-32 bg-white dark:bg-[#202c33] rounded-full flex items-center justify-center shadow-lg border border-slate-100 dark:border-slate-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-16 h-16 text-indigo-500 dark:text-indigo-400">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+                    </svg>
+                  </div>
+                </div>
+
+                <h2 className="text-3xl font-bold text-slate-800 dark:text-[#e9edef] mb-3 tracking-tight">
+                  Connect BLXK Web
+                </h2>
+                <p className="text-slate-500 dark:text-[#8696a0] text-center max-w-md mb-8 leading-relaxed">
+                  Envía y recibe mensajes sin necesidad de mantener tu teléfono conectado.
+                  <br />
+                  Usa Connect BLXK en hasta 4 dispositivos vinculados.
+                </p>
+
+                <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-[#202c33] rounded-full text-xs font-medium text-slate-500 dark:text-[#8696a0]">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
+                    <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z" clipRule="evenodd" />
+                  </svg>
+                  Cifrado de extremo a extremo
+                </div>
+              </div>
+
+              {/* Footer Decoration */}
+              <div className="h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-80"></div>
             </div>
           )}
         </div >
