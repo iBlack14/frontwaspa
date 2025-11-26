@@ -3,6 +3,7 @@ import { useSession } from 'next-auth/react';
 import { toast, Toaster } from 'sonner';
 import { io } from 'socket.io-client';
 import { SparklesIcon, MagnifyingGlassIcon, FunnelIcon, ChatBubbleLeftRightIcon, ArrowRightIcon, PhotoIcon, VideoCameraIcon, DocumentIcon, MicrophoneIcon, FaceSmileIcon, MapPinIcon, UserIcon, PhoneIcon } from '@heroicons/react/24/outline';
+import ContactSearch from '../components/contacts/ContactSearch';
 
 export default function MessagesPage() {
   const { data: session, status } = useSession();
@@ -138,25 +139,19 @@ export default function MessagesPage() {
               </select>
             </div>
 
-            {/* Búsqueda */}
+            {/* Búsqueda de Contactos */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2 flex items-center gap-2">
                 <MagnifyingGlassIcon className="w-4 h-4 text-emerald-500" />
-                Buscar mensajes
+                Buscar contactos
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Buscar por remitente o texto..."
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="w-full px-4 py-3 pl-10 border-2 border-gray-300 dark:border-zinc-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white transition-all"
-                />
-                <MagnifyingGlassIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-              </div>
+              {selectedInstance !== 'all' ? (
+                <ContactSearch instanceId={selectedInstance} />
+              ) : (
+                <div className="w-full px-4 py-3 border-2 border-gray-300 dark:border-zinc-600 rounded-xl bg-gray-50 dark:bg-zinc-700 text-gray-500 dark:text-zinc-400 text-center">
+                  Selecciona una instancia para buscar contactos
+                </div>
+              )}
             </div>
           </div>
         </div>
