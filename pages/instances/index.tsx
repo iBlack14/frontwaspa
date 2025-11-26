@@ -17,7 +17,8 @@ import {
   QrCodeIcon,
   SignalIcon,
   SignalSlashIcon,
-  TrashIcon
+  TrashIcon,
+  ClipboardDocumentIcon
 } from '@heroicons/react/24/outline';
 import { Toaster, toast } from 'sonner';
 import useSWR from 'swr';
@@ -306,11 +307,20 @@ function DashboardContent() {
                           {session.name || 'WhatsApp Instance'}
                         </h3>
                         <p className="text-sm text-slate-500 dark:text-slate-400 font-mono mt-0.5">
-                          {session.phoneNumber || session.documentId.substring(0, 12) + '...'}
+                          {session.phoneNumber || 'Sin número'}
                         </p>
+                        <div className="flex items-center gap-2 mt-1 group/id cursor-pointer" onClick={() => {
+                          navigator.clipboard.writeText(session.documentId);
+                          toast.success('ID copiado al portapapeles');
+                        }}>
+                          <p className="text-xs text-slate-400 dark:text-slate-500 font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                            ID: {session.documentId}
+                          </p>
+                          <ClipboardDocumentIcon className="w-3 h-3 text-slate-400 opacity-0 group-hover/id:opacity-100 transition-opacity" />
+                        </div>
                         <span className={`inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-lg text-xs font-medium ${session.state === 'Connected'
-                            ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'
-                            : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
+                          ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'
+                          : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
                           }`}>
                           {session.state === 'Connected' ? <SignalIcon className="w-3 h-3" /> : <SignalSlashIcon className="w-3 h-3" />}
                           {session.state}
@@ -324,8 +334,8 @@ function DashboardContent() {
                         <button
                           onClick={() => toggleInstanceActive(session.documentId, session.is_active)}
                           className={`p-2 rounded-xl transition-colors ${session.is_active
-                              ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-400'
-                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400'
+                            ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-400'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400'
                             }`}
                           title={session.is_active ? 'Pausar' : 'Activar'}
                         >
