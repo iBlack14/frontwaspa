@@ -10,6 +10,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
 import Breadcrumb from '../Breadcrumb';
 import ThemeToggle from '@/components/ThemeToggle';
+import { createClient } from '@supabase/supabase-js';
 import {
   HomeIcon,
   ServerIcon,
@@ -41,6 +42,11 @@ function SidebarLayout({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Notifications Logic
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [instancesMap, setInstancesMap] = useState<Record<string, string>>({});
+
   useEffect(() => {
     setHasMounted(true);
     const handleResize = () => {
@@ -60,6 +66,81 @@ function SidebarLayout({ children }: { children: React.ReactNode }) {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    if (status !== 'authenticated') return;
+
+    // 1. Fetch instances to map IDs to Names
+    const fetchInstances = async () => {
+      try {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+        const client = createClient(supabaseUrl, supabaseKey);
+
+        const { data } = await client.from('instances').select('document_id, profile_name, phone_number');
+        if (data) {
+          const map: Record<string, string> = {};
+          data.forEach((i: any) => {
+            map[i.document_id] = i.profile_name || i.phone_number || 'Instancia';
+          });
+          setInstancesMap(map);
+        }
+      } catch (e) {
+        console.error('Error fetching instances for notifications:', e);
+      }
+    };
+
+    fetchInstances();
+
+    // 2. Subscribe to new messages (Global Listener)
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    // Create a specific client for notifications with Realtime ENABLED
+    const notifClient = createClient(supabaseUrl, supabaseKey, {
+      realtime: {
+        params: {
+          eventsPerSecond: 10 // Allow some events
+        }
+      }
+    });
+
+    const channel = notifClient
+      .channel('global-messages-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+        },
+        (payload: any) => {
+          const newMessage = payload.new;
+
+          // Ignore own messages
+          if (newMessage.from_me) return;
+
+          // Add to notifications
+          setNotifications(prev => {
+            const instanceName = instancesMap[newMessage.instance_id] || 'WhatsApp';
+            const notif = {
+              id: newMessage.id,
+              title: newMessage.sender_name || newMessage.sender_phone || 'Nuevo mensaje',
+              subtitle: `${instanceName} • ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+              instanceId: newMessage.instance_id,
+              text: newMessage.message_text || (newMessage.media_url ? '📷 Foto' : 'Mensaje'),
+            };
+
+            // Keep max 3, new ones at top
+            return [notif, ...prev].slice(0, 3);
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      notifClient.removeChannel(channel);
+    };
+  }, [status, instancesMap]);
 
   const toggleCollapse = () => {
     const newState = !isCollapsed;
@@ -254,10 +335,47 @@ function SidebarLayout({ children }: { children: React.ReactNode }) {
 
         {/* Global Floating Notification Icon */}
         <div className="absolute top-4 right-6 z-50 pointer-events-auto">
-          <button className="relative p-2.5 rounded-full bg-white/80 dark:bg-[#1e293b]/80 backdrop-blur-md shadow-lg border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-[#1e293b] hover:scale-105 transition-all duration-200 group">
-            <BellIcon className="w-6 h-6 text-slate-600 dark:text-slate-300 group-hover:text-indigo-500 transition-colors" strokeWidth={1.5} />
-            <span className="absolute top-2.5 right-3 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-[#1e293b] animate-pulse"></span>
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative p-2.5 rounded-full bg-white/80 dark:bg-[#1e293b]/80 backdrop-blur-md shadow-lg border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-[#1e293b] hover:scale-105 transition-all duration-200 group"
+            >
+              <BellIcon className="w-6 h-6 text-slate-600 dark:text-slate-300 group-hover:text-indigo-500 transition-colors" strokeWidth={1.5} />
+              {notifications.length > 0 && (
+                <span className="absolute top-2.5 right-3 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-[#1e293b] animate-pulse"></span>
+              )}
+            </button>
+
+            {/* Notifications Dropdown */}
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-[#1e293b] rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div className="p-3 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                  <h3 className="font-semibold text-sm text-slate-800 dark:text-white">Notificaciones</h3>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">{notifications.length} nuevas</span>
+                </div>
+                <div className="max-h-96 overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <div className="p-8 text-center text-slate-500 dark:text-slate-400 text-sm">
+                      No hay notificaciones nuevas
+                    </div>
+                  ) : (
+                    notifications.map((notif, i) => (
+                      <div key={i} className="p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-50 dark:border-slate-800/50 last:border-0 cursor-pointer">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="font-medium text-sm text-slate-800 dark:text-slate-200">{notif.title}</span>
+                          <span className="text-[10px] text-slate-400">{notif.subtitle.split('•')[1]}</span>
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 mb-1">{notif.text}</p>
+                        <span className="text-[10px] text-indigo-500 font-medium bg-indigo-50 dark:bg-indigo-900/20 px-1.5 py-0.5 rounded">
+                          {notif.subtitle.split('•')[0]}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-6">
