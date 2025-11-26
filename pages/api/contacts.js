@@ -10,20 +10,30 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { instanceId } = req.query;
+    const { instanceId, search } = req.query;
 
     if (!instanceId) {
         return res.status(400).json({ error: 'instanceId is required' });
     }
 
     try {
-        // Obtener contactos de la instancia
-        const { data: contacts, error } = await supabase
+        // Construir la consulta base
+        let query = supabase
             .from('contacts')
             .select('jid, name, push_name, profile_pic_url, is_blocked')
             .eq('instance_id', instanceId)
-            .eq('is_blocked', false)
-            .order('name', { ascending: true, nullsFirst: false });
+            .eq('is_blocked', false);
+
+        // Agregar filtro de búsqueda si existe
+        if (search) {
+            const searchTerm = `%${search}%`;
+            query = query.or(`name.ilike.${searchTerm},push_name.ilike.${searchTerm},jid.ilike.${searchTerm}`);
+        }
+
+        // Ejecutar consulta
+        const { data: contacts, error } = await query
+            .order('name', { ascending: true, nullsFirst: false })
+            .limit(50); // Limitar resultados para optimizar
 
         if (error) {
             console.error('Error fetching contacts:', error);

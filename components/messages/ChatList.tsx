@@ -1,4 +1,6 @@
-import { UserIcon, UserGroupIcon } from '@heroicons/react/24/outline';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { UserIcon, UserGroupIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 interface Chat {
   id: string;
@@ -14,10 +16,18 @@ interface Chat {
   is_pinned: boolean;
 }
 
+interface Contact {
+  jid: string;
+  name: string;
+  pushName?: string;
+  profilePicUrl?: string;
+}
+
 interface ChatListProps {
   chats: Chat[];
   selectedChat: Chat | null;
   onSelectChat: (chat: Chat) => void;
+  instanceId: string | null;
 }
 
 // Función helper fuera del componente para que sea accesible por ChatItem
@@ -33,63 +43,164 @@ const formatTime = (timestamp?: string) => {
   return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
 };
 
-export default function ChatList({ chats, selectedChat, onSelectChat }: ChatListProps) {
+export default function ChatList({ chats, selectedChat, onSelectChat, instanceId }: ChatListProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Contact[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   const pinnedChats = chats.filter(c => c.is_pinned && !c.is_archived);
   const regularChats = chats.filter(c => !c.is_pinned && !c.is_archived);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (searchQuery.trim() && instanceId) {
+        setIsSearching(true);
+        try {
+          const res = await axios.get(`/api/contacts?instanceId=${instanceId}&search=${searchQuery}`);
+          setSearchResults(res.data.contacts || []);
+        } catch (error) {
+          console.error('Error searching contacts:', error);
+        } finally {
+          setIsSearching(false);
+        }
+      } else {
+        setSearchResults([]);
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, instanceId]);
+
+  const handleSelectContact = (contact: Contact) => {
+    // Verificar si ya existe un chat con este contacto
+    const existingChat = chats.find(c => c.chat_id === contact.jid);
+
+    if (existingChat) {
+      onSelectChat(existingChat);
+    } else {
+      // Crear objeto de chat temporal
+      const newChat: Chat = {
+        id: contact.jid, // Temporal ID
+        instance_id: instanceId || '',
+        chat_id: contact.jid,
+        chat_name: contact.name || contact.pushName || contact.jid.split('@')[0],
+        chat_type: 'individual',
+        profile_pic_url: contact.profilePicUrl,
+        unread_count: 0,
+        is_archived: false,
+        is_pinned: false
+      };
+      onSelectChat(newChat);
+    }
+    // Limpiar búsqueda (opcional, depende de UX deseada)
+    // setSearchQuery('');
+  };
 
   return (
     <div className="h-full bg-[#f8fafc] dark:bg-[#0f172a] flex flex-col border-r border-slate-200 dark:border-slate-800">
       {/* Search - Pastel Design */}
       <div className="p-4 bg-white/80 backdrop-blur-md dark:bg-[#1e293b]/80 sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800">
         <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-2.5 flex items-center transition-all focus-within:ring-2 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-900 focus-within:bg-white dark:focus-within:bg-slate-900 shadow-sm">
-          <svg className="w-5 h-5 text-slate-400 dark:text-slate-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+          <MagnifyingGlassIcon className="w-5 h-5 text-slate-400 dark:text-slate-500 mr-3" />
           <input
             type="text"
             placeholder="Buscar o iniciar un chat"
             className="flex-1 bg-transparent text-sm text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 border-none focus:outline-none"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </div>
 
-      {/* Chats */}
+      {/* Chats or Search Results */}
       <div className="flex-1 overflow-y-auto custom-scrollbar">
-        {/* Pinned */}
-        {pinnedChats.length > 0 && (
-          <div className="mb-2">
+        {searchQuery ? (
+          // Resultados de búsqueda
+          <div className="pb-4">
             <div className="px-5 py-3 text-xs font-bold text-indigo-500 dark:text-indigo-400 tracking-wider uppercase bg-transparent">
-              Fijados
+              Resultados de búsqueda
             </div>
-            {pinnedChats.map((chat) => (
-              <ChatItem
-                key={chat.id}
-                chat={chat}
-                isSelected={selectedChat?.id === chat.id}
-                onClick={() => onSelectChat(chat)}
-              />
-            ))}
+            {isSearching ? (
+              <div className="flex justify-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-500"></div>
+              </div>
+            ) : searchResults.length > 0 ? (
+              searchResults.map((contact) => (
+                <div
+                  key={contact.jid}
+                  onClick={() => handleSelectContact(contact)}
+                  className="group mx-2 mb-1 rounded-xl p-3 cursor-pointer hover:bg-white/60 dark:hover:bg-[#1e293b]/60 hover:shadow-sm transition-all duration-200"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex-shrink-0">
+                      {contact.profilePicUrl ? (
+                        <img
+                          src={contact.profilePicUrl}
+                          alt={contact.name}
+                          className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-[#0f172a]"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center border-2 border-white dark:border-[#0f172a]">
+                          <UserIcon className="w-6 h-6 text-slate-500 dark:text-slate-400" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-[15px] text-slate-800 dark:text-slate-200 truncate">
+                        {contact.name || contact.pushName || contact.jid.split('@')[0]}
+                      </h3>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
+                        {contact.jid.split('@')[0]}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-slate-400 dark:text-slate-500">
+                <p className="text-sm">No se encontraron contactos</p>
+              </div>
+            )}
           </div>
-        )}
+        ) : (
+          // Lista de chats normal
+          <>
+            {/* Pinned */}
+            {pinnedChats.length > 0 && (
+              <div className="mb-2">
+                <div className="px-5 py-3 text-xs font-bold text-indigo-500 dark:text-indigo-400 tracking-wider uppercase bg-transparent">
+                  Fijados
+                </div>
+                {pinnedChats.map((chat) => (
+                  <ChatItem
+                    key={chat.id}
+                    chat={chat}
+                    isSelected={selectedChat?.id === chat.id}
+                    onClick={() => onSelectChat(chat)}
+                  />
+                ))}
+              </div>
+            )}
 
-        {/* Regular */}
-        <div className="pb-4">
-          {pinnedChats.length > 0 && <div className="px-5 py-2 text-xs font-bold text-slate-400 dark:text-slate-500 tracking-wider uppercase">Recientes</div>}
-          {regularChats.map((chat) => (
-            <ChatItem
-              key={chat.id}
-              chat={chat}
-              isSelected={selectedChat?.id === chat.id}
-              onClick={() => onSelectChat(chat)}
-            />
-          ))}
-        </div>
+            {/* Regular */}
+            <div className="pb-4">
+              {pinnedChats.length > 0 && <div className="px-5 py-2 text-xs font-bold text-slate-400 dark:text-slate-500 tracking-wider uppercase">Recientes</div>}
+              {regularChats.map((chat) => (
+                <ChatItem
+                  key={chat.id}
+                  chat={chat}
+                  isSelected={selectedChat?.id === chat.id}
+                  onClick={() => onSelectChat(chat)}
+                />
+              ))}
+            </div>
 
-        {chats.length === 0 && (
-          <div className="text-center py-12 text-slate-400 dark:text-slate-500">
-            <p className="text-sm">No hay chats disponibles</p>
-          </div>
+            {chats.length === 0 && (
+              <div className="text-center py-12 text-slate-400 dark:text-slate-500">
+                <p className="text-sm">No hay chats disponibles</p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

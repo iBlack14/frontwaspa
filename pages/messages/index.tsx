@@ -328,6 +328,7 @@ function MessagesContent() {
             chats={chats}
             selectedChat={selectedChat}
             onSelectChat={setSelectedChat}
+            instanceId={selectedInstance}
           />
         </div>
 
