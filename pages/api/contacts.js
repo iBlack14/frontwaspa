@@ -12,6 +12,11 @@ export default async function handler(req, res) {
 
     const { instanceId, search } = req.query;
 
+    if (!process.env.SUPABASE_SERVICE_KEY) {
+        console.error('SUPABASE_SERVICE_KEY is missing');
+        return res.status(500).json({ error: 'Configuration error: Missing service key' });
+    }
+
     if (!instanceId) {
         return res.status(400).json({ error: 'instanceId is required' });
     }
@@ -26,22 +31,24 @@ export default async function handler(req, res) {
 
         // Agregar filtro de búsqueda si existe
         if (search) {
-            const searchTerm = `%${search}%`;
+            const searchStr = Array.isArray(search) ? search[0] : search;
+            const searchTerm = `%${searchStr}%`;
+            // Usar ilike para búsqueda insensible a mayúsculas
             query = query.or(`name.ilike.${searchTerm},push_name.ilike.${searchTerm},jid.ilike.${searchTerm}`);
         }
 
         // Ejecutar consulta
         const { data: contacts, error } = await query
             .order('name', { ascending: true, nullsFirst: false })
-            .limit(50); // Limitar resultados para optimizar
+            .limit(50);
 
         if (error) {
-            console.error('Error fetching contacts:', error);
-            return res.status(500).json({ error: error.message });
+            console.error('Supabase error fetching contacts:', error);
+            return res.status(500).json({ error: error.message, details: error });
         }
 
         // Formatear contactos
-        const formattedContacts = contacts.map(contact => ({
+        const formattedContacts = (contacts || []).map(contact => ({
             jid: contact.jid,
             name: contact.name || contact.push_name || contact.jid.split('@')[0],
             pushName: contact.push_name,
@@ -50,7 +57,7 @@ export default async function handler(req, res) {
 
         return res.status(200).json({ contacts: formattedContacts });
     } catch (error) {
-        console.error('Error in contacts API:', error);
-        return res.status(500).json({ error: 'Internal server error' });
+        console.error('Unexpected error in contacts API:', error);
+        return res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 }
