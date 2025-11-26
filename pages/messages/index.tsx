@@ -62,7 +62,13 @@ function MessagesContent() {
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     if (supabaseUrl && supabaseKey) {
-      const client = createClient(supabaseUrl, supabaseKey);
+      const client = createClient(supabaseUrl, supabaseKey, {
+        realtime: {
+          params: {
+            eventsPerSecond: 0  // Deshabilitar WebSocket
+          }
+        }
+      });
       setSupabase(client);
     }
   }, []);
@@ -91,7 +97,9 @@ function MessagesContent() {
   // NOTA: Polling eliminado para evitar rate limit
   // Ahora usamos solo Supabase Realtime para actualizaciones en tiempo real
 
-  // Suscripción en tiempo real a mensajes y chats (sin polling)
+  // NOTA: Realtime deshabilitado para evitar errores de WebSocket
+  // Las actualizaciones se manejan mediante polling o refetch manual
+  /*
   useEffect(() => {
     if (!supabase || !selectedInstance) return;
 
@@ -180,6 +188,7 @@ function MessagesContent() {
       supabase.removeChannel(chatsChannel);
     };
   }, [supabase, selectedInstance, selectedChat]);
+  */
 
   const fetchInstances = async () => {
     try {
