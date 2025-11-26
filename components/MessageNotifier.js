@@ -7,6 +7,9 @@ const MessageNotifier = () => {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
+    // Map para rastrear mensajes notificados y prevenir duplicados
+    const notifiedMessages = new Map();
+
     // Inicializar conexión con el servidor Socket.io
     const socketInstance = io(process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000', {
       reconnection: true,
@@ -30,8 +33,27 @@ const MessageNotifier = () => {
     socketInstance.on('new_message', (message) => {
       console.log('Nuevo mensaje recibido:', message);
 
+      // Crear clave única para el mensaje
+      const messageKey = `${message.instanceId}-${message.messageId || message.chatId}-${message.timestamp || Date.now()}`;
+
+      // Verificar si ya se notificó este mensaje en los últimos 5 segundos
+      if (notifiedMessages.has(messageKey)) {
+        const lastNotified = notifiedMessages.get(messageKey);
+        if (Date.now() - lastNotified < 5000) {
+          console.log('Mensaje ya notificado, ignorando duplicado');
+          return;
+        }
+      }
+
+      // Registrar notificación
+      notifiedMessages.set(messageKey, Date.now());
+
+      // Limpiar entrada después de 5 segundos
+      setTimeout(() => {
+        notifiedMessages.delete(messageKey);
+      }, 5000);
+
       // Obtener ID de instancia actual de la URL
-      // Asumimos ruta: /instance/[id] o similar
       const pathParts = window.location.pathname.split('/');
       const currentInstanceId = pathParts.includes('instance') ? pathParts[pathParts.indexOf('instance') + 1] : null;
 
@@ -40,9 +62,9 @@ const MessageNotifier = () => {
 
       // Si es de otra instancia, mostrar con opción de cambiar
       if (isDifferentInstance) {
-        toast.info(`Mensaje en otra instancia: ${message.sender}`, {
-          description: message.text,
-          duration: 8000,
+        toast(`Mensaje en otra instancia: ${message.sender || 'Desconocido'}`, {
+          description: message.text || 'Nuevo mensaje',
+          duration: 4000,
           action: {
             label: 'Cambiar Instancia',
             onClick: () => window.location.href = `/instance/${message.instanceId}/chat`
@@ -52,12 +74,12 @@ const MessageNotifier = () => {
       }
       // Si es la misma instancia pero no estamos en el chat
       else if (!window.location.pathname.includes(message.chatId)) {
-        toast.success(`Nuevo mensaje de ${message.sender}`, {
-          description: message.text,
-          duration: 5000,
+        toast.success(`Nuevo mensaje de ${message.sender || 'Desconocido'}`, {
+          description: message.text || 'Nuevo mensaje',
+          duration: 4000,
           action: {
             label: 'Ver',
-            onClick: () => window.location.href = `/instance/${message.instanceId}/chat` // Asumiendo ruta unificada
+            onClick: () => window.location.href = `/instance/${message.instanceId}/chat`
           },
         });
         playNotificationSound();
