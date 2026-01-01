@@ -359,12 +359,6 @@ function MessageBubble({
             {fileName}
           </p>
         )}
-        <p className={`text-xs mt-1 opacity-60 leading-[16px] ${message.from_me
-          ? 'text-slate-500 dark:text-slate-400'
-          : 'text-slate-500 dark:text-slate-400'
-          }`}>
-          (Mensaje antiguo sin media)
-        </p>
       </div>
     );
   };
