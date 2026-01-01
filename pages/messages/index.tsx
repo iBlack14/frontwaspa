@@ -351,43 +351,80 @@ function MessagesContent() {
             />
           ) : (
             <div className="flex flex-col h-full bg-[#f0f2f5] dark:bg-[#0b141a] relative overflow-hidden">
+              {/* Background Pattern */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
+                <div className="absolute top-0 left-0 w-full h-full" style={{
+                  backgroundImage: `radial-gradient(circle at 25% 25%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+                                    radial-gradient(circle at 75% 75%, rgba(168, 85, 247, 0.1) 0%, transparent 50%)`,
+                }}></div>
+              </div>
+
               {/* Main Content */}
               <div className="flex-1 flex flex-col items-center justify-center p-8 relative">
-                {/* Background Decoration */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                  <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse"></div>
-                  <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
-                </div>
-
-                {/* Hero Icon */}
-                <div className="relative mb-8 group">
-                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-xl opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
-                  <div className="relative w-32 h-32 bg-white dark:bg-[#202c33] rounded-full flex items-center justify-center shadow-lg border border-slate-100 dark:border-slate-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-16 h-16 text-indigo-500 dark:text-indigo-400">
+                {/* Hero Icon with Animation */}
+                <div className="relative mb-6 group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-500 animate-pulse"></div>
+                  <div className="relative w-24 h-24 bg-white dark:bg-[#202c33] rounded-full flex items-center justify-center shadow-xl border-2 border-indigo-100 dark:border-indigo-900/30 transform transition-transform group-hover:scale-110 duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12 text-indigo-500 dark:text-indigo-400">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
                     </svg>
                   </div>
                 </div>
 
-                <h2 className="text-3xl font-bold text-slate-800 dark:text-[#e9edef] mb-3 tracking-tight">
+                {/* Title & Description */}
+                <h2 className="text-4xl font-bold text-slate-800 dark:text-[#e9edef] mb-3 tracking-tight">
                   Connect BLXK Web
                 </h2>
-                <p className="text-slate-500 dark:text-[#8696a0] text-center max-w-md mb-8 leading-relaxed">
+                <p className="text-slate-600 dark:text-[#8696a0] text-center max-w-lg mb-8 leading-relaxed text-lg">
                   Envía y recibe mensajes sin necesidad de mantener tu teléfono conectado.
-                  <br />
-                  Usa Connect BLXK en hasta 4 dispositivos vinculados.
                 </p>
 
-                <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-[#202c33] rounded-full text-xs font-medium text-slate-500 dark:text-[#8696a0]">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
-                    <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z" clipRule="evenodd" />
-                  </svg>
-                  Cifrado de extremo a extremo
+                {/* Features Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl w-full mb-8">
+                  {/* Feature 1 */}
+                  <div className="bg-white dark:bg-[#202c33] rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700/50 hover:shadow-md transition-shadow">
+                    <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center mb-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-indigo-600 dark:text-indigo-400">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                      </svg>
+                    </div>
+                    <h3 className="font-semibold text-slate-800 dark:text-[#e9edef] mb-2">Seguro</h3>
+                    <p className="text-sm text-slate-500 dark:text-[#8696a0]">Cifrado de extremo a extremo en todos tus mensajes</p>
+                  </div>
+
+                  {/* Feature 2 */}
+                  <div className="bg-white dark:bg-[#202c33] rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700/50 hover:shadow-md transition-shadow">
+                    <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center mb-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-purple-600 dark:text-purple-400">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" />
+                      </svg>
+                    </div>
+                    <h3 className="font-semibold text-slate-800 dark:text-[#e9edef] mb-2">Multi-dispositivo</h3>
+                    <p className="text-sm text-slate-500 dark:text-[#8696a0]">Usa hasta 4 dispositivos vinculados simultáneamente</p>
+                  </div>
+
+                  {/* Feature 3 */}
+                  <div className="bg-white dark:bg-[#202c33] rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700/50 hover:shadow-md transition-shadow">
+                    <div className="w-12 h-12 bg-pink-100 dark:bg-pink-900/30 rounded-xl flex items-center justify-center mb-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-pink-600 dark:text-pink-400">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                      </svg>
+                    </div>
+                    <h3 className="font-semibold text-slate-800 dark:text-[#e9edef] mb-2">Rápido</h3>
+                    <p className="text-sm text-slate-500 dark:text-[#8696a0]">Mensajería instantánea en tiempo real</p>
+                  </div>
+                </div>
+
+                {/* CTA */}
+                <div className="text-center">
+                  <p className="text-sm text-slate-500 dark:text-[#8696a0] mb-4">
+                    👈 Selecciona un chat para comenzar
+                  </p>
                 </div>
               </div>
 
-              {/* Footer Decoration */}
-              <div className="h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-80"></div>
+              {/* Footer Gradient */}
+              <div className="h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
             </div>
           )}
         </div >
