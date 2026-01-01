@@ -97,20 +97,28 @@ function ProfilePage() {
         });
 
         const userData = response.data;
-        setEmail(userData.email || '');
-        setUsername(userData.username || '');
+        // Use session email as fallback for Google OAuth users
+        setEmail(userData.email || (session as any)?.email || '');
+        setUsername(userData.username || (session as any)?.username || '');
         setDocumentId(userData.documentId || '');
         setKey(userData.key || '');
       } catch (error: any) {
         console.error('Error al obtener información del usuario:', error);
+        // If API fails, use session data for Google OAuth users
+        if ((session as any)?.email) {
+          setEmail((session as any).email);
+        }
+        if ((session as any)?.username) {
+          setUsername((session as any).username);
+        }
         // toast.error('Error al cargar datos del perfil');
       }
     };
 
-    if (typedSession?.jwt) {
+    if (typedSession?.jwt || session) {
       fetchUserData();
     }
-  }, [typedSession]);
+  }, [typedSession, session]);
 
 
   const generateKey = () => {

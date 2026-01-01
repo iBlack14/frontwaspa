@@ -38,8 +38,8 @@ export default async function handler(req, res) {
     // Retornar datos del usuario y perfil
     return res.status(200).json({
       documentId: session.id,
-      email: user.email,
-      username: user.user_metadata?.username || user.email?.split('@')[0] || 'Usuario',
+      email: user.email || session.email,
+      username: profile?.username || user.user_metadata?.username || user.email?.split('@')[0] || 'Usuario',
       key: profile?.api_key || '',
       status_plan: profile?.status_plan || false,
       plan_type: profile?.plan_type || 'free',
