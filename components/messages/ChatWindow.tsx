@@ -49,8 +49,8 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
       setNewMessage('');
       toast.success('Mensaje enviado');
 
-      // Refrescar mensajes después de enviar
-      setTimeout(() => onRefresh(), 1000);
+      // Actualización inmediata (sin esperar 1 segundo)
+      onRefresh();
     } catch (error: any) {
       console.error('Error sending message:', error);
       toast.error(error.response?.data?.error || 'Error al enviar mensaje');

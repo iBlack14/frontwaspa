@@ -65,7 +65,7 @@ function MessagesContent() {
       const client = createClient(supabaseUrl, supabaseKey, {
         realtime: {
           params: {
-            eventsPerSecond: 0  // Deshabilitar WebSocket
+            eventsPerSecond: 10  // ✅ Habilitar WebSocket para tiempo real
           }
         }
       });
@@ -94,12 +94,7 @@ function MessagesContent() {
     }
   }, [selectedChat]);
 
-  // NOTA: Polling eliminado para evitar rate limit
-  // Ahora usamos solo Supabase Realtime para actualizaciones en tiempo real
-
-  // NOTA: Realtime deshabilitado para evitar errores de WebSocket
-  // Las actualizaciones se manejan mediante polling o refetch manual
-  /*
+  // ✅ REALTIME HABILITADO - Sincronización automática de mensajes
   useEffect(() => {
     if (!supabase || !selectedInstance) return;
 
@@ -133,7 +128,7 @@ function MessagesContent() {
           // Actualizar lista de chats
           fetchChats(selectedInstance);
 
-          // Notificación sonora
+          // Notificación sonora solo para mensajes recibidos
           if (!payload.new.from_me) {
             playNotificationSound();
             toast.success(`Nuevo mensaje de ${payload.new.sender_name || 'Desconocido'}`);
@@ -188,7 +183,6 @@ function MessagesContent() {
       supabase.removeChannel(chatsChannel);
     };
   }, [supabase, selectedInstance, selectedChat]);
-  */
 
   const fetchInstances = async () => {
     try {
