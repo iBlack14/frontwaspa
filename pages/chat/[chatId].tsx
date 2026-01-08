@@ -273,18 +273,63 @@ export default function ChatPage() {
             className={`flex ${message.from_me ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-md px-4 py-2 rounded-2xl ${
-                message.from_me
+              className={`max-w-md px-4 py-2 rounded-2xl ${message.from_me
                   ? 'bg-emerald-500 text-white rounded-br-sm'
                   : 'bg-white dark:bg-zinc-800 text-gray-900 dark:text-white rounded-bl-sm shadow-md'
-              }`}
+                }`}
             >
+              {/* Image */}
               {message.message_type === 'image' && message.media_url && (
                 <img
                   src={message.media_url}
-                  alt="Image"
-                  className="rounded-lg mb-2 max-w-full"
+                  alt="Imagen"
+                  className="rounded-lg mb-2 max-w-full cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => window.open(message.media_url, '_blank')}
                 />
+              )}
+
+              {/* Video */}
+              {message.message_type === 'video' && message.media_url && (
+                <video
+                  src={message.media_url}
+                  controls
+                  className="rounded-lg mb-2 max-w-full"
+                  style={{ maxHeight: '400px' }}
+                />
+              )}
+
+              {/* Audio */}
+              {message.message_type === 'audio' && message.media_url && (
+                <audio
+                  src={message.media_url}
+                  controls
+                  className="mb-2 w-full"
+                />
+              )}
+
+              {/* Sticker */}
+              {message.message_type === 'sticker' && message.media_url && (
+                <img
+                  src={message.media_url}
+                  alt="Sticker"
+                  className="rounded-lg mb-2 max-w-[200px]"
+                />
+              )}
+
+              {/* Document */}
+              {message.message_type === 'document' && message.media_url && (
+                <a
+                  href={message.media_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 p-3 bg-white/10 rounded-lg hover:bg-white/20 transition-colors mb-2"
+                >
+                  <DocumentIcon className="w-6 h-6" />
+                  <div>
+                    <div className="font-medium">Documento</div>
+                    <div className="text-xs opacity-75">Click para descargar</div>
+                  </div>
+                </a>
               )}
 
               {message.message_text && (
