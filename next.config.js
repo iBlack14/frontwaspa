@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   // Configuración de WebSockets
   webpack: (config, { isServer }) => {
     // Configuración para el cliente
