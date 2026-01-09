@@ -121,13 +121,27 @@ export default function ContactInfoPanel({ chat, messages, isOpen, onClose }: Co
                     {/* Quick Actions */}
                     <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
                         <div className="flex justify-center gap-3">
-                            <button className="flex flex-col items-center gap-1 p-3 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition group">
+                            <button
+                                onClick={() => {
+                                    window.open(`https://wa.me/${phoneNumber}`, '_blank');
+                                    // Nota: La llamada se inicia desde WhatsApp
+                                }}
+                                className="flex flex-col items-center gap-1 p-3 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition group"
+                                title="Abrir WhatsApp para llamar"
+                            >
                                 <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center group-hover:bg-indigo-200 dark:group-hover:bg-indigo-800 transition">
                                     <PhoneIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                                 </div>
                                 <span className="text-xs text-slate-600 dark:text-slate-400">Llamar</span>
                             </button>
-                            <button className="flex flex-col items-center gap-1 p-3 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 transition group">
+                            <button
+                                onClick={() => {
+                                    window.open(`https://wa.me/${phoneNumber}`, '_blank');
+                                    // Nota: La videollamada se inicia desde WhatsApp
+                                }}
+                                className="flex flex-col items-center gap-1 p-3 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 transition group"
+                                title="Abrir WhatsApp para videollamada"
+                            >
                                 <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center group-hover:bg-purple-200 dark:group-hover:bg-purple-800 transition">
                                     <VideoCameraIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                                 </div>
