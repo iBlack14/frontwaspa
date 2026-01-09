@@ -274,8 +274,8 @@ export default function ChatPage() {
           >
             <div
               className={`max-w-md px-4 py-2 rounded-2xl ${message.from_me
-                  ? 'bg-emerald-500 text-white rounded-br-sm'
-                  : 'bg-white dark:bg-zinc-800 text-gray-900 dark:text-white rounded-bl-sm shadow-md'
+                ? 'bg-emerald-500 text-white rounded-br-sm'
+                : 'bg-white dark:bg-zinc-800 text-gray-900 dark:text-white rounded-bl-sm shadow-md'
                 }`}
             >
               {/* Image */}
@@ -298,8 +298,8 @@ export default function ChatPage() {
                 />
               )}
 
-              {/* Audio */}
-              {message.message_type === 'audio' && message.media_url && (
+              {/* Audio / Voice */}
+              {(message.message_type === 'audio' || message.message_type === 'voice') && message.media_url && (
                 <audio
                   src={message.media_url}
                   controls
