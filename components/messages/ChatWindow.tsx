@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, KeyboardEvent } from 'react';
 import { Chat, Message } from '../../pages/messages/index';
 import axios from 'axios';
 import ImageViewer from './ImageViewer';
+import ContactInfoPanel from './ContactInfoPanel';
 import { CheckIcon, PaperAirplaneIcon, FaceSmileIcon, PaperClipIcon } from '@heroicons/react/24/outline';
 import { toast } from 'sonner';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
@@ -20,6 +21,7 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<{ url: string; caption?: string } | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showContactInfo, setShowContactInfo] = useState(false);
 
   useEffect(() => {
     scrollToBottom();
@@ -75,7 +77,10 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
     <div className="h-full flex flex-col bg-[#f1f5f9] dark:bg-[#0f172a]">
       {/* Header - Pastel Glassmorphism */}
       <div className="bg-white/80 backdrop-blur-md dark:bg-[#1e293b]/90 px-6 py-3 flex items-center justify-between shadow-sm border-b border-slate-200 dark:border-slate-800 z-10">
-        <div className="flex items-center gap-4">
+        <button
+          onClick={() => setShowContactInfo(true)}
+          className="flex items-center gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl px-2 py-1 -ml-2 transition-colors cursor-pointer"
+        >
           <div className="relative">
             {chat.profile_pic_url ? (
               <img
@@ -90,15 +95,15 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
             )}
             <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 border-2 border-white dark:border-slate-800 rounded-full"></span>
           </div>
-          <div>
+          <div className="text-left">
             <h2 className="font-bold text-slate-800 dark:text-slate-100 text-[16px]">
               {chat.chat_name || chat.chat_id}
             </h2>
             <p className="text-xs font-medium text-indigo-500 dark:text-indigo-400">
-              {chat.chat_type === 'group' ? 'Grupo' : 'En línea'}
+              {chat.chat_type === 'group' ? 'Grupo' : 'Click para ver info'}
             </p>
           </div>
-        </div>
+        </button>
         <div className="flex items-center gap-2">
           <button
             onClick={onRefresh}
@@ -200,6 +205,14 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
           }}
         />
       )}
+
+      {/* Contact Info Panel */}
+      <ContactInfoPanel
+        chat={chat}
+        messages={messages}
+        isOpen={showContactInfo}
+        onClose={() => setShowContactInfo(false)}
+      />
     </div>
   );
 }
@@ -337,12 +350,12 @@ function MessageBubble({
       return (
         <div className="mb-1">
           <div className={`flex items-center gap-3 rounded-2xl p-3 ${message.from_me
-              ? 'bg-indigo-100/50 dark:bg-indigo-900/30'
-              : 'bg-slate-100 dark:bg-slate-800/50'
+            ? 'bg-indigo-100/50 dark:bg-indigo-900/30'
+            : 'bg-slate-100 dark:bg-slate-800/50'
             }`}>
             <div className={`w-10 h-10 rounded-full flex items-center justify-center ${message.from_me
-                ? 'bg-indigo-200 dark:bg-indigo-800'
-                : 'bg-emerald-200 dark:bg-emerald-800'
+              ? 'bg-indigo-200 dark:bg-indigo-800'
+              : 'bg-emerald-200 dark:bg-emerald-800'
               }`}>
               {message.message_type === 'voice' ? '🎤' : '🎵'}
             </div>
