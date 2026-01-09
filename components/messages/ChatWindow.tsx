@@ -257,12 +257,32 @@ function MessageBubble({
 
     // Renderizar audio o nota de voz
     if ((message.message_type === 'audio' || message.message_type === 'voice') && message.media_url) {
+      // Detectar tipo MIME por extensión
+      const isOgg = message.media_url.endsWith('.ogg') || message.media_url.includes('audio/ogg');
+      const mimeType = isOgg ? 'audio/ogg' : 'audio/mpeg';
+
       return (
         <div className="mb-1">
-          <div className="flex items-center gap-2 bg-white/10 dark:bg-black/10 rounded-lg p-2">
-            {message.message_type === 'voice' ? '🎤' : '🎵'}
-            <audio controls className="flex-1" style={{ height: '32px' }}>
-              <source src={message.media_url} />
+          <div className={`flex items-center gap-3 rounded-2xl p-3 ${message.from_me
+            ? 'bg-indigo-100/50 dark:bg-indigo-900/30'
+            : 'bg-slate-100 dark:bg-slate-800/50'
+            }`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${message.from_me
+              ? 'bg-indigo-200 dark:bg-indigo-800'
+              : 'bg-emerald-200 dark:bg-emerald-800'
+              }`}>
+              {message.message_type === 'voice' ? '🎤' : '🎵'}
+            </div>
+            <audio
+              controls
+              className="flex-1 h-10"
+              style={{ minWidth: '200px' }}
+              preload="metadata"
+            >
+              <source src={message.media_url} type={mimeType} />
+              <source src={message.media_url} type="audio/ogg" />
+              <source src={message.media_url} type="audio/mpeg" />
+              <source src={message.media_url} type="audio/mp4" />
               Tu navegador no soporta audio.
             </audio>
           </div>
@@ -307,6 +327,34 @@ function MessageBubble({
           {message.message_text && (
             <p className="text-[14.2px] mt-1 px-1">{message.message_text}</p>
           )}
+        </div>
+      );
+    }
+
+    // Fallback especial para audio/voice sin media_url disponible
+    if ((message.message_type === 'audio' || message.message_type === 'voice') && !message.media_url) {
+      const fileName = (message.metadata as any)?.fileName;
+      return (
+        <div className="mb-1">
+          <div className={`flex items-center gap-3 rounded-2xl p-3 ${message.from_me
+              ? 'bg-indigo-100/50 dark:bg-indigo-900/30'
+              : 'bg-slate-100 dark:bg-slate-800/50'
+            }`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${message.from_me
+                ? 'bg-indigo-200 dark:bg-indigo-800'
+                : 'bg-emerald-200 dark:bg-emerald-800'
+              }`}>
+              {message.message_type === 'voice' ? '🎤' : '🎵'}
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                {message.message_type === 'voice' ? 'Nota de voz' : 'Audio'}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {fileName || 'Audio no disponible'}
+              </p>
+            </div>
+          </div>
         </div>
       );
     }
