@@ -33,15 +33,20 @@ export default function ContactInfoPanel({ chat, messages, isOpen, onClose }: Co
     const handleBlockContact = async () => {
         try {
             setLoading(true);
-            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-            await axios.post(`${backendUrl}/api/contacts/block/${chat.instance_id}/${chat.chat_id}`, {
+            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+            const url = `${backendUrl}/api/contacts/block/${chat.instance_id}/${chat.chat_id}`;
+            console.log('Blocking contact via URL:', url);
+            console.log('Payload:', { blocked: !isBlocked });
+
+            await axios.post(url, {
                 blocked: !isBlocked
             });
             setIsBlocked(!isBlocked);
             toast.success(isBlocked ? 'Contacto desbloqueado' : 'Contacto bloqueado');
-        } catch (error) {
-            console.error(error);
-            toast.error('Error al actualizar bloqueo');
+        } catch (error: any) {
+            console.error('Error blocking contact:', error);
+            const errorMessage = error.response?.data?.error || error.message;
+            toast.error(`Error: ${errorMessage} (${error.response?.status})`);
         } finally {
             setLoading(false);
         }
