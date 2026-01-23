@@ -176,30 +176,44 @@ function DashboardContent() {
     if (!workspace.name || !workspace.url) return;
 
     try {
-      // Intentar acceder al health endpoint de n8n
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-      const response = await fetch(`${workspace.url}/healthz`, {
-        method: 'GET',
-        signal: controller.signal,
-        headers: {
-          'User-Agent': 'BLXK-Suite-StatusCheck/1.0'
+      // Try multiple endpoints
+      const endpoints = ['/', '/rest/health', '/healthz', '/health'];
+      let foundWorkingEndpoint = false;
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await fetch(`${workspace.url}${endpoint}`, {
+            method: 'GET',
+            signal: controller.signal,
+            headers: {
+              'User-Agent': 'BLXK-Suite-StatusCheck/1.0'
+            }
+          });
+
+          // If we get a response that indicates n8n is running
+          if (response.status === 200 || response.status === 302 || (response.status >= 400 && response.status !== 404 && response.status !== 502)) {
+            // Si está listo, actualizar el estado en la base de datos
+            await axios.post('/api/suite/init', {
+              token: typedSession?.jwt,
+              name_service: workspace.name,
+            });
+
+            toast.success(`¡${workspace.name} está listo!`);
+            fetchWorkspaces(); // Refrescar la lista
+            foundWorkingEndpoint = true;
+            break;
+          }
+        } catch (endpointError: any) {
+          // Continue to next endpoint
         }
-      });
+      }
 
       clearTimeout(timeoutId);
 
-      if (response.ok) {
-        // Si está listo, actualizar el estado en la base de datos
-        await axios.post('/api/suite/init', {
-          token: typedSession?.jwt,
-          name_service: workspace.name,
-        });
-
-        toast.success(`¡${workspace.name} está listo!`);
-        fetchWorkspaces(); // Refrescar la lista
-      } else {
+      if (!foundWorkingEndpoint) {
         toast.info(`${workspace.name} aún se está inicializando...`);
       }
     } catch (error: any) {

@@ -79,8 +79,8 @@ export default async function handler(req, res) {
 
     const selectedPlanConfig = planConfigs[plan] || planConfigs.free;
 
-    // Generar URL con dominio de Easypanel
-    const baseDomain = process.env.EASYPANEL_BASE_DOMAIN || '1mrj9n.easypanel.host';
+    // Generar URL con dominio de Easypanel (debe coincidir con el backend)
+    const baseDomain = process.env.EASYPANEL_BASE_DOMAIN || 'ld4pxg.easypanel.host';
     const generatedUrl = service_url || `https://${service_name}.${baseDomain}`;
 
     // Crear credenciales con información del plan
