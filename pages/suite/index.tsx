@@ -173,16 +173,22 @@ function DashboardContent() {
   };
 
   const checkInstanceStatus = async (workspace: WorkspaceStruture) => {
-    if (!workspace.name) return;
+    if (!workspace.name || !workspace.url) return;
 
     try {
       // Intentar acceder al health endpoint de n8n
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
       const response = await fetch(`${workspace.url}/healthz`, {
         method: 'GET',
+        signal: controller.signal,
         headers: {
           'User-Agent': 'BLXK-Suite-StatusCheck/1.0'
         }
       });
+
+      clearTimeout(timeoutId);
 
       if (response.ok) {
         // Si está listo, actualizar el estado en la base de datos
@@ -191,13 +197,17 @@ function DashboardContent() {
           name_service: workspace.name,
         });
 
-        toast.success(`${workspace.name} está listo!`);
+        toast.success(`¡${workspace.name} está listo!`);
         fetchWorkspaces(); // Refrescar la lista
       } else {
         toast.info(`${workspace.name} aún se está inicializando...`);
       }
-    } catch (error) {
-      toast.info(`${workspace.name} aún se está inicializando...`);
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        toast.info(`${workspace.name} aún se está inicializando (timeout)...`);
+      } else {
+        toast.info(`${workspace.name} aún se está inicializando...`);
+      }
     }
   };
 
