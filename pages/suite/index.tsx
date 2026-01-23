@@ -177,46 +177,40 @@ function DashboardContent() {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-      // Try multiple endpoints
-      const endpoints = ['/', '/rest/health', '/healthz', '/health'];
-      let foundWorkingEndpoint = false;
+      console.log(`Checking status for ${workspace.url}`);
 
-      for (const endpoint of endpoints) {
-        try {
-          const response = await fetch(`${workspace.url}${endpoint}`, {
-            method: 'GET',
-            signal: controller.signal,
-            headers: {
-              'User-Agent': 'BLXK-Suite-StatusCheck/1.0'
-            }
-          });
-
-          // If we get a response that indicates n8n is running
-          if (response.status === 200 || response.status === 302 || (response.status >= 400 && response.status !== 404 && response.status !== 502)) {
-            // Si está listo, actualizar el estado en la base de datos
-            await axios.post('/api/suite/init', {
-              token: typedSession?.jwt,
-              name_service: workspace.name,
-            });
-
-            toast.success(`¡${workspace.name} está listo!`);
-            fetchWorkspaces(); // Refrescar la lista
-            foundWorkingEndpoint = true;
-            break;
-          }
-        } catch (endpointError: any) {
-          // Continue to next endpoint
-        }
-      }
+      // Try the main endpoint first - if n8n is running, it should respond
+      const response = await fetch(workspace.url, {
+        method: 'GET',
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'BLXK-Suite-StatusCheck/1.0',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+        },
+        redirect: 'follow'
+      });
 
       clearTimeout(timeoutId);
 
-      if (!foundWorkingEndpoint) {
-        toast.info(`${workspace.name} aún se está inicializando...`);
+      console.log(`Response status: ${response.status}, URL: ${response.url}`);
+
+      // If we get any response that's not 404, consider it working
+      if (response.status !== 404) {
+        // Si está listo, actualizar el estado en la base de datos
+        await axios.post('/api/suite/init', {
+          token: typedSession?.jwt,
+          name_service: workspace.name,
+        });
+
+        toast.success(`¡${workspace.name} está listo! 🎉`);
+        fetchWorkspaces(); // Refrescar la lista
+      } else {
+        toast.info(`${workspace.name} aún se está inicializando... Intenta de nuevo en unos minutos.`);
       }
     } catch (error: any) {
+      console.log(`Status check error:`, error);
       if (error.name === 'AbortError') {
         toast.info(`${workspace.name} aún se está inicializando (timeout)...`);
       } else {
@@ -385,14 +379,10 @@ function DashboardContent() {
         { headers: { 'Content-Type': 'application/json' } }
       );
 
-      const { health_check_passed, note } = response.data;
+      const { note } = response.data;
 
-      if (health_check_passed) {
-        toast.success('✅ Instancia de n8n creada y lista para usar', { id: 'creating' });
-      } else {
-        toast.success('✅ Instancia de n8n creada. Inicializando...', { id: 'creating' });
-        toast.info(note || 'N8N está inicializando su base de datos. Puede tomar unos minutos.', { duration: 8000 });
-      }
+      toast.success('✅ Instancia de n8n creada. Inicializando...', { id: 'creating' });
+      toast.info(note || 'N8N está inicializando. Usa el botón 🔄 para verificar cuando esté listo.', { duration: 10000 });
 
       fetchWorkspaces();
       handleCloseModal();

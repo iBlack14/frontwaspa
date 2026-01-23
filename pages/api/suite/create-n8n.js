@@ -173,19 +173,17 @@ export default async function handler(req, res) {
           dockerCredentials = dockerResponse.data.credentials;
           const healthCheckPassed = dockerResponse.data.credentials?.health_check_passed || false;
 
-          // Actualizar con las credenciales reales del contenedor
+          // Siempre marcar como "initializing" al inicio, el usuario puede verificar manualmente después
           await supabaseAdmin
             .from('suites')
             .update({
-              activo: healthCheckPassed, // Solo marcar como activo si el health check pasó
+              activo: false, // Siempre empezar como inactivo
               credencials: {
                 ...credentials,
                 ...dockerCredentials,
                 container_id: dockerResponse.data.container_id,
-                status: healthCheckPassed ? 'running' : 'initializing',
-                note: healthCheckPassed
-                  ? 'Contenedor Docker creado y N8N listo para usar'
-                  : 'Contenedor Docker creado. N8N se está inicializando (puede tomar unos minutos).'
+                status: 'initializing', // Siempre empezar como initializing
+                note: 'Contenedor Docker creado. N8N se está inicializando (puede tomar varios minutos). Usa el botón de verificación para comprobar el estado.'
               }
             })
             .eq('id', newSuite.id);
@@ -251,21 +249,16 @@ export default async function handler(req, res) {
       console.warn('NEXT_PUBLIC_BACKEND_URL not configured - instance created in database only');
     }
 
-    // Determinar el mensaje basado en si el health check pasó
-    const healthCheckPassed = dockerCredentials?.health_check_passed || false;
-    const message = healthCheckPassed
-      ? `Instancia de N8N creada exitosamente con plan ${plan.toUpperCase()}`
-      : `Instancia de N8N creada con plan ${plan.toUpperCase()}. N8N se está inicializando y puede tomar unos minutos estar listo.`;
+    // El mensaje siempre indica que se está inicializando
+    const message = `Instancia de N8N creada con plan ${plan.toUpperCase()}. N8N se está inicializando y puede tomar varios minutos estar listo.`;
 
     return res.status(201).json({
       success: true,
       message: message,
       suite: newSuite,
       plan_config: selectedPlanConfig,
-      health_check_passed: healthCheckPassed,
-      note: healthCheckPassed
-        ? 'Tu instancia N8N está lista para usar.'
-        : 'Espera unos minutos y refresca la página. N8N necesita inicializar su base de datos.'
+      health_check_passed: false, // Siempre false inicialmente
+      note: 'La instancia se está inicializando. Usa el botón de verificación (🔄) junto al estado para comprobar cuando esté lista.'
     });
 
   } catch (error) {
