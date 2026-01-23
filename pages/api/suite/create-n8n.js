@@ -171,18 +171,21 @@ export default async function handler(req, res) {
 
         if (dockerResponse.data.success) {
           dockerCredentials = dockerResponse.data.credentials;
-          
+          const healthCheckPassed = dockerResponse.data.credentials?.health_check_passed || false;
+
           // Actualizar con las credenciales reales del contenedor
           await supabaseAdmin
             .from('suites')
             .update({
-              activo: true,
+              activo: healthCheckPassed, // Solo marcar como activo si el health check pasó
               credencials: {
                 ...credentials,
                 ...dockerCredentials,
                 container_id: dockerResponse.data.container_id,
-                status: 'running',
-                note: 'Contenedor Docker creado y en ejecución'
+                status: healthCheckPassed ? 'running' : 'initializing',
+                note: healthCheckPassed
+                  ? 'Contenedor Docker creado y N8N listo para usar'
+                  : 'Contenedor Docker creado. N8N se está inicializando (puede tomar unos minutos).'
               }
             })
             .eq('id', newSuite.id);
@@ -248,11 +251,21 @@ export default async function handler(req, res) {
       console.warn('NEXT_PUBLIC_BACKEND_URL not configured - instance created in database only');
     }
 
+    // Determinar el mensaje basado en si el health check pasó
+    const healthCheckPassed = dockerCredentials?.health_check_passed || false;
+    const message = healthCheckPassed
+      ? `Instancia de N8N creada exitosamente con plan ${plan.toUpperCase()}`
+      : `Instancia de N8N creada con plan ${plan.toUpperCase()}. N8N se está inicializando y puede tomar unos minutos estar listo.`;
+
     return res.status(201).json({
       success: true,
-      message: `Instancia de N8N creada exitosamente con plan ${plan.toUpperCase()}`,
+      message: message,
       suite: newSuite,
-      plan_config: selectedPlanConfig
+      plan_config: selectedPlanConfig,
+      health_check_passed: healthCheckPassed,
+      note: healthCheckPassed
+        ? 'Tu instancia N8N está lista para usar.'
+        : 'Espera unos minutos y refresca la página. N8N necesita inicializar su base de datos.'
     });
 
   } catch (error) {

@@ -23,7 +23,8 @@ import {
   RocketLaunchIcon,
   BoltIcon,
   StarIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline';
 import { Session } from 'next-auth';
 
@@ -45,7 +46,7 @@ interface WorkspaceStruture {
   name?: string | null;
   url?: string | null;
   activo?: boolean;
-  credencials?: { [key: string]: string } | null;
+  credencials?: { [key: string]: any } | null;
 }
 
 interface ProductField {
@@ -168,6 +169,35 @@ function DashboardContent() {
       setError(err.message || 'Error al cargar los productos.');
     } finally {
       setLoadingProducts(false);
+    }
+  };
+
+  const checkInstanceStatus = async (workspace: WorkspaceStruture) => {
+    if (!workspace.name) return;
+
+    try {
+      // Intentar acceder al health endpoint de n8n
+      const response = await fetch(`${workspace.url}/healthz`, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'BLXK-Suite-StatusCheck/1.0'
+        }
+      });
+
+      if (response.ok) {
+        // Si está listo, actualizar el estado en la base de datos
+        await axios.post('/api/suite/init', {
+          token: typedSession?.jwt,
+          name_service: workspace.name,
+        });
+
+        toast.success(`${workspace.name} está listo!`);
+        fetchWorkspaces(); // Refrescar la lista
+      } else {
+        toast.info(`${workspace.name} aún se está inicializando...`);
+      }
+    } catch (error) {
+      toast.info(`${workspace.name} aún se está inicializando...`);
     }
   };
 
@@ -321,7 +351,7 @@ function DashboardContent() {
 
       toast.loading('Creando instancia de n8n...', { id: 'creating' });
 
-      await axios.post(
+      const response = await axios.post(
         '/api/suite/create-n8n',
         {
           service_name: serviceName,
@@ -331,7 +361,15 @@ function DashboardContent() {
         { headers: { 'Content-Type': 'application/json' } }
       );
 
-      toast.success('✅ Instancia de n8n creada con éxito', { id: 'creating' });
+      const { health_check_passed, note } = response.data;
+
+      if (health_check_passed) {
+        toast.success('✅ Instancia de n8n creada y lista para usar', { id: 'creating' });
+      } else {
+        toast.success('✅ Instancia de n8n creada. Inicializando...', { id: 'creating' });
+        toast.info(note || 'N8N está inicializando su base de datos. Puede tomar unos minutos.', { duration: 8000 });
+      }
+
       fetchWorkspaces();
       handleCloseModal();
     } catch (error: any) {
@@ -537,8 +575,31 @@ function DashboardContent() {
                     {workspaces.name || 'Sin nombre'}
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                    <span className={`w-1.5 h-1.5 rounded-full ${workspaces.activo ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
-                    {workspaces.activo ? 'Online' : 'Offline'}
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      workspaces.activo
+                        ? 'bg-emerald-500'
+                        : workspaces.credencials?.status === 'initializing'
+                          ? 'bg-yellow-500'
+                          : 'bg-red-500'
+                    }`}></span>
+                    {workspaces.activo
+                      ? 'Online'
+                      : workspaces.credencials?.status === 'initializing'
+                        ? 'Inicializando...'
+                        : 'Offline'
+                    }
+                    {workspaces.credencials?.status === 'initializing' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          checkInstanceStatus(workspaces);
+                        }}
+                        className="ml-1 p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
+                        title="Verificar estado"
+                      >
+                        <ArrowPathIcon className="w-3 h-3" />
+                      </button>
+                    )}
                   </p>
                 </div>
               </button>
