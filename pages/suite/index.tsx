@@ -379,16 +379,33 @@ function DashboardContent() {
         { headers: { 'Content-Type': 'application/json' } }
       );
 
-      const { note } = response.data;
-
-      toast.success('✅ Instancia de n8n creada. Inicializando...', { id: 'creating' });
-      toast.info(note || 'N8N está inicializando. Usa el botón 🔄 para verificar cuando esté listo.', { duration: 10000 });
+      toast.success('Instancia N8N creada exitosamente. La inicialización puede tomar unos minutos.', {
+        id: 'creating',
+        duration: 6000,
+        description: 'Use el botón de verificación para comprobar el estado cuando esté listo.'
+      });
 
       fetchWorkspaces();
       handleCloseModal();
     } catch (error: any) {
       console.error('Error al crear nueva instancia:', error.response?.data || error.message);
-      toast.error(error.response?.data?.error || error.response?.data?.message || 'Error al crear nueva instancia', { id: 'creating' });
+
+      const errorData = error.response?.data;
+      const isTimeoutError = errorData?.error_type === 'TIMEOUT';
+      const suiteWasCreated = errorData?.suite_created === true;
+
+      if (isTimeoutError && suiteWasCreated) {
+        // Suite created but container creation timed out - show success with warning
+        toast.success('Instancia creada exitosamente. El contenedor se está configurando.', {
+          id: 'creating',
+          duration: 8000,
+          description: 'Puede tomar unos minutos adicionales. Use el botón de verificación para comprobar el progreso.'
+        });
+        fetchWorkspaces(); // Refresh to show the created instance
+      } else {
+        // Actual error
+        toast.error(errorData?.error || errorData?.message || 'Error al crear nueva instancia', { id: 'creating' });
+      }
     } finally {
       setIsLoading(false);
     }

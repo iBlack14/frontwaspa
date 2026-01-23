@@ -161,8 +161,8 @@ export default async function handler(req, res) {
             plan: plan
           },
           {
-            timeout: 120000, // Aumentado a 2 minutos
-            headers: { 
+            timeout: 300000, // Aumentado a 5 minutos para operaciones Docker
+            headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${profile.api_key}` // ✅ Agregar API key
             }
@@ -207,16 +207,16 @@ export default async function handler(req, res) {
         
         if (dockerError.code === 'ECONNREFUSED') {
           errorType = 'CONNECTION_REFUSED';
-          userMessage = 'No se pudo conectar al backend. Verifica que esté corriendo.';
+          userMessage = 'No se pudo conectar al servicio backend. Verifique que esté ejecutándose.';
         } else if (dockerError.code === 'ETIMEDOUT' || dockerError.message.includes('timeout')) {
           errorType = 'TIMEOUT';
-          userMessage = 'El backend tardó demasiado en responder. Intenta nuevamente.';
+          userMessage = 'La creación del contenedor está tomando más tiempo del esperado. La instancia se creó en la base de datos y se completará automáticamente.';
         } else if (dockerError.code === 'ENOTFOUND') {
           errorType = 'DNS_ERROR';
-          userMessage = 'No se pudo encontrar el backend. Verifica la URL.';
+          userMessage = 'No se pudo resolver la dirección del backend. Verifique la configuración de red.';
         } else if (dockerError.response?.status === 500) {
           errorType = 'BACKEND_ERROR';
-          userMessage = dockerError.response?.data?.error || 'Error interno del backend';
+          userMessage = dockerError.response?.data?.error || 'Error interno del sistema backend';
         }
         
         // Actualizar con error pero no fallar la creación
