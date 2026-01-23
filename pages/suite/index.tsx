@@ -588,15 +588,15 @@ function DashboardContent() {
                   }`}
               >
                 <div className="relative flex-shrink-0">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${workspaces.activo
-                    ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
-                    : 'bg-slate-100 dark:bg-slate-700 text-slate-400'
-                    }`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    workspaces.activo
+                      ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
+                      : workspaces.credencials?.status === 'initializing'
+                        ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400'
+                        : 'bg-slate-100 dark:bg-slate-700 text-slate-400'
+                  }`}>
                     <CubeIcon className="w-6 h-6" />
                   </div>
-                  {workspaces.activo && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-slate-800 rounded-full"></span>
-                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className={`font-semibold truncate ${selectedWorkspace?.documentId === workspaces.documentId
@@ -605,33 +605,34 @@ function DashboardContent() {
                     }`}>
                     {workspaces.name || 'Sin nombre'}
                   </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                    <span className={`w-1.5 h-1.5 rounded-full ${
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                       workspaces.activo
-                        ? 'bg-emerald-500'
+                        ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
                         : workspaces.credencials?.status === 'initializing'
-                          ? 'bg-yellow-500'
-                          : 'bg-red-500'
-                    }`}></span>
-                    {workspaces.activo
-                      ? 'Online'
-                      : workspaces.credencials?.status === 'initializing'
-                        ? 'Inicializando...'
-                        : 'Offline'
-                    }
+                          ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+                          : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                    }`}>
+                      {workspaces.activo
+                        ? 'Activo'
+                        : workspaces.credencials?.status === 'initializing'
+                          ? 'Iniciando'
+                          : 'Inactivo'
+                      }
+                    </span>
                     {workspaces.credencials?.status === 'initializing' && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           checkInstanceStatus(workspaces);
                         }}
-                        className="ml-1 p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
+                        className="p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
                         title="Verificar estado"
                       >
                         <ArrowPathIcon className="w-3 h-3" />
                       </button>
                     )}
-                  </p>
+                  </div>
                 </div>
               </button>
             ))
