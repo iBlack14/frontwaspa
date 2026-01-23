@@ -73,7 +73,7 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "blxk-supabase.1mrj9n.easypanel.host",
+        hostname: "wasapi-supabase.ld4pxg.easypanel.host",
       },
       {
         protocol: "https",
