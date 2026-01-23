@@ -74,6 +74,18 @@ const templates = [
     hoverShadow: 'hover:shadow-orange-500/5',
     available: false,
   },
+  {
+    id: 'calentamiento',
+    name: 'Calentamiento WhatsApp',
+    description: 'Calienta tu cuenta gradualmente para evitar bloqueos y bans',
+    icon: SparklesIcon,
+    emoji: '🔥',
+    color: 'red',
+    bgColor: 'bg-red-50/50 dark:bg-red-900/10',
+    borderColor: 'border-red-100 dark:border-red-800/30',
+    hoverShadow: 'hover:shadow-red-500/5',
+    available: true,
+  },
 ];
 
 function TemplatesContent() {

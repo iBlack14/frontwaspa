@@ -26,7 +26,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'templateType es requerido' });
     }
 
-    const validTemplates = ['none', 'spam', 'chatbot'];
+    const validTemplates = ['none', 'spam', 'chatbot', 'calentamiento'];
     if (!validTemplates.includes(templateType)) {
       return res.status(400).json({ error: 'Template inválido' });
     }
