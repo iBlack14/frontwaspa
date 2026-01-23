@@ -13,7 +13,7 @@ export const supabase = (() => {
     return createClient(supabaseUrl, supabaseAnonKey, {
       realtime: {
         params: {
-          eventsPerSecond: 0
+          eventsPerSecond: 2 // Allow some events per second
         }
       },
       auth: {
@@ -28,14 +28,26 @@ export const supabase = (() => {
     supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
       realtime: {
         params: {
-          eventsPerSecond: 0
-        }
+          eventsPerSecond: 2 // Allow realtime events
+        },
+        heartbeatIntervalMs: 30000,
+        reconnectAfterMs: (tries: number) => Math.min(tries * 1000, 30000),
       },
       auth: {
         persistSession: true,
-        autoRefreshToken: true
+        autoRefreshToken: true,
+        detectSessionInUrl: true
       }
     })
+
+    // Add error handling for realtime connections
+    if (typeof window !== 'undefined') {
+      // Log realtime connection events (only in development)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔌 Supabase realtime initialized with URL:', supabaseUrl)
+        console.log('🔌 Realtime params: eventsPerSecond=2, heartbeat=30s')
+      }
+    }
   }
 
   return supabaseInstance
