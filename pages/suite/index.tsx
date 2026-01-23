@@ -173,48 +173,70 @@ function DashboardContent() {
   };
 
   const checkInstanceStatus = async (workspace: WorkspaceStruture) => {
-    if (!workspace.name || !workspace.url) return;
+    if (!workspace.name) return;
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      console.log(`Checking status for ${workspace.name}...`);
 
-      console.log(`Checking status for ${workspace.url}`);
-
-      // Try the main endpoint first - if n8n is running, it should respond
-      const response = await fetch(workspace.url, {
-        method: 'GET',
-        signal: controller.signal,
-        headers: {
-          'User-Agent': 'BLXK-Suite-StatusCheck/1.0',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-        },
-        redirect: 'follow'
+      // Usar el nuevo endpoint de verificación de estado
+      const response = await axios.post('/api/suite/status', {
+        name_service: workspace.name,
+      }, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 15000
       });
 
-      clearTimeout(timeoutId);
+      const statusData = response.data;
 
-      console.log(`Response status: ${response.status}, URL: ${response.url}`);
-
-      // If we get any response that's not 404, consider it working
-      if (response.status !== 404) {
-        // Si está listo, actualizar el estado en la base de datos
-        await axios.post('/api/suite/init', {
-          token: typedSession?.jwt,
-          name_service: workspace.name,
-        });
-
-        toast.success(`¡${workspace.name} está listo! 🎉`);
+      if (statusData.instance_ready && statusData.n8n_ready) {
+        // Instancia completamente lista
+        toast.success(`¡${workspace.name} está listo y funcionando! 🎉`);
         fetchWorkspaces(); // Refrescar la lista
+      } else if (statusData.status === 'running' && !statusData.n8n_ready) {
+        // Contenedor corriendo pero n8n aún inicializando
+        toast.info(`${workspace.name}: Contenedor activo, N8N inicializando base de datos. ${statusData.note || 'Intenta de nuevo en unos minutos.'}`, {
+          duration: 6000
+        });
+      } else if (statusData.status === 'initializing') {
+        // Aún inicializando
+        toast.info(`${workspace.name}: ${statusData.message || 'Aún se está inicializando...'}`, {
+          duration: 5000
+        });
+      } else if (statusData.status === 'starting') {
+        // Contenedor corriendo pero servicio no listo
+        toast.info(`${workspace.name}: Contenedor activo, esperando que N8N esté listo...`, {
+          duration: 4000
+        });
+      } else if (statusData.status === 'dns_error') {
+        // Problema de DNS/routing
+        toast.error(`${workspace.name}: Error de DNS. ${statusData.note || 'Verificar configuración de Easypanel.'}`, {
+          duration: 8000
+        });
+      } else if (statusData.status === 'backend_unavailable') {
+        // Backend no disponible
+        toast.warning(`${workspace.name}: No se pudo verificar con backend. ${statusData.message || ''}`, {
+          duration: 6000
+        });
       } else {
-        toast.info(`${workspace.name} aún se está inicializando... Intenta de nuevo en unos minutos.`);
+        // Otro estado
+        toast.info(`${workspace.name}: ${statusData.message || 'Estado desconocido'}`, {
+          duration: 4000
+        });
       }
+
     } catch (error: any) {
-      console.log(`Status check error:`, error);
-      if (error.name === 'AbortError') {
-        toast.info(`${workspace.name} aún se está inicializando (timeout)...`);
+      console.error(`Status check error:`, error);
+
+      const errorMessage = error.response?.data?.error || error.message || 'Error desconocido';
+
+      if (error.response?.status === 404) {
+        toast.error(`${workspace.name}: Instancia no encontrada`);
+      } else if (error.response?.status === 403) {
+        toast.error(`${workspace.name}: ${error.response.data.message || 'API Key requerida'}`);
+      } else if (error.code === 'ECONNABORTED') {
+        toast.warning(`${workspace.name}: Verificación tomó demasiado tiempo. Intenta de nuevo.`);
       } else {
-        toast.info(`${workspace.name} aún se está inicializando...`);
+        toast.error(`${workspace.name}: Error al verificar estado - ${errorMessage}`);
       }
     }
   };
@@ -267,6 +289,24 @@ function DashboardContent() {
       fetchUserPlan();
     }
   }, [status]);
+
+  // Auto-check status for initializing instances
+  useEffect(() => {
+    if (workspace.length === 0) return;
+
+    const initializingInstances = workspace.filter(ws => ws.credencials?.status === 'initializing');
+
+    if (initializingInstances.length === 0) return;
+
+    // Check status every 30 seconds for initializing instances
+    const interval = setInterval(() => {
+      initializingInstances.forEach(instance => {
+        checkInstanceStatus(instance);
+      });
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [workspace]);
 
   useEffect(() => {
     if (selectedWorkspace) {
@@ -379,10 +419,10 @@ function DashboardContent() {
         { headers: { 'Content-Type': 'application/json' } }
       );
 
-      toast.success('Instancia N8N creada exitosamente. La inicialización puede tomar unos minutos.', {
+      toast.success('Instancia N8N creada exitosamente. El contenedor se está configurando.', {
         id: 'creating',
-        duration: 6000,
-        description: 'Use el botón de verificación para comprobar el estado cuando esté listo.'
+        duration: 8000,
+        description: 'N8N inicializará su base de datos (puede tomar varios minutos). El sistema verificará automáticamente cada 30 segundos.'
       });
 
       fetchWorkspaces();
@@ -626,10 +666,10 @@ function DashboardContent() {
                           e.stopPropagation();
                           checkInstanceStatus(workspaces);
                         }}
-                        className="p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
-                        title="Verificar estado"
+                        className="p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors animate-pulse"
+                        title="Verificar estado - N8N inicializando"
                       >
-                        <ArrowPathIcon className="w-3 h-3" />
+                        <ArrowPathIcon className="w-3 h-3 animate-spin" />
                       </button>
                     )}
                   </div>

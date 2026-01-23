@@ -250,7 +250,7 @@ export default async function handler(req, res) {
     }
 
     // El mensaje siempre indica que se está inicializando
-    const message = `Instancia de N8N creada con plan ${plan.toUpperCase()}. N8N se está inicializando y puede tomar varios minutos estar listo.`;
+    const message = `Instancia de N8N creada con plan ${plan.toUpperCase()}. El contenedor Docker se está configurando y N8N inicializará su base de datos (esto puede tomar varios minutos).`;
 
     return res.status(201).json({
       success: true,
@@ -258,7 +258,7 @@ export default async function handler(req, res) {
       suite: newSuite,
       plan_config: selectedPlanConfig,
       health_check_passed: false, // Siempre false inicialmente
-      note: 'La instancia se está inicializando. Usa el botón de verificación (🔄) junto al estado para comprobar cuando esté lista.'
+      note: 'La instancia se está inicializando. El sistema verificará automáticamente cada 30 segundos, o puedes usar el botón de verificación manual (🔄) junto al estado "Iniciando".'
     });
 
   } catch (error) {
