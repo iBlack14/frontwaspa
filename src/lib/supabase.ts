@@ -3,18 +3,43 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-// Cliente para el navegador (client-side)
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  realtime: {
-    params: {
-      eventsPerSecond: 0
-    }
-  },
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true
+// Singleton pattern to prevent multiple GoTrueClient instances
+let supabaseInstance: ReturnType<typeof createClient> | null = null
+
+// Cliente para el navegador (client-side) - Singleton
+export const supabase = (() => {
+  if (typeof window === 'undefined') {
+    // Server-side: create a new instance each time (SSR safe)
+    return createClient(supabaseUrl, supabaseAnonKey, {
+      realtime: {
+        params: {
+          eventsPerSecond: 0
+        }
+      },
+      auth: {
+        persistSession: false, // Disable persistence on server
+        autoRefreshToken: false
+      }
+    })
   }
-})
+
+  // Client-side: use singleton to prevent multiple instances
+  if (!supabaseInstance) {
+    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+      realtime: {
+        params: {
+          eventsPerSecond: 0
+        }
+      },
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true
+      }
+    })
+  }
+
+  return supabaseInstance
+})()
 
 // Tipos TypeScript para las tablas
 export type Instance = {
