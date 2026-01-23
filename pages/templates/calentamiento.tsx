@@ -15,7 +15,7 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
   SparklesIcon,
-  TrendingUpIcon
+  ArrowTrendingUpIcon
 } from '@heroicons/react/24/outline';
 
 interface Instance {
@@ -34,6 +34,8 @@ function CalentamientoContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [calentamientoStatus, setCalentamientoStatus] = useState<any>(null);
   const [availableInstances, setAvailableInstances] = useState<Instance[]>([]);
+  const [useIA, setUseIA] = useState(false);
+  const [iaStatus, setIaStatus] = useState<any>(null);
 
   // Configuración del calentamiento por fases
   const calentamientoPhases = [
@@ -114,10 +116,59 @@ function CalentamientoContent() {
     if (!selectedInstance) return;
 
     try {
-      const response = await axios.get(`/api/templates/calentamiento?instanceId=${selectedInstance}`);
-      setCalentamientoStatus(response.data);
+      const endpoint = useIA ? '/api/templates/calentamiento-ia' : '/api/templates/calentamiento';
+      const response = await axios.get(`${endpoint}?instanceId=${selectedInstance}`);
+      if (useIA) {
+        setIaStatus(response.data);
+      } else {
+        setCalentamientoStatus(response.data);
+      }
     } catch (error: any) {
       console.error('Error checking status:', error);
+    }
+  };
+
+  const startIAConversation = async () => {
+    if (!selectedInstance) {
+      toast.error('Selecciona una instancia');
+      return;
+    }
+
+    if (availableInstances.length < 2) {
+      toast.error('Se necesitan al menos 2 instancias conectadas para conversaciones IA');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await axios.post('/api/templates/calentamiento-ia', {
+        instanceId: selectedInstance,
+        action: 'start'
+      });
+
+      toast.success('Conversación IA iniciada exitosamente');
+      setIaStatus(response.data);
+    } catch (error: any) {
+      console.error('Error starting IA conversation:', error);
+      toast.error(error.response?.data?.error || 'Error al iniciar conversación IA');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const stopIAConversation = async () => {
+    if (!selectedInstance) return;
+
+    try {
+      await axios.post('/api/templates/calentamiento-ia', {
+        instanceId: selectedInstance,
+        action: 'stop'
+      });
+
+      toast.success('Conversación IA detenida');
+      setIaStatus(null);
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Error al detener conversación IA');
     }
   };
 
@@ -209,47 +260,100 @@ function CalentamientoContent() {
 
             {selectedInstance && (
               <div className="space-y-4">
-                {/* Información sobre el tipo de calentamiento */}
+                {/* Selección de tipo de calentamiento */}
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-xl p-4 border border-blue-100 dark:border-blue-800/30">
-                  <h3 className="font-bold text-slate-800 dark:text-white mb-2">
-                    📱 Tipo de Calentamiento
+                  <h3 className="font-bold text-slate-800 dark:text-white mb-3">
+                    🎯 Elige tu método de calentamiento
                   </h3>
-                  {availableInstances.length > 1 ? (
-                    <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
-                      <SparklesIcon className="w-5 h-5" />
-                      <span className="font-medium">
-                        Calentamiento entre instancias ({availableInstances.length} números disponibles)
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
-                      <ExclamationTriangleIcon className="w-5 h-5" />
-                      <span className="font-medium">
-                        Calentamiento con mensajes de prueba (solo 1 instancia disponible)
-                      </span>
-                    </div>
-                  )}
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                    {availableInstances.length > 1
-                      ? "Los mensajes se enviarán entre tus propias instancias conectadas para conversaciones naturales."
-                      : "Se usarán mensajes de prueba seguros que no molestan a contactos reales."
-                    }
-                  </p>
+
+                  <div className="space-y-3">
+                    {/* Opción: Calentamiento normal */}
+                    <label className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                      !useIA
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                        : 'border-slate-200 dark:border-slate-700 hover:border-blue-300'
+                    }`}>
+                      <input
+                        type="radio"
+                        name="calentamiento-type"
+                        checked={!useIA}
+                        onChange={() => setUseIA(false)}
+                        className="mt-1"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-slate-800 dark:text-white">
+                            🔥 Calentamiento Tradicional
+                          </span>
+                          {availableInstances.length > 1 ? (
+                            <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full">
+                              Recomendado
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          {availableInstances.length > 1
+                            ? `Mensajes entre tus ${availableInstances.length} instancias conectadas`
+                            : "Mensajes de prueba seguros"
+                          }
+                        </p>
+                      </div>
+                    </label>
+
+                    {/* Opción: Calentamiento con IA */}
+                    <label className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                      useIA
+                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                        : 'border-slate-200 dark:border-slate-700 hover:border-purple-300'
+                    } ${availableInstances.length < 2 ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                      <input
+                        type="radio"
+                        name="calentamiento-type"
+                        checked={useIA}
+                        onChange={() => availableInstances.length >= 2 && setUseIA(true)}
+                        disabled={availableInstances.length < 2}
+                        className="mt-1"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-slate-800 dark:text-white">
+                            🤖 Conversaciones con IA
+                          </span>
+                          <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-2 py-0.5 rounded-full">
+                            Premium
+                          </span>
+                          {availableInstances.length < 2 && (
+                            <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-2 py-0.5 rounded-full">
+                              Requiere 2+ instancias
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          Conversaciones naturales generadas por IA entre tus instancias
+                        </p>
+                      </div>
+                    </label>
+                  </div>
                 </div>
 
                 {/* Botones de control */}
                 <div className="flex items-center gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
                   <button
-                    onClick={startCalentamiento}
-                    disabled={isSubmitting}
+                    onClick={useIA ? startIAConversation : startCalentamiento}
+                    disabled={isSubmitting || (useIA && availableInstances.length < 2)}
                     className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-2.5 rounded-xl hover:shadow-lg disabled:opacity-50"
                   >
                     <PlayIcon className="w-5 h-5" />
-                    {isSubmitting ? 'Iniciando...' : 'Iniciar Calentamiento'}
+                    {isSubmitting
+                      ? 'Iniciando...'
+                      : useIA
+                        ? 'Iniciar Conversaciones IA'
+                        : 'Iniciar Calentamiento'
+                    }
                   </button>
 
                   <button
-                    onClick={stopCalentamiento}
+                    onClick={useIA ? stopIAConversation : stopCalentamiento}
                     className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-6 py-2.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700"
                   >
                     <StopIcon className="w-5 h-5" />
@@ -273,7 +377,7 @@ function CalentamientoContent() {
       {/* Calentamiento Phases */}
       <div className="bg-white dark:bg-[#1e293b] rounded-3xl p-6 border border-slate-100 dark:border-slate-800 mb-8">
         <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-3">
-          <TrendingUpIcon className="w-6 h-6" />
+          <ArrowTrendingUpIcon className="w-6 h-6" />
           Fases del Calentamiento
         </h2>
 
@@ -310,11 +414,23 @@ function CalentamientoContent() {
       </div>
 
       {/* Status Information */}
-      {calentamientoStatus && (
+      {(calentamientoStatus || iaStatus) && (
         <div className="bg-white dark:bg-[#1e293b] rounded-3xl p-6 border border-slate-100 dark:border-slate-800">
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6">
-            Estado del Calentamiento
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-3">
+            {useIA ? <SparklesIcon className="w-6 h-6 text-purple-500" /> : <FireIcon className="w-6 h-6 text-red-500" />}
+            Estado del {useIA ? 'Calentamiento IA' : 'Calentamiento'}
           </h2>
+
+          {useIA && iaStatus && (
+            <div className="mb-4 p-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg border border-purple-200 dark:border-purple-800/30">
+              <div className="flex items-center gap-2 text-purple-700 dark:text-purple-400">
+                <SparklesIcon className="w-5 h-5" />
+                <span className="font-medium">
+                  Conversación IA activa con {iaStatus.participantCount || 0} participantes
+                </span>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-2xl p-6 border border-blue-100 dark:border-blue-800/30">
@@ -323,7 +439,7 @@ function CalentamientoContent() {
                 <span className="font-bold text-slate-800 dark:text-white">Fase Actual</span>
               </div>
               <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                {calentamientoStatus.currentPhase || 1}
+                {(useIA ? iaStatus : calentamientoStatus)?.currentPhase || 1}
               </div>
               <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                 de 10 fases
@@ -336,7 +452,7 @@ function CalentamientoContent() {
                 <span className="font-bold text-slate-800 dark:text-white">Mensajes Enviados</span>
               </div>
               <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
-                {calentamientoStatus.messagesSent || 0}
+                {(useIA ? iaStatus : calentamientoStatus)?.messagesSent || 0}
               </div>
               <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                 hoy
@@ -349,7 +465,7 @@ function CalentamientoContent() {
                 <span className="font-bold text-slate-800 dark:text-white">Próximo Límite</span>
               </div>
               <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">
-                {calentamientoPhases[calentamientoStatus.currentPhase - 1]?.messages || 5}
+                {calentamientoPhases[((useIA ? iaStatus : calentamientoStatus)?.currentPhase || 1) - 1]?.messages || 5}
               </div>
               <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                 mensajes diarios

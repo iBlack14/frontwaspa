@@ -4,9 +4,17 @@
 
 El **calentamiento de WhatsApp** es una técnica esencial para evitar que tus cuentas sean bloqueadas o baneadas por enviar muchos mensajes de golpe. Consiste en **acostumbrar gradualmente** a WhatsApp a tu patrón de envío de mensajes.
 
-## 🔥 NUEVA FUNCIONALIDAD: Calentamiento entre Instancias
+## 🔥 NUEVA FUNCIONALIDAD: Calentamiento Inteligente
 
-La plantilla ahora es **inteligente** y funciona de dos formas:
+La plantilla ahora es **ultra-inteligente** y funciona de tres formas:
+
+### 🤖 **Conversaciones con IA** (Premium - Más Realista)
+Si tienes **2+ instancias conectadas**, el sistema:
+- Genera **conversaciones naturales con IA** entre tus números
+- Usa **OpenAI/Claude** para respuestas contextuales
+- Crea **diálogos profesionales** y realistas
+- **Mantiene contexto** de conversaciones anteriores
+- **Respuestas inteligentes** basadas en el historial
 
 ### 🔄 **Calentamiento entre Instancias** (Recomendado)
 Si tienes **múltiples instancias conectadas**, el sistema:
@@ -45,18 +53,21 @@ Si solo tienes **una instancia**, el sistema:
 2. Selecciona **"Calentamiento WhatsApp"**
 3. Elige una instancia conectada
 
-### 2. Seleccionar Instancia y Ver Modo
-- Elige una instancia conectada
-- El sistema **detecta automáticamente** el tipo de calentamiento:
-  - 🔄 **"Calentamiento entre instancias"** → Si tienes múltiples números
-  - 🧪 **"Calentamiento con mensajes de prueba"** → Si solo tienes un número
+### 2. Seleccionar Método y Instancia
+- Elige el **tipo de calentamiento**:
+  - 🤖 **Conversaciones con IA** → Más realista (requiere 2+ instancias)
+  - 🔄 **Entre instancias** → Automático entre tus números
+  - 🧪 **Mensajes de prueba** → Fallback seguro
+- Selecciona una instancia conectada
+- El sistema **muestra automáticamente** qué método usará
 
 ### 3. Iniciar el Calentamiento
-- Haz clic en **"Iniciar Calentamiento"**
+- Haz clic en **"Iniciar Conversaciones IA"** o **"Iniciar Calentamiento"**
 - El sistema comenzará automáticamente la Fase 1
+- **IA**: Genera conversaciones contextuales inteligentes
 - **Entre instancias**: Mensajes reales entre tus números
-- **Mensajes de prueba**: Mensajes seguros que no molestan a nadie
-- Intervalo: 30-120 segundos entre mensajes
+- **Mensajes de prueba**: Mensajes seguros que no molestan
+- Intervalo: 45-180 segundos (más natural para conversaciones)
 
 ### 3. Monitoreo en Tiempo Real
 - **Fase Actual**: Día del calentamiento
@@ -130,6 +141,13 @@ El sistema envía mensajes de prueba como:
 
 ## 🎯 Beneficios del Calentamiento
 
+### 🤖 Conversaciones con IA (ULTRA REALISTA):
+- 🧠 **Respuestas generadas por IA** contextuales e inteligentes
+- 🧠 **Conversaciones naturales** que mantienen contexto
+- 🧠 **OpenAI/Claude integration** para respuestas profesionales
+- 🧠 **Historial de conversación** para respuestas coherentes
+- 🧠 **Detección de patrones humanos** ultra-avanzada
+
 ### 🔥 Calentamiento entre Instancias (NUEVO):
 - 🔄 **Conversaciones 100% reales** entre tus números
 - 🔄 **No molesta a contactos externos**
@@ -152,6 +170,14 @@ El sistema envía mensajes de prueba como:
 - 🤖 **Ajustes inteligentes** según respuesta de WhatsApp
 - 🤖 **Monitoreo 24/7** del estado de la cuenta
 - 🤖 **Detección automática** del mejor método de calentamiento
+
+## 📊 Comparación de Métodos
+
+| Método | Ventajas | Limitaciones | Realismo |
+|--------|----------|--------------|----------|
+| **🤖 IA Conversations** | Ultra-realista, contextual, inteligente | Requiere API key + 2+ instancias | ⭐⭐⭐⭐⭐ |
+| **🔄 Entre Instancias** | Conversaciones reales, mejor aceptación | Requiere múltiples números | ⭐⭐⭐⭐ |
+| **🧪 Mensajes de Prueba** | Funciona con 1 número, seguro | Menos natural para WhatsApp | ⭐⭐ |
 
 ## 🚨 Consideraciones Importantes
 
