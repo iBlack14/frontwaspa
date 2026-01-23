@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import Sidebar from '../components/dashboard/index';
 import ChatList from '../../components/messages/ChatList';
 import ChatWindow from '../../components/messages/ChatWindow';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 
 export interface Chat {
   id: string;
@@ -48,7 +48,6 @@ function MessagesContent() {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
-  const [supabase, setSupabase] = useState<any>(null);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -57,21 +56,6 @@ function MessagesContent() {
   }, [status, router]);
 
   // Inicializar Supabase
-  useEffect(() => {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (supabaseUrl && supabaseKey) {
-      const client = createClient(supabaseUrl, supabaseKey, {
-        realtime: {
-          params: {
-            eventsPerSecond: 10  // ✅ Habilitar WebSocket para tiempo real
-          }
-        }
-      });
-      setSupabase(client);
-    }
-  }, []);
 
   // Cargar instancias
   useEffect(() => {

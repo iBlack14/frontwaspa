@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '../../src/lib/supabase-admin';
 
 export default async function handler(req, res) {
     if (req.method !== 'GET') {
@@ -7,34 +7,6 @@ export default async function handler(req, res) {
 
     const { instanceId, search } = req.query;
 
-    // Validar URL de Supabase
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-        console.error('CRITICAL: NEXT_PUBLIC_SUPABASE_URL is missing');
-        return res.status(500).json({ error: 'Configuration error: Missing Supabase URL' });
-    }
-
-    // Intentar obtener la key de varias variables de entorno comunes
-    const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!supabaseKey) {
-        console.error('CRITICAL: Supabase key is missing in environment variables');
-        return res.status(500).json({
-            error: 'Configuration error',
-            details: 'Supabase key is missing. Check SUPABASE_SERVICE_KEY or SUPABASE_SERVICE_ROLE_KEY.'
-        });
-    }
-
-    // Inicializar cliente
-    let supabase;
-    try {
-        supabase = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL,
-            supabaseKey
-        );
-    } catch (clientError) {
-        console.error('Error initializing Supabase client:', clientError);
-        return res.status(500).json({ error: 'Initialization error', details: clientError.message });
-    }
 
     if (!instanceId) {
         return res.status(400).json({ error: 'instanceId is required' });
@@ -42,7 +14,7 @@ export default async function handler(req, res) {
 
     try {
         // Construir la consulta base
-        let query = supabase
+        let query = supabaseAdmin
             .from('contacts')
             .select('jid, name, push_name, profile_pic_url, is_blocked')
             .eq('instance_id', instanceId)

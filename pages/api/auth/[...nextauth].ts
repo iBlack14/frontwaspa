@@ -2,19 +2,7 @@ import NextAuth, { AuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { signIn } from '../../../src/services/auth';
 import GoogleProvider from 'next-auth/providers/google';
-import { createClient } from '@supabase/supabase-js';
-
-// Cliente Supabase Admin (Solo lado servidor)
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-);
+import { supabaseAdmin } from '../../../src/lib/supabase-admin';
 
 export const authOptions: AuthOptions = {
   providers: [

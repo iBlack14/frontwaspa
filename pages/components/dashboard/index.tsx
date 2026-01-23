@@ -10,7 +10,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
 import Breadcrumb from '../Breadcrumb';
 import ThemeToggle from '@/components/ThemeToggle';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 import {
   HomeIcon,
   ServerIcon,
@@ -73,11 +73,7 @@ function SidebarLayout({ children }: { children: React.ReactNode }) {
     // 1. Fetch instances to map IDs to Names
     const fetchInstances = async () => {
       try {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-        const client = createClient(supabaseUrl, supabaseKey);
-
-        const { data } = await client.from('instances').select('document_id, profile_name, phone_number');
+        const { data } = await supabase.from('instances').select('document_id, profile_name, phone_number');
         if (data) {
           const map: Record<string, string> = {};
           data.forEach((i: any) => {
@@ -95,31 +91,9 @@ function SidebarLayout({ children }: { children: React.ReactNode }) {
     // 2. Subscribe to new messages (Global Listener)
     if (!session || !(session as any).jwt) return;
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-    // Create a specific client for notifications with Realtime ENABLED
-    // IMPORTANT: persistSession: false prevents "Multiple GoTrueClient" warnings
+    // Use singleton client for notifications with Realtime ENABLED
     // IMPORTANT: Authorization header ensures we pass RLS policies
-    const notifClient = createClient(supabaseUrl, supabaseKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false
-      },
-      realtime: {
-        params: {
-          eventsPerSecond: 10
-        }
-      },
-      global: {
-        headers: {
-          Authorization: `Bearer ${(session as any).jwt}`
-        }
-      }
-    });
-
-    const channel = notifClient
+    const channel = supabase
       .channel('global-messages-notifications')
       .on(
         'postgres_changes',
@@ -155,7 +129,7 @@ function SidebarLayout({ children }: { children: React.ReactNode }) {
       });
 
     return () => {
-      notifClient.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
   }, [status, instancesMap, session]);
 

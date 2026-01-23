@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '../../../src/lib/supabase-admin';
 import { Resend } from 'resend';
 
 // Configuración de Next.js API
@@ -8,12 +8,6 @@ export const config = {
     bodyParser: true,
   },
 };
-
-// Inicializar cliente de Supabase
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY // Usar service role key para bypass RLS
-);
 
 // Inicializar Resend
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -70,7 +64,7 @@ export default async function handler(req, res) {
       const amount = transaction.amount / 100; // Convertir de centavos a soles
       
       // 1. Buscar o crear usuario
-      const { data: authUser, error: authError } = await supabase.auth.admin.listUsers();
+      const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.listUsers();
       let user = authUser?.users?.find(u => u.email === customer.email);
       
       // Si el usuario no existe, crearlo con contraseña temporal
@@ -81,7 +75,7 @@ export default async function handler(req, res) {
         const tempPassword = `Temp${Math.random().toString(36).slice(-8)}!${Date.now().toString(36)}`;
         
         // Crear usuario en Supabase Auth
-        const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+        const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
           email: customer.email,
           password: tempPassword,
           email_confirm: true, // Confirmar email automáticamente
@@ -99,7 +93,7 @@ export default async function handler(req, res) {
         user = newUser.user;
         
         // Actualizar perfil con contraseña temporal
-        await supabase
+        await supabaseAdmin
           .from('profiles')
           .update({
             must_change_password: true,
@@ -195,7 +189,7 @@ export default async function handler(req, res) {
       }
       
       // 2. Guardar el pago en la base de datos
-      const { data: payment, error: paymentError } = await supabase
+      const { data: payment, error: paymentError } = await supabaseAdmin
         .from('payments')
         .insert({
           user_id: user.id,
@@ -230,7 +224,7 @@ export default async function handler(req, res) {
       }
       
       // 4. Actualizar el perfil del usuario
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile, error: profileError } = await supabaseAdmin
         .from('profiles')
         .update({
           plan_type: planType,
