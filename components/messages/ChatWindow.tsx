@@ -13,6 +13,117 @@ interface ChatWindowProps {
   onSendMessage?: (text: string) => Promise<void>;
 }
 
+// Componente de Audio Personalizado estilo WhatsApp
+function CustomAudioPlayer({ src, isVoiceNote }: { src: string, isVoiceNote: boolean }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [error, setError] = useState(false);
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play().catch(() => setError(true));
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      const current = audioRef.current.currentTime;
+      const total = audioRef.current.duration;
+      if (total) {
+        setProgress((current / total) * 100);
+      }
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
+    }
+  };
+
+  const handleEnded = () => {
+    setIsPlaying(false);
+    setProgress(0);
+  };
+
+  const handleSeek = (e: any) => {
+    const newProgress = e.target.value;
+    if (audioRef.current && duration) {
+      audioRef.current.currentTime = (duration * newProgress) / 100;
+      setProgress(newProgress);
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    if (!seconds || isNaN(seconds)) return "0:00";
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  if (error) {
+    return (
+      <div className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
+        <span className="text-red-500 text-xs">Error</span>
+        <a href={src} target="_blank" className="text-xs text-indigo-500 underline">Descargar</a>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700/50 rounded-xl p-2 transition-all w-full max-w-[280px]">
+      <button
+        onClick={togglePlay}
+        className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-slate-500 dark:text-slate-300 hover:text-indigo-500 dark:hover:text-indigo-400 transition"
+      >
+        {isPlaying ? (
+          <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+        ) : (
+          <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+        )}
+      </button>
+
+      <div className="flex-1 flex flex-col justify-center gap-1 min-w-0">
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={progress}
+          onChange={handleSeek}
+          className="w-full h-1 bg-slate-300 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+        />
+        <div className="flex justify-between text-[10px] text-slate-400 font-mono">
+          <span>{audioRef.current ? formatTime(audioRef.current.currentTime) : "0:00"}</span>
+          <span>{formatTime(duration)}</span>
+        </div>
+      </div>
+
+      <div className="flex-shrink-0">
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isVoiceNote ? 'bg-emerald-100 text-emerald-600' : 'bg-indigo-100 text-indigo-600'}`}>
+          {isVoiceNote ? <span className="text-sm">🎤</span> : <span className="text-sm">🎵</span>}
+        </div>
+      </div>
+
+      <audio
+        ref={audioRef}
+        src={src}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onEnded={handleEnded}
+        onError={() => setError(true)}
+        className="hidden"
+      />
+    </div>
+  );
+}
+
 export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [newMessage, setNewMessage] = useState('');
