@@ -48,14 +48,18 @@ export default function ChatList({ chats, selectedChat, onSelectChat, instanceId
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Contact[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all' | 'chats' | 'channels' | 'status'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'chats' | 'groups' | 'channels' | 'status'>('all');
 
   const filteredChats = chats.filter(chat => {
     if (activeTab === 'all') return true;
     if (activeTab === 'status') return chat.chat_id === 'status@broadcast';
     if (activeTab === 'channels') return chat.chat_id.endsWith('@newsletter');
+    if (activeTab === 'groups') return chat.chat_id.endsWith('@g.us');
     if (activeTab === 'chats') {
-      return chat.chat_id !== 'status@broadcast' && !chat.chat_id.endsWith('@newsletter');
+      // Solo chats individuales (ni grupos, ni canales, ni estados)
+      return !chat.chat_id.endsWith('@g.us') &&
+        chat.chat_id !== 'status@broadcast' &&
+        !chat.chat_id.endsWith('@newsletter');
     }
     return true;
   });
@@ -113,7 +117,7 @@ export default function ChatList({ chats, selectedChat, onSelectChat, instanceId
   return (
     <div className="h-full bg-[#f8fafc] dark:bg-[#0f172a] flex flex-col border-r border-slate-200 dark:border-slate-800">
       {/* Search - Pastel Design */}
-      <div className="flex-shrink-0 p-4 bg-white/80 backdrop-blur-md dark:bg-[#1e293b]/80 sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800">
+      <div className="flex-shrink-0 p-4 pb-2 bg-white/80 backdrop-blur-md dark:bg-[#1e293b]/80 sticky top-0 z-10">
         <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-2.5 flex items-center transition-all focus-within:ring-2 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-900 focus-within:bg-white dark:focus-within:bg-slate-900 shadow-sm">
           <MagnifyingGlassIcon className="w-5 h-5 text-slate-400 dark:text-slate-500 mr-3" />
           <input
@@ -127,10 +131,11 @@ export default function ChatList({ chats, selectedChat, onSelectChat, instanceId
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex-shrink-0 px-4 pb-2 bg-white/80 backdrop-blur-md dark:bg-[#1e293b]/80 border-b border-slate-100 dark:border-slate-800 flex gap-2 overflow-x-auto no-scrollbar">
+      <div className="flex-shrink-0 px-4 pt-1 pb-4 bg-white/80 backdrop-blur-md dark:bg-[#1e293b]/80 border-b border-slate-100 dark:border-slate-800 flex gap-2 overflow-x-auto no-scrollbar">
         {[
           { id: 'all', label: 'Todos' },
           { id: 'chats', label: 'Chats' },
+          { id: 'groups', label: 'Grupos' },
           { id: 'channels', label: 'Canales' },
           { id: 'status', label: 'Estados' }
         ].map((tab) => (
@@ -230,9 +235,38 @@ export default function ChatList({ chats, selectedChat, onSelectChat, instanceId
               ))}
             </div>
 
-            {chats.length === 0 && (
-              <div className="text-center py-12 text-slate-400 dark:text-slate-500">
-                <p className="text-sm">No hay chats disponibles</p>
+            {/* Empty States per Tab */}
+            {filteredChats.length === 0 && (
+              <div className="text-center py-12 px-6 flex flex-col items-center">
+                <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-full mb-3">
+                  {activeTab === 'status' ? (
+                    <div className="w-8 h-8 rounded-full border-2 border-dashed border-slate-400"></div>
+                  ) : activeTab === 'channels' ? (
+                    <div className="w-8 h-8 rounded-lg border-2 border-slate-400"></div>
+                  ) : (
+                    <MagnifyingGlassIcon className="w-8 h-8 text-slate-400" />
+                  )}
+                </div>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">
+                  {activeTab === 'status' ? 'No hay estados recientes' :
+                    activeTab === 'channels' ? 'No hay canales o newsletters' :
+                      activeTab === 'chats' ? 'No hay conversaciones' :
+                        'No se encontraron chats'}
+                </p>
+                <p className="text-xs text-slate-400 max-w-[200px] mb-4">
+                  {activeTab === 'status' ? 'Las actualizaciones de estado de tus contactos aparecerán aquí.' :
+                    activeTab === 'channels' ? 'Los mensajes de canales a los que sigues aparecerán aquí.' :
+                      'Tus chats personales y grupos aparecerán aquí.'}
+                </p>
+
+                {activeTab !== 'all' && (
+                  <button
+                    onClick={() => setActiveTab('all')}
+                    className="text-xs font-bold text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 px-4 py-2 rounded-lg transition-colors"
+                  >
+                    Ver Todos los Chats
+                  </button>
+                )}
               </div>
             )}
           </>

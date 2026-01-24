@@ -77,7 +77,7 @@ export default async function handler(req, res) {
 
     // POST - Iniciar o detener conversación IA
     if (action === 'start') {
-      const { provider, apiKey, instanceIds, theme } = req.body;
+      const { provider, apiKey, instanceIds, theme, unlimited, customLimit } = req.body;
 
       if (!instanceIds || !Array.isArray(instanceIds) || instanceIds.length < 2) {
         return res.status(400).json({ error: 'Se requieren al menos 2 instanciaIds para conversar' });
@@ -86,7 +86,7 @@ export default async function handler(req, res) {
       const results = [];
       for (const id of instanceIds) {
         const resMock = { status: () => ({ json: () => { } }) }; // Simple mock for internal loops
-        const result = await startIAConversation(id, session.id, resMock, provider, apiKey, instanceIds, theme, req.body.unlimited);
+        const result = await startIAConversation(id, session.id, resMock, provider, apiKey, instanceIds, theme, unlimited, customLimit);
         results.push(result);
       }
 
