@@ -63,6 +63,9 @@ function CalentamientoContent() {
     { day: 10, messages: 150, description: "Cuenta completamente caliente - 150 mensajes" },
   ];
 
+  const [useCustomLimit, setUseCustomLimit] = useState(false);
+  const [customMessageLimit, setCustomMessageLimit] = useState(20);
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
@@ -119,6 +122,8 @@ function CalentamientoContent() {
             setUseIA(true);
             setIaStatus(iaData);
             setSelectedInstances([firstId]); // Auto select it to show UI
+            // Restore context if available
+            if (iaData.theme) setConversationTheme(iaData.theme);
             console.log('✅ Restaurado estado de Calentamiento IA');
             return; // Exit if found
           }
@@ -235,7 +240,8 @@ function CalentamientoContent() {
         provider: aiProvider,
         apiKey: apiKey,
         theme: conversationTheme,
-        unlimited: isContinuous
+        unlimited: isContinuous,
+        customLimit: useCustomLimit ? customMessageLimit : null
       });
 
       toast.success('Conversación IA iniciada exitosamente');
@@ -598,42 +604,77 @@ function CalentamientoContent() {
         )}
       </div>
 
-      {/* Calentamiento Phases */}
+      {/* Calentamiento Phases & Limits */}
       <div className="bg-white dark:bg-[#1e293b] rounded-3xl p-6 border border-slate-100 dark:border-slate-800 mb-8">
-        <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-3">
-          <ArrowTrendingUpIcon className="w-6 h-6" />
-          Fases del Calentamiento
-        </h2>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-3">
+            <ArrowTrendingUpIcon className="w-6 h-6" />
+            Límite de Mensajes Diarios
+          </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {calentamientoPhases.map((phase) => (
-            <div
-              key={phase.day}
-              className={`p-4 rounded-xl border-2 transition-all ${(useIA ? iaStatus : calentamientoStatus)?.currentPhase >= phase.day
-                ? 'border-emerald-200 bg-emerald-50 dark:bg-emerald-900/10'
-                : 'border-slate-200 dark:border-slate-700'
-                }`}
+          <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 p-2 rounded-xl">
+            <span className={`text-sm font-medium ${!useCustomLimit ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500'}`}>Automático (Fases)</span>
+            <button
+              onClick={() => setUseCustomLimit(!useCustomLimit)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${useCustomLimit ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'}`}
             >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                  Día {phase.day}
-                </span>
-                {(useIA ? iaStatus : calentamientoStatus)?.currentPhase >= phase.day && (
-                  <CheckCircleIcon className="w-5 h-5 text-emerald-500" />
-                )}
-              </div>
-              <div className="flex items-center gap-2 mb-1">
-                <FireIcon className="w-4 h-4 text-red-500" />
-                <span className="font-bold text-slate-800 dark:text-white">
-                  {phase.messages} mensajes
-                </span>
-              </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                {phase.description}
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${useCustomLimit ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+            <span className={`text-sm font-medium ${useCustomLimit ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500'}`}>Manual</span>
+          </div>
+        </div>
+
+        {useCustomLimit ? (
+          <div className="p-6 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-800/30 animate-fadeIn">
+            <div className="flex flex-col gap-2 max-w-sm">
+              <label className="text-sm font-bold text-slate-700 dark:text-white flex items-center gap-2">
+                <FireIcon className="w-4 h-4 text-orange-500" />
+                ¿Cuántos mensajes quieres enviar hoy?
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="1000"
+                value={customMessageLimit}
+                onChange={(e) => setCustomMessageLimit(parseInt(e.target.value) || 0)}
+                className="px-4 py-3 bg-white dark:bg-slate-900 border-2 border-blue-200 dark:border-blue-700 rounded-xl focus:ring-4 focus:ring-blue-500/20 outline-none text-xl font-bold text-blue-600 dark:text-blue-400"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                El sistema se detendrá automáticamente al alcanzar esta cantidad.
               </p>
             </div>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 opacity-100 transition-opacity">
+            {calentamientoPhases.map((phase) => (
+              <div
+                key={phase.day}
+                className={`p-4 rounded-xl border-2 transition-all ${(useIA ? iaStatus : calentamientoStatus)?.currentPhase >= phase.day
+                  ? 'border-emerald-200 bg-emerald-50 dark:bg-emerald-900/10'
+                  : 'border-slate-200 dark:border-slate-700'
+                  }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                    Día {phase.day}
+                  </span>
+                  {(useIA ? iaStatus : calentamientoStatus)?.currentPhase >= phase.day && (
+                    <CheckCircleIcon className="w-5 h-5 text-emerald-500" />
+                  )}
+                </div>
+                <div className="flex items-center gap-2 mb-1">
+                  <FireIcon className="w-4 h-4 text-red-500" />
+                  <span className="font-bold text-slate-800 dark:text-white">
+                    {phase.messages} mensajes
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  {phase.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Status Information */}

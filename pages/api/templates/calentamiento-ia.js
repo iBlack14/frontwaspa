@@ -255,7 +255,7 @@ function getFallbackResponse(message, conversationHistory, theme = "negocios") {
   const selectedFallbacks = isBusiness ? businessFallbacks : generalFallbacks;
   return selectedFallbacks[Math.floor(Math.random() * selectedFallbacks.length)];
 }
-async function startIAConversation(instanceId, userId, res, provider = 'openai', apiKey = null, groupInstanceIds = null, theme = null, unlimited = false) {
+async function startIAConversation(instanceId, userId, res, provider = 'openai', apiKey = null, groupInstanceIds = null, theme = null, unlimited = false, customLimit = null) {
   const conversationKey = `${userId}-${instanceId}`;
 
   // Verificar si ya hay una conversación activa
@@ -321,6 +321,7 @@ async function startIAConversation(instanceId, userId, res, provider = 'openai',
     apiKey,
     theme,
     unlimited,
+    customLimit: customLimit ? parseInt(customLimit) : null, // Add customLimit here
     userKey: '', // Will be filled below
     startDate: new Date().toISOString(),
     currentPhase: 1,
@@ -407,17 +408,28 @@ async function startIAConversationProcess(conversationData, backendUrl) {
       const currentPhase = currentData.phases[currentData.currentPhase - 1];
       const todayMessages = currentPhase.messagesSent;
 
-      // Verificar si ya alcanzó el límite del día (SÓLO SI NO ES UNLIMITED)
-      if (!currentData.unlimited && todayMessages >= currentPhase.maxMessages) {
-        if (currentData.currentPhase < 10) {
-          currentData.currentPhase++;
-          console.log(`📈 IA: Avanzando a fase ${currentData.currentPhase} para ${instanceId}`);
-        } else {
-          console.log(`🎉 IA: Conversación completada para ${instanceId}`);
+      // Verificar límites diarios
+      const today = new Date().toISOString().split('T')[0];
+      const historycal = await getClassHistory(instanceId); // Assuming getClassHistory is defined elsewhere or a typo for updateInstanceStats
+      const todayStats = historycal.find(h => h.date === today) || { message_sent: 0 };
+
+      // Lógica de límite: Personalizado > Infinito > Fases
+      if (currentData.customLimit) {
+        if (todayStats.message_sent >= currentData.customLimit) {
+          console.log(`🛑 [IA-LIMIT] Límite manual alcanzado (${currentData.customLimit}). Deteniendo.`);
           activeConversations.delete(conversationKey);
-          break;
+          return;
         }
-        continue;
+      } else if (!currentData.unlimited) {
+        // Lógica por fases (solo si no es infinito ni manual)
+        const phaseLimits = { 1: 5, 2: 10, 3: 15, 4: 25, 5: 35, 6: 50, 7: 75, 8: 100, 9: 125, 10: 150 };
+        const maxMessages = phaseLimits[currentData.currentPhase] || 5;
+
+        if (todayStats.message_sent >= maxMessages) {
+          console.log(`🛑 [IA-LIMIT] Límite diario de fase ${currentData.currentPhase} alcanzado (${maxMessages}). Deteniendo.`);
+          activeConversations.delete(conversationKey);
+          return;
+        }
       }
 
       // Elegir un participante aleatorio para conversar
