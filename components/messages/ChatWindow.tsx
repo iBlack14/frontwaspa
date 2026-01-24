@@ -406,6 +406,39 @@ function MessageBubble({
       );
     }
 
+    // Renderizar View Once (Ver una vez)
+    if ((message.message_type === 'view_once_image' || message.message_type === 'view_once_video') && message.media_url) {
+      const isVideo = message.message_type === 'view_once_video';
+      return (
+        <div className="mb-1 min-w-[200px]">
+          <button
+            onClick={() => window.open(message.media_url, '_blank')}
+            className="flex items-center gap-3 bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 w-full hover:bg-slate-200 dark:hover:bg-slate-700 transition group text-left"
+          >
+            <div className="w-10 h-10 rounded-full border-2 border-indigo-500 flex items-center justify-center flex-shrink-0">
+              <span className="text-indigo-500 font-bold text-sm">1</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                {isVideo ? 'Video' : 'Foto'}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Ver una vez
+              </p>
+            </div>
+            <div className="text-slate-400 group-hover:text-indigo-500 transition">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </button>
+          {message.message_text && (
+            <p className="text-[14.2px] mt-1 px-1">{message.message_text}</p>
+          )}
+        </div>
+      );
+    }
+
     // Renderizar sticker
     if (message.message_type === 'sticker' && message.media_url) {
       return (
