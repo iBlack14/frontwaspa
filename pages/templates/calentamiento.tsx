@@ -68,9 +68,19 @@ function CalentamientoContent() {
   const fetchInstances = async () => {
     try {
       const res = await axios.get('/api/instances');
-      const connectedInstances = res.data.instances.filter(
+      const allInstances = res.data.instances || [];
+
+      const mappedInstances = allInstances.map((item: any) => ({
+        documentId: item.document_id || item.documentId,
+        state: item.state,
+        phoneNumber: item.phone_number || item.phoneNumber,
+        name: item.profile_name || item.name || 'Instancia',
+      }));
+
+      const connectedInstances = mappedInstances.filter(
         (i: any) => i.state === 'Connected'
       );
+
       setInstances(connectedInstances);
       setAvailableInstances(connectedInstances);
     } catch (error) {
@@ -240,7 +250,10 @@ function CalentamientoContent() {
               {instances.map((instance) => (
                 <button
                   key={instance.documentId}
-                  onClick={() => setSelectedInstance(instance.documentId)}
+                  onClick={() => {
+                    console.log('Seleccionando instancia:', instance.documentId);
+                    setSelectedInstance(instance.documentId);
+                  }}
                   className={`p-4 rounded-xl border-2 transition-all ${selectedInstance === instance.documentId
                     ? 'border-red-500 bg-red-50 dark:bg-red-900/10'
                     : 'border-slate-200 dark:border-slate-700 hover:border-red-300'
