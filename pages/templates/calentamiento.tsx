@@ -209,6 +209,8 @@ function CalentamientoContent() {
 
       toast.success('Conversación IA iniciada exitosamente');
       setIaStatus(response.data);
+      // Forzar primer refresh inmediato
+      setTimeout(() => checkStatus(), 2000);
     } catch (error: any) {
       console.error('Error starting IA conversation:', error);
       toast.error(error.response?.data?.error || 'Error al iniciar conversación IA');
@@ -645,24 +647,31 @@ function CalentamientoContent() {
           </div>
 
           {/* Activity Log (SÓLO PARA IA) */}
-          {useIA && iaStatus?.conversationHistory?.length > 0 && (
+          {useIA && iaStatus?.isActive && (
             <div className="mt-8">
               <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
                 <ClockIcon className="w-5 h-5 text-purple-500" />
                 Log de Actividad en Tiempo Real
               </h3>
               <div className="bg-slate-900 rounded-2xl p-4 font-mono text-xs overflow-y-auto max-h-60 border border-slate-700">
-                <div className="space-y-2">
-                  {[...iaStatus.conversationHistory].reverse().map((log: any, index: number) => (
-                    <div key={index} className="flex gap-2 border-b border-slate-800 pb-2 last:border-0">
-                      <span className="text-slate-500">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
-                      <span className="text-emerald-400 font-bold">{log.from === selectedInstanceId ? 'TÚ' : 'INSTANCIA'}</span>
-                      <span className="text-slate-400">→</span>
-                      <span className="text-blue-400 font-bold">{log.to?.substring(0, 8) || 'DESTINO'}</span>
-                      <span className="text-slate-300 ml-2">{log.content}</span>
-                    </div>
-                  ))}
-                </div>
+                {iaStatus.conversationHistory?.length > 0 ? (
+                  <div className="space-y-2">
+                    {[...iaStatus.conversationHistory].reverse().map((log: any, index: number) => (
+                      <div key={index} className="flex gap-2 border-b border-slate-800 pb-2 last:border-0">
+                        <span className="text-slate-500">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
+                        <span className="text-emerald-400 font-bold">{log.from === selectedInstanceId ? 'TÚ' : 'INSTANCIA'}</span>
+                        <span className="text-slate-400">→</span>
+                        <span className="text-blue-400 font-bold">{log.to?.substring(0, 8) || 'DESTINO'}</span>
+                        <span className="text-slate-300 ml-2">{log.content}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-10 text-slate-500">
+                    <div className="animate-pulse mb-2">● Esperando primer mensaje de IA...</div>
+                    <p className="text-[10px]">Las conversaciones pueden tardar hasta 1 minuto en iniciar para parecer naturales.</p>
+                  </div>
+                )}
               </div>
             </div>
           )}

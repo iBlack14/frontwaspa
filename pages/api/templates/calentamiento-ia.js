@@ -86,6 +86,7 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         success: true,
+        isActive: true,
         message: 'Conversaciones IA iniciadas para el grupo',
         instances: instanceIds
       });
