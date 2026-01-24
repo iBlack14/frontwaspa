@@ -144,12 +144,21 @@ function MessagesContent() {
           // Detectar nombres inválidos (Aggressive filtering UNIVERSAL)
           const isInvalidName = (name?: string) => {
             if (!name) return true;
-            const n = name.trim();
-            // Filtramos si el nombre del chat es "." O es el nombre del PROPIO usuario actual (evitar auto-chat)
-            const currentUserName = session?.user?.name || '';
-            const isSelfName = currentUserName && n.includes(currentUserName);
+            // Normalizar: Minúsculas y Sin tildes para comparar bien
+            const n = name.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-            return n === '.' || n === cleanId || isSelfName || n === 'Alonso Huancas'; // Mantenemos hardcode por si acaso el session name falla
+            // Obtener nombre de usuario actual normalizado
+            const sessionName = session?.user?.name || 'Alonso Huancas';
+            const uName = sessionName.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+            const isSelfName = uName && n.includes(uName);
+
+            // Es inválido si:
+            // 1. Es "." 
+            // 2. Es igual al ID (ej. es un número de teléfono crudo)
+            // 3. Es el nombre del usuario actual (Auto-chat bug)
+            // 4. Contiene "alonso huancas" hardcoded por si acaso
+            return n === '.' || n === cleanId || isSelfName || n.includes('alonso huancas');
           };
 
           const currentHasBadName = isInvalidName(existing.chat_name);
