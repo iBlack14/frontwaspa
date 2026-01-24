@@ -75,6 +75,7 @@ function MessagesContent() {
   // Cargar mensajes cuando se selecciona un chat
   useEffect(() => {
     if (selectedChat) {
+      setMessages([]); // ⚡ UX: Limpiar chat anterior inmediatamente
       fetchMessages(selectedChat.instance_id, selectedChat.chat_id);
     }
   }, [selectedChat]);
@@ -119,18 +120,40 @@ function MessagesContent() {
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const response = await axios.get(`${backendUrl}/api/messages/chats/${instanceId}`);
+      const rawChats: Chat[] = response.data.chats || [];
 
-      // Deduplicate chats based on chat_id
-      const uniqueChats = response.data.chats.reduce((acc: Chat[], current: Chat) => {
-        const x = acc.find(item => item.chat_id === current.chat_id);
-        if (!x) {
-          return acc.concat([current]);
+      // Helper para normalizar ID (eliminar sufijos @s.whatsapp.net y server info)
+      const normalizeId = (id: string) => {
+        if (!id) return '';
+        return id.replace(/@s\.whatsapp\.net/g, '').replace(/@g\.us/g, '').split(':')[0];
+      };
+
+      // Deduplicación robusta usando un Map
+      const uniqueChatsMap = new Map<string, Chat>();
+
+      rawChats.forEach((chat) => {
+        const cleanId = normalizeId(chat.chat_id);
+        const existing = uniqueChatsMap.get(cleanId);
+
+        if (!existing) {
+          uniqueChatsMap.set(cleanId, chat);
         } else {
-          return acc;
-        }
-      }, []);
+          // Si ya existe, nos quedamos con el más reciente
+          const existingTime = new Date(existing.last_message_at || 0).getTime();
+          const newTime = new Date(chat.last_message_at || 0).getTime();
 
-      setChats(uniqueChats || []);
+          if (newTime > existingTime) {
+            uniqueChatsMap.set(cleanId, chat);
+          }
+        }
+      });
+
+      // Convertir a array y ordenar por fecha descendente
+      const sortedChats = Array.from(uniqueChatsMap.values()).sort((a, b) => {
+        return new Date(b.last_message_at || 0).getTime() - new Date(a.last_message_at || 0).getTime();
+      });
+
+      setChats(sortedChats);
     } catch (error) {
       console.error('Error fetching chats:', error);
     }
