@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, KeyboardEvent } from 'react';
 import { Chat, Message } from '../../pages/messages/index';
 import axios from 'axios';
 import ImageViewer from './ImageViewer';
-import { CheckIcon, PaperAirplaneIcon, FaceSmileIcon, PaperClipIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, PaperAirplaneIcon, FaceSmileIcon, PaperClipIcon, MicrophoneIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { toast } from 'sonner';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 
@@ -280,6 +280,98 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
     setPastedImagePreview(null);
   };
 
+  // Audio Recording States
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/mp4' });
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = async () => {
+          const base64Audio = reader.result as string;
+          await sendAudioMessage(base64Audio);
+        };
+
+        // Cierra los tracks del stream para apagar el micro
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingDuration(0);
+
+      timerRef.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+
+      toast.info('🎤 Grabando audio...');
+    } catch (err) {
+      console.error('Error accessing microphone:', err);
+      toast.error('No se pudo acceder al micrófono');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+  };
+
+  const cancelRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.onstop = null; // No enviar nada
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (timerRef.current) clearInterval(timerRef.current);
+      toast.error('Grabación cancelada');
+    }
+  };
+
+  const sendAudioMessage = async (base64Audio: string) => {
+    setSending(true);
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      await axios.post(`${backendUrl}/api/messages/send-audio`, {
+        instanceId: chat.instance_id,
+        chatId: chat.chat_id,
+        file: base64Audio
+      });
+
+      toast.success('✅ Nota de voz enviada');
+      setTimeout(onRefresh, 1000);
+    } catch (error) {
+      console.error('Error sending audio:', error);
+      toast.error('❌ Error al enviar nota de voz');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   return (
     <div className="h-full flex flex-col bg-[#f1f5f9] dark:bg-[#0f172a]">
       {/* Header - Pastel Glassmorphism */}
@@ -357,45 +449,79 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
             </div>
           )}
 
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#0f172a] rounded-full p-1 border border-slate-200 dark:border-slate-700">
-            <button
-              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className={`p-2 rounded-full transition-all duration-200 ${showEmojiPicker ? 'text-indigo-500 bg-white shadow-sm' : 'text-slate-500 hover:text-indigo-500 hover:bg-white/50'}`}
-            >
-              <FaceSmileIcon className="w-6 h-6" />
-            </button>
-            <button className="p-2 text-slate-500 hover:text-indigo-500 hover:bg-white/50 rounded-full transition-all duration-200">
-              <PaperClipIcon className="w-6 h-6" />
-            </button>
-          </div>
+          {!isRecording ? (
+            <>
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#0f172a] rounded-full p-1 border border-slate-200 dark:border-slate-700">
+                <button
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  className={`p-2 rounded-full transition-all duration-200 ${showEmojiPicker ? 'text-indigo-500 bg-white shadow-sm' : 'text-slate-500 hover:text-indigo-500 hover:bg-white/50'}`}
+                >
+                  <FaceSmileIcon className="w-6 h-6" />
+                </button>
+                <button className="p-2 text-slate-500 hover:text-indigo-500 hover:bg-white/50 rounded-full transition-all duration-200">
+                  <PaperClipIcon className="w-6 h-6" />
+                </button>
+              </div>
 
-          <div className="flex-1 bg-slate-100 dark:bg-[#0f172a] rounded-2xl flex items-center px-4 py-2.5 border border-slate-200 dark:border-slate-700 focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-900/30 transition-all shadow-inner">
-            <input
-              type="text"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              onPaste={handlePaste}
-              placeholder="Escribe un mensaje o pega una imagen (Ctrl+V)..."
-              disabled={sending}
-              className="flex-1 bg-transparent text-[15px] text-slate-800 dark:text-slate-100 placeholder-slate-400 border-none focus:outline-none"
-            />
-          </div>
+              <div className="flex-1 bg-slate-100 dark:bg-[#0f172a] rounded-2xl flex items-center px-4 py-2.5 border border-slate-200 dark:border-slate-700 focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-900/30 transition-all shadow-inner">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  onPaste={handlePaste}
+                  placeholder="Escribe un mensaje o pega una imagen (Ctrl+V)..."
+                  disabled={sending}
+                  className="flex-1 bg-transparent text-[15px] text-slate-800 dark:text-slate-100 placeholder-slate-400 border-none focus:outline-none"
+                />
+              </div>
 
-          <button
-            onClick={pastedImage ? sendPastedImage : handleSendMessage}
-            disabled={(!newMessage.trim() && !pastedImage) || sending}
-            className={`p-3 rounded-full transition-all duration-300 shadow-lg ${(newMessage.trim() || pastedImage) && !sending
-              ? 'bg-gradient-to-tr from-indigo-500 to-purple-500 text-white hover:shadow-indigo-300 dark:hover:shadow-indigo-900 hover:scale-105 active:scale-95'
-              : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
-              }`}
-          >
-            {sending ? (
-              <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <PaperAirplaneIcon className="w-6 h-6 transform rotate-90" />
-            )}
-          </button>
+              {newMessage.trim() || pastedImage ? (
+                <button
+                  onClick={pastedImage ? sendPastedImage : handleSendMessage}
+                  disabled={sending}
+                  className="p-3 bg-gradient-to-tr from-indigo-500 to-purple-500 text-white rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all"
+                >
+                  {sending ? (
+                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <PaperAirplaneIcon className="w-6 h-6 transform rotate-90" />
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={startRecording}
+                  disabled={sending}
+                  className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-full transition-all duration-200 shadow-sm border border-slate-200 dark:border-slate-700"
+                >
+                  <MicrophoneIcon className="w-6 h-6" />
+                </button>
+              )}
+            </>
+          ) : (
+            <div className="flex-1 flex items-center gap-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl px-4 py-2 border border-indigo-200 dark:border-indigo-800 animate-pulse">
+              <div className="flex items-center gap-2 flex-1">
+                <div className="w-3 h-3 bg-red-500 rounded-full animate-ping" />
+                <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400 tracking-wider">
+                  Rec: {formatDuration(recordingDuration)}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={cancelRecording}
+                  className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-all"
+                >
+                  <XMarkIcon className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={stopRecording}
+                  className="p-3 bg-indigo-500 text-white rounded-full shadow-lg hover:bg-indigo-600 transition-all"
+                >
+                  <PaperAirplaneIcon className="w-6 h-6 transform rotate-90" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Pasted Image Preview */}
