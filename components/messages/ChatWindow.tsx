@@ -288,6 +288,7 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const startRecording = async () => {
+    if (isRecording) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
@@ -302,33 +303,29 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
 
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/mp4' });
+        if (audioBlob.size < 2000) return; // Ignorar si es demasiado corto
+
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
           const base64Audio = reader.result as string;
           await sendAudioMessage(base64Audio);
         };
-
-        // Cierra los tracks del stream para apagar el micro
         stream.getTracks().forEach(track => track.stop());
       };
 
       mediaRecorder.start();
       setIsRecording(true);
       setRecordingDuration(0);
-
-      timerRef.current = setInterval(() => {
-        setRecordingDuration(prev => prev + 1);
-      }, 1000);
-
-      toast.info('🎤 Grabando audio...');
+      timerRef.current = setInterval(() => setRecordingDuration(prev => prev + 1), 1000);
+      if (window.navigator.vibrate) window.navigator.vibrate(50);
     } catch (err) {
-      console.error('Error accessing microphone:', err);
-      toast.error('No se pudo acceder al micrófono');
+      console.error('Error recording:', err);
+      toast.error('Error al acceder al micro');
     }
   };
 
-  const stopRecording = () => {
+  const stopRecordingAndSend = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
@@ -371,9 +368,8 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
-
   return (
-    <div className="h-full flex flex-col bg-[#f1f5f9] dark:bg-[#0f172a]">
+    <div className="h-full flex flex-col bg-[#f1f5f9] dark:bg-[#0f172a]" onMouseUp={() => isRecording && stopRecordingAndSend()}>
       {/* Header - Pastel Glassmorphism */}
       <div className="bg-white/80 backdrop-blur-md dark:bg-[#1e293b]/90 px-6 py-3 flex items-center justify-between shadow-sm border-b border-slate-200 dark:border-slate-800 z-10">
         <div className="flex items-center gap-4">
@@ -490,9 +486,12 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
                 </button>
               ) : (
                 <button
-                  onClick={startRecording}
+                  onMouseDown={(e) => { e.preventDefault(); startRecording(); }}
+                  onMouseUp={(e) => { e.preventDefault(); stopRecordingAndSend(); }}
+                  onTouchStart={(e) => { e.preventDefault(); startRecording(); }}
+                  onTouchEnd={(e) => { e.preventDefault(); stopRecordingAndSend(); }}
                   disabled={sending}
-                  className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-full transition-all duration-200 shadow-sm border border-slate-200 dark:border-slate-700"
+                  className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-full transition-all duration-200 shadow-sm border border-slate-200 dark:border-slate-700 cursor-pointer active:scale-110"
                 >
                   <MicrophoneIcon className="w-6 h-6" />
                 </button>
@@ -514,7 +513,7 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
                   <XMarkIcon className="w-6 h-6" />
                 </button>
                 <button
-                  onClick={stopRecording}
+                  onClick={stopRecordingAndSend}
                   className="p-3 bg-indigo-500 text-white rounded-full shadow-lg hover:bg-indigo-600 transition-all"
                 >
                   <PaperAirplaneIcon className="w-6 h-6 transform rotate-90" />
