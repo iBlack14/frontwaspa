@@ -410,7 +410,15 @@ async function startIAConversationProcess(conversationData, backendUrl) {
 
       // Verificar límites diarios
       const today = new Date().toISOString().split('T')[0];
-      const historycal = await getClassHistory(instanceId); // Assuming getClassHistory is defined elsewhere or a typo for updateInstanceStats
+
+      // Obtener estadísticas actuales desde la DB
+      const { data: instanceData } = await supabaseAdmin
+        .from('instances')
+        .select('historycal_data')
+        .eq('document_id', instanceId)
+        .single();
+
+      const historycal = instanceData?.historycal_data || [];
       const todayStats = historycal.find(h => h.date === today) || { message_sent: 0 };
 
       // Lógica de límite: Personalizado > Infinito > Fases
