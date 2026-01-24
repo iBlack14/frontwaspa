@@ -24,29 +24,31 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'No autorizado' });
     }
 
-    const { instanceId, action } = req.method === 'POST' ? req.body : req.query;
+    const { instanceId, instanceIds, action } = req.method === 'POST' ? req.body : req.query;
 
-    if (!instanceId) {
-      return res.status(400).json({ error: 'instanceId es requerido' });
+    if (!instanceId && (!instanceIds || !Array.isArray(instanceIds))) {
+      return res.status(400).json({ error: 'instanceId o instanceIds es requerido' });
     }
 
-    // Verificar que la instancia pertenece al usuario
-    const { data: instance } = await supabaseAdmin
-      .from('instances')
-      .select('document_id, state, user_id')
-      .eq('document_id', instanceId)
-      .eq('user_id', session.id)
-      .single();
+    // Si es una sola instancia (GET o stop), verificamos su estado
+    if (instanceId) {
+      const { data: instance } = await supabaseAdmin
+        .from('instances')
+        .select('document_id, state, user_id')
+        .eq('document_id', instanceId)
+        .eq('user_id', session.id)
+        .single();
 
-    if (!instance) {
-      return res.status(404).json({ error: 'Instancia no encontrada' });
-    }
+      if (!instance) {
+        return res.status(404).json({ error: 'Instancia no encontrada' });
+      }
 
-    if (instance.state !== 'Connected') {
-      return res.status(400).json({
-        error: 'La instancia no está conectada',
-        message: 'Por favor, reconecta tu instancia de WhatsApp'
-      });
+      if (instance.state !== 'Connected' && action !== 'start') {
+        return res.status(400).json({
+          error: 'La instancia no está conectada',
+          message: 'Por favor, reconecta tu instancia de WhatsApp'
+        });
+      }
     }
 
     // GET - Obtener estado de la conversación IA
