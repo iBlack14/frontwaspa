@@ -258,7 +258,9 @@ function getFallbackResponse(message, conversationHistory, theme = "negocios") {
 async function startIAConversation(instanceId, userId, res, provider = 'openai', apiKey = null, groupInstanceIds = null, theme = null, unlimited = false, customLimit = null) {
   const conversationKey = `${userId}-${instanceId}`;
 
-  // Verificar si ya hay una conversación activa
+  // Log de depuración para rastrear customLimit
+  console.log(`🔍 [IA-START] Petición recibida para ${instanceId}`);
+  console.log(`🔍 [IA-START] Params: customLimit=${customLimit} (Type: ${typeof customLimit}), Unlimited=${unlimited}`);
   if (activeConversations.has(conversationKey)) {
     return { error: 'Ya activa' };
   }
