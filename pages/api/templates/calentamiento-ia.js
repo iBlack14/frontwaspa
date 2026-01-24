@@ -174,8 +174,8 @@ async function generateIAResponse(message, conversationHistory = [], context = {
     // 💎 GOOGLE GEMINI
     // ---------------------------------------------------------
     else if (provider === 'gemini') {
-      // Usamos gemini-1.5-flash que es el modelo estándar más rápido y estable actualmente para el tier gratuito
-      const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      // Usamos gemini-2.0-flash según indicación del usuario (el 1.5 daba 404)
+      const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
       const contents = [
         {
