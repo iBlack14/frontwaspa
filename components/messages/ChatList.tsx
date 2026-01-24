@@ -113,13 +113,13 @@ export default function ChatList({ chats, selectedChat, onSelectChat, instanceId
   return (
     <div className="h-full bg-[#f8fafc] dark:bg-[#0f172a] flex flex-col border-r border-slate-200 dark:border-slate-800">
       {/* Search - Pastel Design */}
-      <div className="p-4 bg-white/80 backdrop-blur-md dark:bg-[#1e293b]/80 sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800">
+      <div className="flex-shrink-0 p-4 bg-white/80 backdrop-blur-md dark:bg-[#1e293b]/80 sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800">
         <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-2.5 flex items-center transition-all focus-within:ring-2 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-900 focus-within:bg-white dark:focus-within:bg-slate-900 shadow-sm">
           <MagnifyingGlassIcon className="w-5 h-5 text-slate-400 dark:text-slate-500 mr-3" />
           <input
             type="text"
             placeholder="Buscar o iniciar un chat"
-            className="flex-1 bg-transparent text-sm text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 border-none focus:outline-none"
+            className="flex-1 bg-transparent text-sm text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 border-none focus:outline-none w-full"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -127,7 +127,7 @@ export default function ChatList({ chats, selectedChat, onSelectChat, instanceId
       </div>
 
       {/* Filter Tabs */}
-      <div className="px-4 pb-2 bg-white/80 backdrop-blur-md dark:bg-[#1e293b]/80 border-b border-slate-100 dark:border-slate-800 flex gap-2 overflow-x-auto no-scrollbar">
+      <div className="flex-shrink-0 px-4 pb-2 bg-white/80 backdrop-blur-md dark:bg-[#1e293b]/80 border-b border-slate-100 dark:border-slate-800 flex gap-2 overflow-x-auto no-scrollbar">
         {[
           { id: 'all', label: 'Todos' },
           { id: 'chats', label: 'Chats' },
