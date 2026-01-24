@@ -524,10 +524,10 @@ async function startIAConversationProcess(conversationData, backendUrl) {
             // ✅ Generar apertura contextual con IA si hay tema
             console.log(`🤖 IA: Generando frase inicial sobre "${currentData.theme}"...`);
             messageToSend = await generateIAResponse(
-              `Instrucción interna: Inicia una conversación por WhatsApp con tu amigo ${randomPartner.name}. 
-               El tema es estrictamente: "${currentData.theme}". 
-               Solo escribe la primera frase de saludo y una pregunta o comentario sobre el tema. 
-               Sé casual, corto y natural.`,
+              `Instrucción: Inicia el chat con ${randomPartner.name}.
+               TU OBJETIVO: Saludar (Hola, Hey, etc) e INMEDIATAMENTE mencionar el tema "${currentData.theme}" para sacar conversación.
+               Ejemplo: "Hola! ¿Qué piensas de [TEMA]?" o "Hey, viste lo de [TEMA]?".
+               Sé natural, casual y directo.`,
               [],
               {},
               provider,
