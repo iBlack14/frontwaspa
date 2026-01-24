@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { UserIcon, UserGroupIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { UserIcon, UserGroupIcon, MagnifyingGlassIcon, ArrowLeftIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { toast } from 'sonner';
 
 interface Chat {
@@ -224,15 +224,44 @@ export default function ChatList({ chats, selectedChat, onSelectChat, instanceId
 
             {/* Regular */}
             <div className="pb-4">
+              {activeTab !== 'all' && filteredChats.length > 0 && (
+                <button
+                  onClick={() => setActiveTab('all')}
+                  className="mx-4 my-2 text-xs font-semibold text-indigo-500 hover:text-indigo-600 flex items-center gap-1"
+                >
+                  <ArrowLeftIcon className="w-3 h-3" />
+                  Volver a todos
+                </button>
+              )}
+
               {pinnedChats.length > 0 && <div className="px-5 py-2 text-xs font-bold text-slate-400 dark:text-slate-500 tracking-wider uppercase">Recientes</div>}
-              {regularChats.map((chat) => (
-                <ChatItem
-                  key={chat.id}
-                  chat={chat}
-                  isSelected={selectedChat?.id === chat.id}
-                  onClick={() => onSelectChat(chat)}
-                />
-              ))}
+              {regularChats.map((chat) => {
+                // INTERCEPTAR ESTADOS para mejorar visualización
+                if (chat.chat_id === 'status@broadcast') {
+                  return (
+                    <ChatItem
+                      key={chat.id}
+                      chat={{
+                        ...chat,
+                        chat_name: 'Estados / Historias',
+                        profile_pic_url: undefined // Forzar icono por defecto
+                      }}
+                      isStatus={true} // Flag especial
+                      isSelected={selectedChat?.id === chat.id}
+                      onClick={() => onSelectChat(chat)}
+                    />
+                  );
+                }
+
+                return (
+                  <ChatItem
+                    key={chat.id}
+                    chat={chat}
+                    isSelected={selectedChat?.id === chat.id}
+                    onClick={() => onSelectChat(chat)}
+                  />
+                );
+              })}
             </div>
 
             {/* Empty States per Tab */}
@@ -276,7 +305,10 @@ export default function ChatList({ chats, selectedChat, onSelectChat, instanceId
   );
 }
 
-function ChatItem({ chat, isSelected, onClick }: { chat: Chat; isSelected: boolean; onClick: () => void }) {
+// ... (interfaces logic remains same)
+
+// Definición correcta de ChatItem al final del archivo o fuera del export default
+function ChatItem({ chat, isSelected, onClick, isStatus }: { chat: Chat; isSelected: boolean; onClick: () => void; isStatus?: boolean }) {
   return (
     <div
       onClick={onClick}
@@ -296,8 +328,16 @@ function ChatItem({ chat, isSelected, onClick }: { chat: Chat; isSelected: boole
                 className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-[#0f172a]"
               />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center border-2 border-white dark:border-[#0f172a]">
-                {chat.chat_type === 'group' ? (
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 border-white dark:border-[#0f172a] ${isStatus
+                ? 'bg-gradient-to-br from-pink-100 to-rose-200 dark:from-pink-900/30 dark:to-rose-900/30'
+                : 'bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800'}`}>
+
+                {isStatus ? (
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-pink-400 rounded-full animate-ping opacity-20"></div>
+                    <SparklesIcon className="w-6 h-6 text-pink-500 dark:text-pink-400" />
+                  </div>
+                ) : chat.chat_type === 'group' ? (
                   <UserGroupIcon className="w-6 h-6 text-slate-500 dark:text-slate-400" />
                 ) : (
                   <UserIcon className="w-6 h-6 text-slate-500 dark:text-slate-400" />
@@ -305,10 +345,12 @@ function ChatItem({ chat, isSelected, onClick }: { chat: Chat; isSelected: boole
               </div>
             )}
           </div>
-          {/* Online Status Indicator - Green Dot with Pulse */}
-          <span className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-emerald-400 border-2 border-white dark:border-[#0f172a] rounded-full shadow-sm">
-            <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
-          </span>
+          {/* Online Status Indicator */}
+          {!isStatus && (
+            <span className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-emerald-400 border-2 border-white dark:border-[#0f172a] rounded-full shadow-sm">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
+            </span>
+          )}
         </div>
 
         {/* Content */}
@@ -323,7 +365,7 @@ function ChatItem({ chat, isSelected, onClick }: { chat: Chat; isSelected: boole
           </div>
           <div className="flex justify-between items-center">
             <p className={`text-sm truncate flex-1 ${isSelected ? 'text-indigo-600/80 dark:text-indigo-300/80' : 'text-slate-500 dark:text-slate-400'}`}>
-              {chat.last_message_text || '📎 Archivo multimedia'}
+              {chat.last_message_text || (isStatus ? 'Nueva actualización de estado' : '📎 Archivo multimedia')}
             </p>
             {chat.unread_count > 0 && (
               <span className="ml-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center shadow-sm shadow-indigo-200 dark:shadow-none">

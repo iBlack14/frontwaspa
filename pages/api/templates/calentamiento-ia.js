@@ -265,9 +265,37 @@ async function startIAConversation(instanceId, userId, res, provider = 'openai',
     return { error: 'Ya activa' };
   }
 
-  // Validate API Key presence
-  if (!apiKey) {
-    return { error: 'Falta API Key' };
+  // Validate API Key presence for AI (if required by provider)
+  // Nota: Si el usuario no da key de IA, usaremos la del sistema si existe en el perfil, o error.
+
+  // Buscar SIEMPRE la key del sistema (para enviar mensajes) y keys guardadas
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('api_key, openai_api_key, gemini_api_key')
+    .eq('id', userId)
+    .single();
+
+  const systemApiKey = profile?.api_key;
+  if (!systemApiKey) {
+    console.error('❌ [IA-START] Error: El usuario no tiene API Key de sistema');
+    return { error: 'No se encontró API Key del sistema para este usuario. Contacta soporte.' };
+  }
+
+  // Determinar la key final para la IA
+  let finalAiKey = apiKey;
+
+  if (!finalAiKey) {
+    // Si no viene en el request, buscar en perfil según provider
+    if (provider === 'openai' && profile.openai_api_key) {
+      finalAiKey = profile.openai_api_key;
+    } else if (provider === 'gemini' && profile.gemini_api_key) {
+      finalAiKey = profile.gemini_api_key;
+    }
+  }
+
+  // Si sigue sin haber key de IA, advertir (pero permitir arrancar si hay lógica fallback sin key)
+  if (!finalAiKey) {
+    console.warn('⚠️ [IA-START] Arrancando sin API Key de IA explícita (usará fallback local o fallará la IA)');
   }
 
   // Si nos pasan un grupo específico, usamos ese. Si no, buscamos todas las conectadas.
@@ -320,11 +348,11 @@ async function startIAConversation(instanceId, userId, res, provider = 'openai',
     instanceId,
     userId,
     provider,
-    apiKey,
+    apiKey: finalAiKey, // Key para la IA (OpenAI/Gemini)
+    systemApiKey: systemApiKey, // Key para nuestra API (Backend)
     theme,
     unlimited,
-    customLimit: customLimit ? parseInt(customLimit) : null, // Add customLimit here
-    userKey: '', // Will be filled below
+    customLimit: customLimit ? parseInt(customLimit) : null,
     startDate: new Date().toISOString(),
     currentPhase: 1,
     messagesSent: 0,
@@ -346,31 +374,6 @@ async function startIAConversation(instanceId, userId, res, provider = 'openai',
       { day: 10, maxMessages: 150, messagesSent: 0 },
     ]
   };
-
-  // Obtener la clave interna del usuario para autenticar con el backend-whatsapp
-  // (Solo si no se proporcionó una explícita)
-  if (!apiKey) {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('api_key, openai_api_key, gemini_api_key')
-      .eq('id', userId)
-      .single();
-
-    if (profile) {
-      // Priorizar la key específica del proveedor seleccionado
-      if (provider === 'openai' && profile.openai_api_key) {
-        conversationData.userKey = profile.openai_api_key;
-      } else if (provider === 'gemini' && profile.gemini_api_key) {
-        conversationData.userKey = profile.gemini_api_key;
-      } else if (profile.api_key) {
-        // Fallback a la key genérica si existe
-        conversationData.userKey = profile.api_key;
-      }
-    }
-  } else {
-    // Si el usuario dio una key explícita, usarla como principal
-    conversationData.userKey = apiKey;
-  }
 
   // Guardar en memoria
   activeConversations.set(conversationKey, conversationData);
@@ -405,10 +408,10 @@ async function stopIAConversation(instanceId, userId, res) {
 
 // Función que ejecuta el proceso de conversación IA en background
 async function startIAConversationProcess(conversationData, backendUrl) {
-  const { instanceId, userId, conversationPartners, provider, apiKey, userKey } = conversationData;
+  const { instanceId, userId, conversationPartners, provider, apiKey, systemApiKey } = conversationData;
   const conversationKey = `${userId}-${instanceId}`;
 
-  console.log(`🚀 Iniciando proceso IA para ${instanceId} (Auth Key: ${userKey ? 'Presente' : 'Faltante'})`);
+  console.log(`🚀 Iniciando proceso IA para ${instanceId} (Auth Key: ${systemApiKey ? 'Presente' : 'Faltante'})`);
 
   // Pequeña espera inicial para que el usuario vea el cambio en el UI antes del primer mensaje
   await new Promise(resolve => setTimeout(resolve, 5000));
@@ -422,7 +425,6 @@ async function startIAConversationProcess(conversationData, backendUrl) {
       if (!currentData || !currentData.isActive) break;
 
       const currentPhase = currentData.phases[currentData.currentPhase - 1];
-      const todayMessages = currentPhase.messagesSent;
 
       // Verificar límites diarios
       const today = new Date().toISOString().split('T')[0];
@@ -490,7 +492,7 @@ async function startIAConversationProcess(conversationData, backendUrl) {
           {
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${userKey || apiKey}` // Priorizar userKey interna
+              'Authorization': `Bearer ${systemApiKey}` // USAR KEY DEL SISTEMA SIEMPRE
             },
             timeout: 10000
           }
@@ -516,7 +518,7 @@ async function startIAConversationProcess(conversationData, backendUrl) {
           currentData.conversationHistory = currentData.conversationHistory.slice(-20);
         }
 
-        console.log(`🤖 IA: Mensaje enviado a ${randomPartner.name} (${currentData.messagesSent}/${currentPhase.maxMessages} hoy)`);
+        console.log(`🤖 IA: Mensaje enviado a ${randomPartner.name} (${currentData.messagesSent}/${currentData.customLimit || '∞'} sesión)`);
 
         // Actualizar estadísticas
         try {

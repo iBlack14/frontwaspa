@@ -245,9 +245,6 @@ function CalentamientoContent() {
         customLimit: useCustomLimit ? (Number(customMessageLimit) || 1000) : null
       };
 
-      // DEBUG: Mostrar alerta para verificar qué se envía
-      alert(`Enviando configuración:\nLímite Manual: ${useCustomLimit}\nValor: ${payload.customLimit}`);
-
       const response = await axios.post('/api/templates/calentamiento-ia', payload);
 
       toast.success('Conversación IA iniciada exitosamente');

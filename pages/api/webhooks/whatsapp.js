@@ -1,6 +1,7 @@
 // API para recibir webhooks del backend de WhatsApp
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { broadcastMessage } from '@/lib/websocket';
+import axios from 'axios';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -91,14 +92,102 @@ export default async function handler(req, res) {
           shouldUpdate = true;
           console.log(`[WEBHOOK] ✅ Mensaje recibido detectado`);
 
+          // Variables para procesar el mensaje
+          const sender = data?.pushName || data?.key?.remoteJid?.split('@')[0] || 'Desconocido';
+          const chatId = data?.key?.remoteJid;
+          const messageText = data?.message?.conversation ||
+            data?.message?.extendedTextMessage?.text ||
+            data?.message?.imageMessage?.caption ||
+            data?.message?.videoMessage?.caption || null;
+
+          // -------------------------------------------------------------
+          // 🤖 LOGICA DEL CHATBOT
+          // -------------------------------------------------------------
+          if (messageText && chatId && !chatId.includes('status@broadcast')) {
+            try {
+              // 1. Buscar si hay un chatbot activo para esta instancia
+              const { data: chatbot } = await supabaseAdmin
+                .from('instance_chatbots')
+                .select('*')
+                .eq('instance_id', instanceId)
+                .eq('is_active', true)
+                .single();
+
+              if (chatbot) {
+                console.log(`[CHATBOT] 🤖 Bot activo encontrado para ${instanceId}`);
+
+                let responseToSend = null;
+
+                // 2. Buscar coincidencia en reglas
+                // Normalizar mensaje de entrada
+                const lowerMessage = messageText.toLowerCase().trim();
+
+                // Buscar regla coincidente
+                const matchedRule = chatbot.rules.find(rule => {
+                  if (!rule.isActive) return false;
+
+                  // Separar triggers por | y limpiar espacios
+                  const triggers = rule.trigger.split('|').map(t => t.trim().toLowerCase());
+
+                  // Verificar si alguno de los triggers está presente en el mensaje
+                  // Opción A: Coincidencia exacta o parcial?
+                  // Vamos a usar 'includes' para ser más flexibles, o match exacto si se prefiere
+                  return triggers.some(trigger => lowerMessage.includes(trigger));
+                });
+
+                if (matchedRule) {
+                  console.log(`[CHATBOT] ✅ Regla coincidente: "${matchedRule.trigger}"`);
+                  responseToSend = matchedRule.response;
+                } else if (chatbot.default_response) {
+                  // Sólo responder por defecto si NO es un mensaje de sistema importante?
+                  // Para evitar spam, podríamos limitar esto.
+                  // Por ahora, usaremos la respuesta por defecto si está configurada
+                  console.log(`[CHATBOT] ⚠️ Sin coincidencia, usando respuesta por defecto`);
+                  // responseToSend = chatbot.default_response; // Opcional: Descomentar si se quiere respuesta por defecto siempre
+                }
+
+                // 3. Enviar respuesta si hay alguna
+                if (responseToSend) {
+                  // Pequeño delay para simular "escribiendo"
+                  await new Promise(r => setTimeout(r, 1500)); // 1.5s delay
+
+                  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3000'; // Fallback
+
+                  // Enviar mensaje usando la API interna
+                  // Necesitamos la key del usuario. La tomamos de la instancia que ya consultamos arriba (instance.user_id)
+                  // Consultamos la API Key del perfil
+                  const { data: profile } = await supabaseAdmin
+                    .from('profiles')
+                    .select('api_key')
+                    .eq('id', instance.user_id)
+                    .single();
+
+                  const apiKey = profile?.api_key || '';
+
+                  await axios.post(`${backendUrl}/api/send-message/${instanceId}`, {
+                    number: chatId.replace(/\D/g, ''), // Solo números para la API
+                    message: responseToSend
+                  }, {
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${apiKey}`
+                    }
+                  });
+
+                  console.log(`[CHATBOT] 📤 Respuesta enviada a ${sender}: "${responseToSend}"`);
+
+                  // Actualizar stats de envío también
+                  statsUpdate.message_sent = (statsUpdate.message_sent || 0) + 1;
+                  statsUpdate.api_message_sent = (statsUpdate.api_message_sent || 0) + 1;
+                }
+              }
+            } catch (botError) {
+              console.error('[CHATBOT] ❌ Error procesando lógica del bot:', botError);
+            }
+          }
+
           // Guardar mensaje en la base de datos
           try {
-            const sender = data?.pushName || data?.key?.remoteJid?.split('@')[0] || 'Desconocido';
-            const messageText = data?.message?.conversation ||
-              data?.message?.extendedTextMessage?.text ||
-              data?.message?.imageMessage?.caption ||
-              data?.message?.videoMessage?.caption || null;
-
             const messageType = data?.message?.conversation ? 'text' :
               data?.message?.imageMessage ? 'image' :
                 data?.message?.videoMessage ? 'video' :
