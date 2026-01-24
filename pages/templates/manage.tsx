@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 import Sidebard from '../components/dashboard/index';
 import {
   ArrowLeftIcon,
@@ -140,7 +140,7 @@ function ManageTemplatesContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-transparent p-6 sm:p-8">
-      <Toaster richColors position="top-right" />
+
 
       {/* Header */}
       <div className="mb-8">
@@ -282,8 +282,8 @@ function ManageTemplatesContent() {
 
                 <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
                   <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${isLowUsage
-                      ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
-                      : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                    ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                    : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
                     }`}>
                     {isLowUsage ? '⚡ Bajo consumo' : '⚠️ Alto consumo'}
                   </span>
@@ -331,8 +331,8 @@ function ManageTemplatesContent() {
                           <p className="text-slate-600 dark:text-slate-400 text-sm">{instance.phoneNumber || 'Sin número'}</p>
                         </div>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${instance.state === 'Connected'
-                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
-                            : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                          ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                          : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                           }`}>
                           {instance.state === 'Connected' ? (
                             <span className="flex items-center gap-1">

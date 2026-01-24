@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import io, { Socket } from 'socket.io-client';
+import { logger } from '@/utils/logger';
 import { useSession } from 'next-auth/react';
 
 interface UseWebSocketOptions {
@@ -23,6 +24,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     // URL del backend WebSocket
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
 
+    logger.websocket(`Connecting to ${backendUrl}`);
+
     // Conectar al WebSocket
     const socket = io(backendUrl, {
       path: '/socket.io/',
@@ -36,7 +39,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
     // Eventos de conexión
     socket.on('connect', () => {
-      console.log('✅ WebSocket connected:', socket.id);
+      logger.success('WebSocket connected', 'websocket');
       setIsConnected(true);
       setError(null);
 
@@ -54,18 +57,18 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     });
 
     socket.on('disconnect', () => {
-      console.log('❌ WebSocket disconnected');
+      logger.warn('WebSocket disconnected', 'websocket');
       setIsConnected(false);
     });
 
     socket.on('connect_error', (err) => {
-      console.error('❌ WebSocket connection error:', err);
+      logger.error(`Connection error: ${err.message}`, 'websocket');
       setError(err.message);
       setIsConnected(false);
     });
 
     socket.on('authenticated', (data) => {
-      console.log('✅ WebSocket authenticated:', data);
+      logger.success('WebSocket authenticated', 'websocket', data);
     });
 
     // Eventos personalizados

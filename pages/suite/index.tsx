@@ -3,7 +3,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Image from 'next/image';
-import { Toaster, toast } from 'sonner';
+import { toast } from 'sonner';
 import axios from 'axios';
 import Sidebard from '../components/dashboard/index';
 import {
@@ -581,7 +581,6 @@ function DashboardContent() {
 
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-transparent">
-      <Toaster richColors position="top-right" expand={true} closeButton />
 
       {/* Left Sidebar */}
       <div className="w-80 p-6 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col">
@@ -628,13 +627,12 @@ function DashboardContent() {
                   }`}
               >
                 <div className="relative flex-shrink-0">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                    workspaces.activo
-                      ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
-                      : workspaces.credencials?.status === 'initializing'
-                        ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400'
-                        : 'bg-slate-100 dark:bg-slate-700 text-slate-400'
-                  }`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${workspaces.activo
+                    ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
+                    : workspaces.credencials?.status === 'initializing'
+                      ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400'
+                      : 'bg-slate-100 dark:bg-slate-700 text-slate-400'
+                    }`}>
                     <CubeIcon className="w-6 h-6" />
                   </div>
                 </div>
@@ -646,13 +644,12 @@ function DashboardContent() {
                     {workspaces.name || 'Sin nombre'}
                   </p>
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      workspaces.activo
-                        ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
-                        : workspaces.credencials?.status === 'initializing'
-                          ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-                          : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                    }`}>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${workspaces.activo
+                      ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                      : workspaces.credencials?.status === 'initializing'
+                        ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+                        : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                      }`}>
                       {workspaces.activo
                         ? 'Activo'
                         : workspaces.credencials?.status === 'initializing'

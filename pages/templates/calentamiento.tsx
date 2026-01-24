@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 import Sidebard from '../components/dashboard/index';
 import {
   ArrowLeftIcon,
@@ -190,7 +190,7 @@ function CalentamientoContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-transparent p-6 sm:p-8">
-      <Toaster richColors position="top-right" />
+
 
       {/* Header */}
       <div className="mb-8">
@@ -356,8 +356,8 @@ function CalentamientoContent() {
                             <button
                               onClick={() => setAiProvider('openai')}
                               className={`p-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${aiProvider === 'openai'
-                                  ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
-                                  : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                                ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
+                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
                                 }`}
                             >
                               <span>ChatGPT (OpenAI)</span>
@@ -365,8 +365,8 @@ function CalentamientoContent() {
                             <button
                               onClick={() => setAiProvider('gemini')}
                               className={`p-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${aiProvider === 'gemini'
-                                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                                  : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
                                 }`}
                             >
                               <span>Google Gemini</span>
@@ -449,8 +449,8 @@ function CalentamientoContent() {
             <div
               key={phase.day}
               className={`p-4 rounded-xl border-2 transition-all ${(useIA ? iaStatus : calentamientoStatus)?.currentPhase >= phase.day
-                  ? 'border-emerald-200 bg-emerald-50 dark:bg-emerald-900/10'
-                  : 'border-slate-200 dark:border-slate-700'
+                ? 'border-emerald-200 bg-emerald-50 dark:bg-emerald-900/10'
+                : 'border-slate-200 dark:border-slate-700'
                 }`}
             >
               <div className="flex items-center justify-between mb-2">

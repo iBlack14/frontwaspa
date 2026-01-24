@@ -20,7 +20,7 @@ import {
   TrashIcon,
   ClipboardDocumentIcon
 } from '@heroicons/react/24/outline';
-import { Toaster, toast } from 'sonner';
+import { toast } from 'sonner';
 import useSWR from 'swr';
 
 interface CustomSession {
@@ -243,7 +243,7 @@ function DashboardContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-transparent">
-      <Toaster richColors position="top-right" />
+
 
       <div className="p-6 sm:p-8 max-w-7xl mx-auto flex items-start gap-6">
         <div className="flex-1 w-full">

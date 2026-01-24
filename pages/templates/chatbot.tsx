@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 import Sidebard from '../components/dashboard/index';
 import {
   ArrowLeftIcon,
@@ -243,7 +243,7 @@ function ChatbotContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-transparent p-6 sm:p-8">
-      <Toaster richColors position="top-right" />
+
 
       {/* Header */}
       <div className="mb-8">

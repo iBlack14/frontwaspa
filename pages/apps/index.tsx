@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Head from 'next/head';
 import Sidebard from '../components/dashboard/index';
-import { Toaster, toast } from 'sonner';
+import { toast } from 'sonner';
 import {
     ChatBubbleLeftRightIcon,
     CameraIcon,
@@ -73,7 +73,7 @@ function AppsContent() {
             <Head>
                 <title>Apps & Integraciones | Connect BLXK</title>
             </Head>
-            <Toaster richColors position="top-right" />
+
 
             <div className="max-w-7xl mx-auto animate-fadeIn">
                 {/* Header */}
@@ -100,8 +100,8 @@ function AppsContent() {
                                         <app.icon className="w-8 h-8" />
                                     </div>
                                     <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide flex items-center gap-1.5 ${app.status === 'connected'
-                                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                        : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
                                         }`}>
                                         {app.status === 'connected' ? (
                                             <>
@@ -128,8 +128,8 @@ function AppsContent() {
                                     <button
                                         onClick={() => handleConfigure(app)}
                                         className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${app.status === 'connected'
-                                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                                                : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-500/20'
+                                            ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                            : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-500/20'
                                             }`}
                                     >
                                         <Cog6ToothIcon className="w-5 h-5" />

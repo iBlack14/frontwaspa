@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 import Sidebar from '../components/dashboard/index';
-import { Toaster, toast } from 'sonner';
+import { toast } from 'sonner';
 import {
   ChevronDownIcon,
   ChatBubbleBottomCenterTextIcon,
@@ -270,7 +270,7 @@ function DashboardContent() {
 
   return (
     <div className="p-6 space-y-8 bg-slate-50 dark:bg-transparent min-h-screen">
-      <Toaster richColors position="top-right" />
+
 
       {loading ? (
         <div className="flex items-center justify-center h-[400px]">
@@ -325,8 +325,8 @@ function DashboardContent() {
                       key={inst.documentId}
                       onClick={() => handleInstanceSelect(inst.documentId)}
                       className={`px-4 py-3 flex items-center gap-3 cursor-pointer transition-colors ${inst.documentId === selectedInstanceId
-                          ? 'bg-indigo-50 dark:bg-indigo-900/20 border-l-2 border-indigo-500'
-                          : 'hover:bg-slate-50 dark:hover:bg-slate-800 border-l-2 border-transparent'
+                        ? 'bg-indigo-50 dark:bg-indigo-900/20 border-l-2 border-indigo-500'
+                        : 'hover:bg-slate-50 dark:hover:bg-slate-800 border-l-2 border-transparent'
                         }`}
                     >
                       <div className={`w-2 h-2 rounded-full ${inst.state === 'Connected' ? 'bg-emerald-400' : 'bg-red-400'}`}></div>

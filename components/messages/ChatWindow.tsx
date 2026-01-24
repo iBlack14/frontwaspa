@@ -131,6 +131,8 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<{ url: string; caption?: string } | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [pastedImage, setPastedImage] = useState<File | null>(null);
+  const [pastedImagePreview, setPastedImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
     scrollToBottom();
@@ -208,6 +210,71 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
   const onEmojiClick = (emojiData: EmojiClickData) => {
     setNewMessage((prev) => prev + emojiData.emoji);
     setShowEmojiPicker(false);
+  };
+
+  // Handle paste event (Ctrl+V / Cmd+V)
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+
+      // Check if pasted content is an image
+      if (item.type.indexOf('image') !== -1) {
+        e.preventDefault();
+        const file = item.getAsFile();
+
+        if (file) {
+          // Create preview
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            setPastedImagePreview(event.target?.result as string);
+          };
+          reader.readAsDataURL(file);
+          setPastedImage(file);
+          toast.success('📸 Imagen pegada - Click para enviar');
+        }
+        break;
+      }
+    }
+  };
+
+  // Send pasted image
+  const sendPastedImage = async () => {
+    if (!pastedImage) return;
+
+    setSending(true);
+    try {
+      const formData = new FormData();
+      formData.append('to', chat.chat_id);
+      formData.append('media', pastedImage);
+      if (newMessage.trim()) {
+        formData.append('caption', newMessage.trim());
+      }
+
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+      await axios.post(`${backendUrl}/api/send-image/${chat.instance_id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      toast.success('✅ Imagen enviada');
+      setNewMessage('');
+      setPastedImage(null);
+      setPastedImagePreview(null);
+      setTimeout(onRefresh, 1000);
+    } catch (error) {
+      console.error('Error sending image:', error);
+      toast.error('❌ Error al enviar imagen');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // Cancel pasted image
+  const cancelPastedImage = () => {
+    setPastedImage(null);
+    setPastedImagePreview(null);
   };
 
   return (
@@ -305,16 +372,17 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Escribe un mensaje..."
+              onPaste={handlePaste}
+              placeholder="Escribe un mensaje o pega una imagen (Ctrl+V)..."
               disabled={sending}
               className="flex-1 bg-transparent text-[15px] text-slate-800 dark:text-slate-100 placeholder-slate-400 border-none focus:outline-none"
             />
           </div>
 
           <button
-            onClick={handleSendMessage}
-            disabled={!newMessage.trim() || sending}
-            className={`p-3 rounded-full transition-all duration-300 shadow-lg ${newMessage.trim() && !sending
+            onClick={pastedImage ? sendPastedImage : handleSendMessage}
+            disabled={(!newMessage.trim() && !pastedImage) || sending}
+            className={`p-3 rounded-full transition-all duration-300 shadow-lg ${(newMessage.trim() || pastedImage) && !sending
               ? 'bg-gradient-to-tr from-indigo-500 to-purple-500 text-white hover:shadow-indigo-300 dark:hover:shadow-indigo-900 hover:scale-105 active:scale-95'
               : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
               }`}
@@ -326,6 +394,49 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
             )}
           </button>
         </div>
+
+        {/* Pasted Image Preview */}
+        {pastedImagePreview && (
+          <div className="absolute bottom-full mb-3 left-0 right-0 px-4">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-4">
+              <div className="flex items-start gap-4">
+                <div className="relative flex-shrink-0">
+                  <img
+                    src={pastedImagePreview}
+                    alt="Preview"
+                    className="w-24 h-24 object-cover rounded-xl shadow-lg"
+                  />
+                  <div className="absolute -top-2 -right-2 bg-indigo-500 text-white text-xs px-2 py-1 rounded-full shadow-lg">
+                    📸
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 mb-1">
+                    Imagen lista para enviar
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                    {pastedImage?.name || 'Imagen pegada'} • {(pastedImage?.size || 0 / 1024).toFixed(0)} KB
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={sendPastedImage}
+                      disabled={sending}
+                      className="flex-1 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm font-medium rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
+                    >
+                      ✓ Enviar
+                    </button>
+                    <button
+                      onClick={cancelPastedImage}
+                      className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-all"
+                    >
+                      ✕ Cancelar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Image Viewer Modal */}
@@ -446,8 +557,8 @@ function MessageBubble({
           <img
             src={message.media_url}
             alt="Sticker"
-            className="max-w-[150px] cursor-pointer"
-            onClick={() => window.open(message.media_url, '_blank')}
+            className="max-w-[150px] cursor-pointer hover:scale-105 transition-transform"
+            onClick={() => onImageClick?.(message.media_url!, 'Sticker')}
           />
         </div>
       );

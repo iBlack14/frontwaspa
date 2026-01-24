@@ -21,7 +21,7 @@ import {
   PencilIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
-import { Toaster, toast } from 'sonner';
+import { toast } from 'sonner';
 
 interface CustomSession {
   id?: string;
@@ -341,7 +341,7 @@ function ProfilePage() {
 
   return (
     <div className="max-w-6xl mx-auto p-6 sm:p-8">
-      <Toaster richColors position="top-right" />
+
 
       {/* Header */}
       <div className="mb-8">

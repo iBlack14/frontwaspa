@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
 import Sidebar from '../components/dashboard/index';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 
 interface ApiKeyData {
   apiKey: string;
@@ -68,7 +68,7 @@ function ApiKeyContent() {
       });
 
       toast.success('API key regenerada exitosamente');
-      
+
       // Actualizar con la nueva key
       setApiKeyData({
         ...apiKeyData!,
@@ -100,7 +100,7 @@ function ApiKeyContent() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
-      <Toaster richColors position="top-right" />
+
 
       {/* Header */}
       <div className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-sm sticky top-0 z-10">
@@ -179,7 +179,7 @@ function ApiKeyContent() {
         {/* Usage Instructions */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 mb-6">
           <h2 className="text-xl font-bold mb-4">📖 Cómo usar tu API Key</h2>
-          
+
           <div className="space-y-4">
             <div>
               <h3 className="text-emerald-400 font-semibold mb-2">1. Agregar en el Header</h3>
@@ -194,7 +194,7 @@ function ApiKeyContent() {
               <h3 className="text-emerald-400 font-semibold mb-2">2. Ejemplo con cURL</h3>
               <div className="bg-zinc-950 border border-zinc-700 rounded-lg p-4 overflow-x-auto">
                 <pre className="text-sm text-zinc-300">
-{`curl https://backend.com/api/send-message \\
+                  {`curl https://backend.com/api/send-message \\
   -H "Authorization: Bearer ${maskApiKey(apiKeyData?.apiKey || 'tu_api_key')}" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -210,7 +210,7 @@ function ApiKeyContent() {
               <h3 className="text-emerald-400 font-semibold mb-2">3. Ejemplo con JavaScript</h3>
               <div className="bg-zinc-950 border border-zinc-700 rounded-lg p-4 overflow-x-auto">
                 <pre className="text-sm text-zinc-300">
-{`const response = await fetch('https://backend.com/api/send-message', {
+                  {`const response = await fetch('https://backend.com/api/send-message', {
   method: 'POST',
   headers: {
     'Authorization': 'Bearer ${maskApiKey(apiKeyData?.apiKey || 'tu_api_key')}',
@@ -232,7 +232,7 @@ function ApiKeyContent() {
         {apiKeyData?.history && apiKeyData.history.length > 0 && (
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <h2 className="text-xl font-bold mb-4">📜 Historial de Rotación</h2>
-            
+
             <div className="space-y-3">
               {apiKeyData.history.map((item, index) => (
                 <div key={index} className="bg-zinc-950 border border-zinc-700 rounded-lg p-4">

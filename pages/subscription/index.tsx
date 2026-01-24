@@ -5,7 +5,7 @@ import axios from 'axios';
 import { useRouter } from 'next/router';
 import Sidebard from '../components/dashboard/index';
 import { CheckCircleIcon, XCircleIcon, SparklesIcon, StarIcon, ShieldCheckIcon, BoltIcon } from '@heroicons/react/24/outline';
-import { Toaster, toast } from 'sonner';
+import { toast } from 'sonner';
 
 interface CustomSession {
   id?: string;
@@ -131,7 +131,7 @@ function SubscriptionContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-transparent p-6 sm:p-8">
-      <Toaster richColors position="top-right" />
+
 
       {/* Header */}
       <div className="mb-10 text-center max-w-2xl mx-auto">
@@ -219,8 +219,8 @@ function SubscriptionContent() {
             <div
               key={plan.id}
               className={`relative p-8 rounded-3xl transition-all duration-300 flex flex-col ${plan.recommended
-                  ? 'bg-white dark:bg-[#1e293b] border-2 border-indigo-500 shadow-xl shadow-indigo-500/10 transform scale-105 z-10'
-                  : 'bg-white dark:bg-[#1e293b] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-lg hover:-translate-y-1'
+                ? 'bg-white dark:bg-[#1e293b] border-2 border-indigo-500 shadow-xl shadow-indigo-500/10 transform scale-105 z-10'
+                : 'bg-white dark:bg-[#1e293b] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-lg hover:-translate-y-1'
                 }`}
             >
               {/* Recommended Badge */}
@@ -265,8 +265,8 @@ function SubscriptionContent() {
               <button
                 onClick={() => handleSelectPlan(plan.id, plan.name)}
                 className={`w-full py-4 rounded-xl font-bold transition-all duration-300 transform hover:-translate-y-0.5 flex items-center justify-center gap-2 ${plan.recommended
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25'
-                    : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white'
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25'
+                  : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white'
                   }`}
               >
                 {plan.recommended ? <BoltIcon className="w-5 h-5" /> : null}

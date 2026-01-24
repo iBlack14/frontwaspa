@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 import {
   PaperAirplaneIcon,
   PhotoIcon,
@@ -209,7 +209,7 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-zinc-900">
-      <Toaster richColors position="top-right" />
+
 
       {/* Header */}
       <div className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700 px-4 py-3">
@@ -273,11 +273,10 @@ export default function ChatPage() {
             className={`flex ${message.from_me ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-md px-4 py-2 rounded-2xl ${
-                message.from_me
+              className={`max-w-md px-4 py-2 rounded-2xl ${message.from_me
                   ? 'bg-emerald-500 text-white rounded-br-sm'
                   : 'bg-white dark:bg-zinc-800 text-gray-900 dark:text-white rounded-bl-sm shadow-md'
-              }`}
+                }`}
             >
               {message.message_type === 'image' && message.media_url && (
                 <img

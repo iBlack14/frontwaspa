@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
 import Sidebar from '../components/dashboard/index';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 
 interface UsageStats {
   total_requests: number;
@@ -77,13 +77,13 @@ function ApiUsageContent() {
     );
   }
 
-  const successRate = stats?.total_requests 
+  const successRate = stats?.total_requests
     ? ((stats.successful_requests / stats.total_requests) * 100).toFixed(1)
     : '0';
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
-      <Toaster richColors position="top-right" />
+
 
       {/* Header */}
       <div className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-sm sticky top-0 z-10">
@@ -98,7 +98,7 @@ function ApiUsageContent() {
               </Link>
               <h1 className="text-2xl font-bold">📊 Uso de API</h1>
             </div>
-            
+
             {/* Period Selector */}
             <select
               value={days}
@@ -211,7 +211,7 @@ function ApiUsageContent() {
         {/* Recent Calls */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
           <h2 className="text-lg font-bold mb-4">🕐 Últimas 20 Llamadas</h2>
-          
+
           {recentCalls.length === 0 ? (
             <div className="text-center py-8 text-zinc-500">
               No hay llamadas registradas aún
