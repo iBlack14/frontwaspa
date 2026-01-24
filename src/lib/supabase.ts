@@ -14,11 +14,12 @@ export const supabase = (() => {
   if (typeof window === 'undefined') {
     // Server-side: create a new instance each time (SSR safe)
     return createClient(supabaseUrl, supabaseAnonKey, {
-      realtime: isRealtimeEnabled ? {
-        params: {
-          eventsPerSecond: 2 // Allow some events per second
-        }
-      } : undefined, // Disable realtime if not enabled
+      // @ts-ignore
+      realtime: {
+        // Force endpoint for server-side too (just in case)
+        endpoint: 'wss://realtime.wasapi-supabase.ld4pxg.easypanel.host/realtime/v1',
+        timeout: 20000
+      },
       auth: {
         persistSession: false, // Disable persistence on server
         autoRefreshToken: false
@@ -29,11 +30,11 @@ export const supabase = (() => {
   // Client-side: use singleton to prevent multiple instances
   if (!supabaseInstance) {
     supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
-      // HYBRID CONFIGURATION:
-      // 1. Try WebSockets for 0-latency updates.
-      // 2. Client handles reconnection automatically.
-      // 3. We keep manual polling in the UI as a backup.
+      // PROPER CONFIGURATION:
+      // Directly configure the RealtimeClient to use the correct WSS endpoint.
+      // @ts-ignore
       realtime: {
+        endpoint: 'wss://realtime.wasapi-supabase.ld4pxg.easypanel.host/realtime/v1',
         timeout: 10000,
         headers: {
           apikey: supabaseAnonKey
@@ -47,35 +48,9 @@ export const supabase = (() => {
       }
     })
 
-    // 🔧 CUSTOM ENDPOINT PATCH (Fix for Easypanel Routing)
-    // We manually override the internal RealtimeClient to point to the correct "realtime." subdomain.
-    // The library defaults to the main URL, which fails here.
-    if (supabaseInstance.realtime) {
-      // 1. Disconnect default client
-      supabaseInstance.realtime.disconnect()
-
-      // 2. Define custom endpoint
-      const customRealtimeUrl = 'wss://realtime.wasapi-supabase.ld4pxg.easypanel.host/realtime/v1'
-
-      // 3. Create new RealtimeClient with same config
-      const { RealtimeClient } = require('@supabase/supabase-js') // Import dynamically to avoid top-level issues
-
-      const newRealtime = new RealtimeClient(customRealtimeUrl, {
-        params: {
-          apikey: supabaseAnonKey
-        },
-        timeout: 10000,
-        heartbeatIntervalMs: 5000
-      })
-
-      // 4. Overwrite internal property (TypeScript hack involved, but works in JS runtime)
-      // @ts-ignore
-      supabaseInstance.realtime = newRealtime
-
-      // 5. Connect new client
-      newRealtime.connect()
-
-      console.log(`🔌 Supabase Realtime: Custom Endpoint Configured -> ${customRealtimeUrl}`)
+    // Log realtime status
+    if (typeof window !== 'undefined') {
+      console.log('🔌 Supabase Realtime: Custom Endpoint Configured (wss://realtime...)')
     }
 
     // Log status
