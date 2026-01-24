@@ -421,20 +421,21 @@ async function startIAConversationProcess(conversationData, backendUrl) {
       const historycal = instanceData?.historycal_data || [];
       const todayStats = historycal.find(h => h.date === today) || { message_sent: 0 };
 
-      // Lógica de límite: Personalizado > Infinito > Fases
+      // Lógica de límite: Personalizado (META DE SESIÓN) > Infinito > Fases (TOPE DIARIO)
       if (currentData.customLimit) {
-        if (todayStats.message_sent >= currentData.customLimit) {
-          console.log(`🛑 [IA-LIMIT] Límite manual alcanzado (${currentData.customLimit}). Deteniendo.`);
+        // En modo manual, el límite aplica a la CANTIDAD DE MENSAJES DE ESTA SESIÓN
+        if (currentData.messagesSent >= currentData.customLimit) {
+          console.log(`🛑 [IA-LIMIT] Meta de sesión manual alcanzada (${currentData.customLimit} mensajes nuevos). Deteniendo.`);
           activeConversations.delete(conversationKey);
           return;
         }
       } else if (!currentData.unlimited) {
-        // Lógica por fases (solo si no es infinito ni manual)
+        // Lógica por fases (Tope Diario, seguridad por defecto)
         const phaseLimits = { 1: 5, 2: 10, 3: 15, 4: 25, 5: 35, 6: 50, 7: 75, 8: 100, 9: 125, 10: 150 };
         const maxMessages = phaseLimits[currentData.currentPhase] || 5;
 
         if (todayStats.message_sent >= maxMessages) {
-          console.log(`🛑 [IA-LIMIT] Límite diario de fase ${currentData.currentPhase} alcanzado (${maxMessages}). Deteniendo.`);
+          console.log(`🛑 [IA-LIMIT] Límite diario de fase ${currentData.currentPhase} alcanzado (${maxMessages} totales). Deteniendo.`);
           activeConversations.delete(conversationKey);
           return;
         }
