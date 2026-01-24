@@ -31,10 +31,11 @@ export const supabase = (() => {
     supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
       realtime: isRealtimeEnabled ? {
         params: {
-          eventsPerSecond: 2 // Allow realtime events
+          eventsPerSecond: 10
         },
-        heartbeatIntervalMs: 30000,
-        reconnectAfterMs: (tries: number) => Math.min(tries * 1000, 30000),
+        headers: {
+          apikey: supabaseAnonKey,
+        }
       } : undefined, // Disable realtime if not enabled
       auth: {
         persistSession: true,
