@@ -59,7 +59,7 @@ export default async function handler(req, res) {
     if (instance.active_template === 'chatbot' && templateType !== 'chatbot') {
       console.log('[ASSIGN] 🤖 Desactivando chatbot anterior...');
       const { error: deactivateError } = await supabaseAdmin
-        .from('chatbots')
+        .from('instance_chatbots')
         .update({ is_active: false })
         .eq('instance_id', instanceId);
 
@@ -95,7 +95,7 @@ export default async function handler(req, res) {
     if (templateType === 'chatbot') {
       console.log('[ASSIGN] 🤖 Activando logic para nuevo chatbot...');
       const { data: chatbot, error: fetchChatbotError } = await supabaseAdmin
-        .from('chatbots')
+        .from('instance_chatbots')
         .select('id')
         .eq('instance_id', instanceId)
         .maybeSingle();
@@ -104,9 +104,9 @@ export default async function handler(req, res) {
         console.error('[ASSIGN] ❌ Error buscando chatbot para activar:', fetchChatbotError);
       } else if (chatbot) {
         const { error: activateError } = await supabaseAdmin
-          .from('chatbots')
+          .from('instance_chatbots')
           .update({ is_active: true })
-          .eq('id', chatbot.id);
+          .eq('instance_id', instanceId); // Use instance_id for safety instead of id if it's simpler
 
         if (activateError) {
           console.error('[ASSIGN] ❌ Error activando chatbot:', activateError);

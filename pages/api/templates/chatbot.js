@@ -60,18 +60,17 @@ export default async function handler(req, res) {
     const chatbotConfig = {
       user_id: session.id,
       instance_id: instanceId,
-      name: chatbotName.trim(),
+      chatbot_name: chatbotName.trim(),
       welcome_message: welcomeMessage?.trim() || null,
       default_response: defaultResponse?.trim() || 'Lo siento, no entendí tu mensaje.',
       rules: rules,
       is_active: true,
-      created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
 
     // Verificar si ya existe un chatbot para esta instancia
     const { data: existingChatbot } = await supabaseAdmin
-      .from('chatbots')
+      .from('instance_chatbots')
       .select('id')
       .eq('instance_id', instanceId)
       .single();
@@ -81,9 +80,9 @@ export default async function handler(req, res) {
     if (existingChatbot) {
       // Actualizar chatbot existente
       const { data: updatedChatbot, error: updateError } = await supabaseAdmin
-        .from('chatbots')
+        .from('instance_chatbots')
         .update(chatbotConfig)
-        .eq('id', existingChatbot.id)
+        .eq('instance_id', instanceId)
         .select()
         .single();
 
@@ -96,8 +95,11 @@ export default async function handler(req, res) {
     } else {
       // Crear nuevo chatbot
       const { data: newChatbot, error: insertError } = await supabaseAdmin
-        .from('chatbots')
-        .insert(chatbotConfig)
+        .from('instance_chatbots')
+        .insert({
+          ...chatbotConfig,
+          created_at: new Date().toISOString()
+        })
         .select()
         .single();
 
