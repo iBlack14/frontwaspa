@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
+import axios from 'axios';
 
 // Store active IA conversations (in production, use Redis/database)
 const activeConversations = new Map();
@@ -213,10 +214,20 @@ async function generateIAResponse(message, conversationHistory = [], context = {
   }
 }
 
-// ... (omit functions in between for brevity if possible, but replace_file_content needs the block)
-// Let's actually provide the full replacement for startIAConversation to include the group logic
-
-// Función para iniciar conversación IA
+// Función de respaldo si falla la IA
+function getFallbackResponse(message, conversationHistory) {
+  const fallbacks = [
+    "Entiendo, cuéntame más sobre eso.",
+    "Interesante punto, ¿qué opinas tú?",
+    "Claro, tiene sentido. ¿Cómo seguimos?",
+    "Ya veo. ¿Hay algo más que debamos considerar?",
+    "Perfecto, lo tengo en cuenta.",
+    "Gracias por la actualización.",
+    "¿Podrías darme más detalles?",
+    "Sí, estoy de acuerdo contigo."
+  ];
+  return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+}
 async function startIAConversation(instanceId, userId, res, provider = 'openai', apiKey = null, groupInstanceIds = null, theme = null, unlimited = false) {
   const conversationKey = `${userId}-${instanceId}`;
 
@@ -358,6 +369,9 @@ async function startIAConversationProcess(conversationData, backendUrl) {
   // Pequeña espera inicial para que el usuario vea el cambio en el UI antes del primer mensaje
   await new Promise(resolve => setTimeout(resolve, 5000));
 
+  let messagesSinceLastPause = 0;
+  let pauseThreshold = Math.floor(Math.random() * 6) + 10; // 10-15 mensajes
+
   try {
     while (activeConversations.has(conversationKey)) {
       const currentData = activeConversations.get(conversationKey);
@@ -458,6 +472,15 @@ async function startIAConversationProcess(conversationData, backendUrl) {
           console.log(`🤖 IA: Rate limit detectado, esperando 5 minutos...`);
           await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000));
         }
+      }
+
+      // ☕ Lógica de pausas largas de seguridad
+      messagesSinceLastPause++;
+      if (messagesSinceLastPause >= pauseThreshold) {
+        console.log(`☕ IA: Tomando descanso largo de seguridad (5 min) después de ${messagesSinceLastPause} mensajes...`);
+        await new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000));
+        messagesSinceLastPause = 0;
+        pauseThreshold = Math.floor(Math.random() * 6) + 10;
       }
 
       // Esperar entre 45-180 segundos (más tiempo para conversaciones naturales)
