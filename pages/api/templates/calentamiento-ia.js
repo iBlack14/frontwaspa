@@ -11,7 +11,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  console.log(`🔥 [API CALL] Calentamiento IA Handler invocado: ${req.method} Action: ${req.body?.action || req.query?.action}`);
+  const action = req.body?.action || req.query?.action || 'status';
+  if (action !== 'status') {
+    console.log(`🔥 [IA-API] ${action.toUpperCase()} (${req.method})`);
+  }
 
   try {
     // Verificar sesión
@@ -208,27 +211,45 @@ async function generateIAResponse(message, conversationHistory = [], context = {
     }
 
     // Fallback if API fails
-    return getFallbackResponse(message, conversationHistory);
+    return getFallbackResponse(message, conversationHistory, theme);
 
   } catch (error) {
     console.error('Error generando respuesta IA:', error);
-    return getFallbackResponse(message, []);
+    return getFallbackResponse(message, [], theme);
   }
 }
 
-// Función de respaldo si falla la IA
-function getFallbackResponse(message, conversationHistory) {
-  const fallbacks = [
-    "Entiendo, cuéntame más sobre eso.",
-    "Interesante punto, ¿qué opinas tú?",
-    "Claro, tiene sentido. ¿Cómo seguimos?",
-    "Ya veo. ¿Hay algo más que debamos considerar?",
-    "Perfecto, lo tengo en cuenta.",
-    "Gracias por la actualización.",
-    "¿Podrías darme más detalles?",
-    "Sí, estoy de acuerdo contigo."
+// Función de respaldo si falla la IA (Mejorada y Contextual)
+function getFallbackResponse(message, conversationHistory, theme = "negocios") {
+  // Frases genéricas de negocios/tecnología si el tema lo sugiere
+  const businessFallbacks = [
+    "He estado revisando las métricas del último sprint y se ven prometedoras.",
+    "¿Has tenido oportunidad de ver el feedback del cliente sobre la nueva feature?",
+    "Creo que deberíamos agendar una reunión para sincronizar los avances del proyecto.",
+    "La integración de la API está casi lista, faltan unos detalles de seguridad.",
+    "¿Qué opinas si probamos una estrategia diferente para la optimización?",
+    "Recuerda enviar el reporte antes del cierre del día.",
+    "Estaba pensando que podríamos automatizar ese proceso para ahorrar tiempo.",
+    "¿Cómo van los tests de cargas? ¿Todo estable?",
+    "Excelente, sigamos con ese plan entonces.",
+    "Voy a documentar estos cambios para que todo el equipo esté alineado."
   ];
-  return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+
+  const generalFallbacks = [
+    "Entiendo tu punto, suena razonable.",
+    "Sí, totalmente de acuerdo. ¿Cómo sugerirías proceder?",
+    "Interesante. Déjame pensarlo un momento y te comento.",
+    "Claro, tiene todo el sentido del mundo.",
+    "Perfecto, avancemos con eso entonces.",
+    "Me parece bien. ¿Necesitas ayuda con algo de eso?",
+    "Vale, lo tendré en cuenta para la próxima iteración."
+  ];
+
+  // Detectar si el tema es de negocios/tecnología (simple heurística)
+  const isBusiness = theme && (theme.toLowerCase().includes('negocio') || theme.toLowerCase().includes('tecnología') || theme.toLowerCase().includes('trabajo'));
+
+  const selectedFallbacks = isBusiness ? businessFallbacks : generalFallbacks;
+  return selectedFallbacks[Math.floor(Math.random() * selectedFallbacks.length)];
 }
 async function startIAConversation(instanceId, userId, res, provider = 'openai', apiKey = null, groupInstanceIds = null, theme = null, unlimited = false) {
   const conversationKey = `${userId}-${instanceId}`;
@@ -423,7 +444,7 @@ async function startIAConversationProcess(conversationData, backendUrl) {
           `${backendUrl}/api/send-message/${instanceId}`,
           {
             number: randomPartner.number,
-            message: `${messageToSend} (IA Conversación - Día ${currentData.currentPhase})`
+            message: messageToSend // Mensaje limpio sin etiquetas de debug
           },
           {
             headers: {

@@ -510,36 +510,55 @@ function CalentamientoContent() {
                   )}
                 </div>
 
-                {/* Botones de control */}
-                <div className="flex items-center gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-                  <button
-                    onClick={useIA ? startIAConversation : startCalentamiento}
-                    disabled={isSubmitting || (selectedInstances.length === 0) || (useIA && selectedInstances.length < 2) || (useIA && !apiKey)}
-                    className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-2.5 rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                  >
-                    <PlayIcon className="w-5 h-5" />
-                    {isSubmitting
-                      ? 'Iniciando...'
-                      : useIA
-                        ? 'Iniciar Conversaciones IA'
-                        : 'Iniciar Calentamiento'
-                    }
-                  </button>
+                {/* Botones de control PRO */}
+                <div className="flex flex-col sm:flex-row items-center gap-4 pt-6 border-t border-slate-200 dark:border-slate-700">
+                  {/* Botón Principal Dinámico */}
+                  {!((useIA ? iaStatus?.isActive : calentamientoStatus?.isActive)) ? (
+                    <button
+                      onClick={useIA ? startIAConversation : startCalentamiento}
+                      disabled={isSubmitting || (selectedInstances.length === 0) || (useIA && selectedInstances.length < 2) || (useIA && !apiKey)}
+                      className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-red-500 text-white px-8 py-4 rounded-2xl hover:shadow-[0_4px_14px_rgba(239,68,68,0.5)] active:scale-95 transition-all text-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed group"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/50 border-t-white" />
+                          <span>Iniciando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <PlayIcon className="w-6 h-6 group-hover:fill-white/20 transition-all" />
+                          <span>{useIA ? 'Iniciar IA Inteligente' : 'Iniciar Calentamiento'}</span>
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <div className="w-full sm:w-auto flex items-center justify-center gap-3 bg-emerald-500/10 border border-emerald-500/50 text-emerald-600 dark:text-emerald-400 px-8 py-4 rounded-2xl animate-pulse cursor-default">
+                      <div className="relative flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                      </div>
+                      <span className="font-bold text-lg">Ejecutando en Segundo Plano</span>
+                    </div>
+                  )}
 
-                  <button
-                    onClick={useIA ? stopIAConversation : stopCalentamiento}
-                    className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-6 py-2.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
-                  >
-                    <StopIcon className="w-5 h-5" />
-                    Detener
-                  </button>
+                  {/* Botón Detener (Solo visible si está activo) */}
+                  {((useIA ? iaStatus?.isActive : calentamientoStatus?.isActive)) && (
+                    <button
+                      onClick={useIA ? stopIAConversation : stopCalentamiento}
+                      className="w-full sm:w-auto flex items-center justify-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-6 py-4 rounded-2xl hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 border border-transparent hover:border-red-200 dark:hover:border-red-800 transition-all font-medium"
+                    >
+                      <StopIcon className="w-5 h-5" />
+                      Detener Proceso
+                    </button>
+                  )}
 
+                  {/* Botón Estado */}
                   <button
                     onClick={checkStatus}
-                    className="flex items-center gap-2 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-6 py-2.5 rounded-xl hover:bg-blue-200 dark:hover:bg-blue-800/30 transition-all"
+                    className="ml-auto w-full sm:w-auto flex items-center justify-center gap-2 text-slate-500 hover:text-blue-500 dark:text-slate-400 dark:hover:text-blue-400 transition-colors px-4 py-2"
                   >
                     <ChartBarIcon className="w-5 h-5" />
-                    Ver Estado
+                    <span className="underline decoration-dotted underline-offset-4">Actualizar Estado</span>
                   </button>
                 </div>
               </div>

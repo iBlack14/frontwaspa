@@ -10,8 +10,7 @@ export default async function handler(req, res) {
   try {
     const { event, instanceId, data } = req.body;
 
-    console.log(`[WEBHOOK] Evento recibido: ${event} para instancia ${instanceId}`);
-    console.log(`[WEBHOOK] Datos:`, JSON.stringify(data, null, 2));
+    // console.log(`[WEBHOOK] Evento: ${event} -> ${instanceId.substring(0, 8)}...`);
 
     // Validar que tenemos los datos necesarios
     if (!event || !instanceId) {
@@ -46,13 +45,15 @@ export default async function handler(req, res) {
           statsUpdate.message_sent = 1;
           statsUpdate.api_message_sent = 1;
           shouldUpdate = true;
-          console.log(`[WEBHOOK] ✅ Mensaje enviado detectado`);
+          shouldUpdate = true;
+          // console.log(`[WEBHOOK] ✅ Sent`);
         }
         // Mensaje recibido
         else if (data?.fromMe === false || data?.key?.fromMe === false) {
           statsUpdate.message_received = 1;
           shouldUpdate = true;
-          console.log(`[WEBHOOK] 📥 Mensaje recibido detectado`);
+          shouldUpdate = true;
+          // console.log(`[WEBHOOK] 📥 Received`);
 
           // Emitir evento Socket.io para notificaciones
           try {
@@ -193,8 +194,8 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: updateError.message });
       }
 
-      console.log(`[WEBHOOK] ✅ Estadísticas actualizadas para ${instanceId}`);
-      console.log(`[WEBHOOK] Nuevos valores:`, historycalData[historycalData.length - 1]);
+      const latest = historycalData[historycalData.length - 1];
+      console.log(`📊 [STATS] ${instanceId.substring(0, 8)} | Enviados: ${latest.message_sent} (API: ${latest.api_message_sent}) | Recibidos: ${latest.message_received}`);
     }
 
     return res.status(200).json({
