@@ -138,13 +138,29 @@ function MessagesContent() {
         if (!existing) {
           uniqueChatsMap.set(cleanId, chat);
         } else {
-          // Si ya existe, nos quedamos con el más reciente
-          const existingTime = new Date(existing.last_message_at || 0).getTime();
-          const newTime = new Date(chat.last_message_at || 0).getTime();
+          // Lógica de Fusión Inteligente
+          const useNew = new Date(chat.last_message_at || 0).getTime() > new Date(existing.last_message_at || 0).getTime();
 
-          if (newTime > existingTime) {
-            uniqueChatsMap.set(cleanId, chat);
+          // Detectar nombres inválidos
+          const isInvalidName = (name?: string) => !name || name === '.' || name === 'Alonso Huancas' || name === cleanId;
+          const currentHasBadName = isInvalidName(existing.chat_name);
+          const newHasBadName = isInvalidName(chat.chat_name);
+
+          // Decidir qué objeto base usar (generalmente el más reciente)
+          let finalChat = useNew ? chat : existing;
+
+          // Pero... si el objeto que vamos a descartar tiene MEJOR NOMBRE, robamos ese nombre
+          if (useNew && !newHasBadName) {
+            // El nuevo es reciente y tiene buen nombre, perfecto. 
+          } else if (currentHasBadName && !newHasBadName) {
+            // El actual tiene nombre malo, el nuevo tiene buen nombre -> Usamos el nuevo (o robamos nombre)
+            finalChat = { ...finalChat, chat_name: chat.chat_name };
+          } else if (!currentHasBadName && newHasBadName) {
+            // El actual tiene buen nombre, el nuevo es malo -> Mantenemos nombre del actual
+            finalChat = { ...finalChat, chat_name: existing.chat_name };
           }
+
+          uniqueChatsMap.set(cleanId, finalChat);
         }
       });
 
