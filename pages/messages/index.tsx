@@ -37,6 +37,7 @@ export interface Message {
   timestamp: string;
   is_read: boolean;
   metadata?: any;
+  status?: 'sending' | 'sent' | 'error'; // Optimistic UI status
 }
 
 function MessagesContent() {

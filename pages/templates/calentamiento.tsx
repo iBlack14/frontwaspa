@@ -15,7 +15,8 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
   SparklesIcon,
-  ArrowTrendingUpIcon
+  ArrowTrendingUpIcon,
+  KeyIcon
 } from '@heroicons/react/24/outline';
 
 interface Instance {
@@ -36,6 +37,11 @@ function CalentamientoContent() {
   const [availableInstances, setAvailableInstances] = useState<Instance[]>([]);
   const [useIA, setUseIA] = useState(false);
   const [iaStatus, setIaStatus] = useState<any>(null);
+
+  // BYO API Key State
+  const [aiProvider, setAiProvider] = useState<'openai' | 'gemini'>('openai');
+  const [apiKey, setApiKey] = useState('');
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
 
   // Configuración del calentamiento por fases
   const calentamientoPhases = [
@@ -66,7 +72,7 @@ function CalentamientoContent() {
         (i: any) => i.state === 'Connected'
       );
       setInstances(connectedInstances);
-      setAvailableInstances(connectedInstances); // Guardar todas para mostrar info
+      setAvailableInstances(connectedInstances);
     } catch (error) {
       console.error('Error fetching instances:', error);
       toast.error('Error al cargar las instancias');
@@ -143,7 +149,9 @@ function CalentamientoContent() {
     try {
       const response = await axios.post('/api/templates/calentamiento-ia', {
         instanceId: selectedInstance,
-        action: 'start'
+        action: 'start',
+        provider: aiProvider,
+        apiKey: apiKey
       });
 
       toast.success('Conversación IA iniciada exitosamente');
@@ -235,16 +243,14 @@ function CalentamientoContent() {
                 <button
                   key={instance.documentId}
                   onClick={() => setSelectedInstance(instance.documentId)}
-                  className={`p-4 rounded-xl border-2 transition-all ${
-                    selectedInstance === instance.documentId
-                      ? 'border-red-500 bg-red-50 dark:bg-red-900/10'
-                      : 'border-slate-200 dark:border-slate-700 hover:border-red-300'
-                  }`}
+                  className={`p-4 rounded-xl border-2 transition-all ${selectedInstance === instance.documentId
+                    ? 'border-red-500 bg-red-50 dark:bg-red-900/10'
+                    : 'border-slate-200 dark:border-slate-700 hover:border-red-300'
+                    }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${
-                      instance.state === 'Connected' ? 'bg-emerald-500' : 'bg-red-500'
-                    }`} />
+                    <div className={`w-3 h-3 rounded-full ${instance.state === 'Connected' ? 'bg-emerald-500' : 'bg-red-500'
+                      }`} />
                     <div className="text-left">
                       <p className="font-medium text-slate-800 dark:text-white">
                         {instance.name || 'Sin nombre'}
@@ -268,11 +274,10 @@ function CalentamientoContent() {
 
                   <div className="space-y-3">
                     {/* Opción: Calentamiento normal */}
-                    <label className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                      !useIA
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                        : 'border-slate-200 dark:border-slate-700 hover:border-blue-300'
-                    }`}>
+                    <label className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${!useIA
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                      : 'border-slate-200 dark:border-slate-700 hover:border-blue-300'
+                      }`}>
                       <input
                         type="radio"
                         name="calentamiento-type"
@@ -285,11 +290,11 @@ function CalentamientoContent() {
                           <span className="font-medium text-slate-800 dark:text-white">
                             🔥 Calentamiento Tradicional
                           </span>
-                          {availableInstances.length > 1 ? (
+                          {availableInstances.length > 1 && (
                             <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full">
                               Recomendado
                             </span>
-                          ) : null}
+                          )}
                         </div>
                         <p className="text-sm text-slate-600 dark:text-slate-400">
                           {availableInstances.length > 1
@@ -301,11 +306,10 @@ function CalentamientoContent() {
                     </label>
 
                     {/* Opción: Calentamiento con IA */}
-                    <label className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                      useIA
-                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                        : 'border-slate-200 dark:border-slate-700 hover:border-purple-300'
-                    } ${availableInstances.length < 2 ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    <label className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${useIA
+                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                      : 'border-slate-200 dark:border-slate-700 hover:border-purple-300'
+                      } ${availableInstances.length < 2 ? 'opacity-50 cursor-not-allowed' : ''}`}>
                       <input
                         type="radio"
                         name="calentamiento-type"
@@ -334,14 +338,73 @@ function CalentamientoContent() {
                       </div>
                     </label>
                   </div>
+
+                  {/* Configuración de IA */}
+                  {useIA && (
+                    <div className="mt-4 p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 animate-fadeIn">
+                      <h4 className="font-bold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
+                        <KeyIcon className="w-4 h-4 text-purple-500" />
+                        Configuración de IA
+                      </h4>
+
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Proveedor de Inteligencia Artificial
+                          </label>
+                          <div className="grid grid-cols-2 gap-3">
+                            <button
+                              onClick={() => setAiProvider('openai')}
+                              className={`p-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${aiProvider === 'openai'
+                                  ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
+                                  : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                                }`}
+                            >
+                              <span>ChatGPT (OpenAI)</span>
+                            </button>
+                            <button
+                              onClick={() => setAiProvider('gemini')}
+                              className={`p-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${aiProvider === 'gemini'
+                                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                                  : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                                }`}
+                            >
+                              <span>Google Gemini</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Tu API Key de {aiProvider === 'openai' ? 'OpenAI' : 'Google Gemini'}
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="password"
+                              value={apiKey}
+                              onChange={(e) => setApiKey(e.target.value)}
+                              placeholder={aiProvider === 'openai' ? "sk-..." : "AIza..."}
+                              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all"
+                            />
+                            <KeyIcon className="w-5 h-5 text-slate-400 absolute left-3 top-2.5" />
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1">
+                            {aiProvider === 'openai'
+                              ? 'Obtén tu key en platform.openai.com'
+                              : 'Obtén tu key en aistudio.google.com'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Botones de control */}
                 <div className="flex items-center gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
                   <button
                     onClick={useIA ? startIAConversation : startCalentamiento}
-                    disabled={isSubmitting || (useIA && availableInstances.length < 2)}
-                    className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-2.5 rounded-xl hover:shadow-lg disabled:opacity-50"
+                    disabled={isSubmitting || (useIA && availableInstances.length < 2) || (useIA && !apiKey)}
+                    className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-2.5 rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
                     <PlayIcon className="w-5 h-5" />
                     {isSubmitting
@@ -354,7 +417,7 @@ function CalentamientoContent() {
 
                   <button
                     onClick={useIA ? stopIAConversation : stopCalentamiento}
-                    className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-6 py-2.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700"
+                    className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-6 py-2.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
                   >
                     <StopIcon className="w-5 h-5" />
                     Detener
@@ -362,7 +425,7 @@ function CalentamientoContent() {
 
                   <button
                     onClick={checkStatus}
-                    className="flex items-center gap-2 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-6 py-2.5 rounded-xl hover:bg-blue-200 dark:hover:bg-blue-800/30"
+                    className="flex items-center gap-2 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-6 py-2.5 rounded-xl hover:bg-blue-200 dark:hover:bg-blue-800/30 transition-all"
                   >
                     <ChartBarIcon className="w-5 h-5" />
                     Ver Estado
@@ -385,17 +448,16 @@ function CalentamientoContent() {
           {calentamientoPhases.map((phase, index) => (
             <div
               key={phase.day}
-              className={`p-4 rounded-xl border-2 transition-all ${
-                calentamientoStatus?.currentPhase >= phase.day
+              className={`p-4 rounded-xl border-2 transition-all ${(useIA ? iaStatus : calentamientoStatus)?.currentPhase >= phase.day
                   ? 'border-emerald-200 bg-emerald-50 dark:bg-emerald-900/10'
                   : 'border-slate-200 dark:border-slate-700'
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
                   Día {phase.day}
                 </span>
-                {calentamientoStatus?.currentPhase >= phase.day && (
+                {(useIA ? iaStatus : calentamientoStatus)?.currentPhase >= phase.day && (
                   <CheckCircleIcon className="w-5 h-5 text-emerald-500" />
                 )}
               </div>

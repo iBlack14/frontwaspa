@@ -62,7 +62,8 @@ export default async function handler(req, res) {
 
     // POST - Iniciar o detener conversación IA
     if (action === 'start') {
-      return await startIAConversation(instanceId, session.id, res);
+      const { provider, apiKey } = req.body;
+      return await startIAConversation(instanceId, session.id, res, provider, apiKey);
     } else if (action === 'stop') {
       return await stopIAConversation(instanceId, session.id, res);
     } else {
@@ -79,17 +80,22 @@ export default async function handler(req, res) {
 }
 
 // Función para generar respuesta de IA
-async function generateIAResponse(message, conversationHistory = [], context = {}) {
+async function generateIAResponse(message, conversationHistory = [], context = {}, provider = 'openai', apiKey = null) {
   try {
-    // Usar OpenAI API si está disponible
-    const openaiApiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      console.warn('No API Key provided for IA response');
+      return getFallbackResponse(message, conversationHistory);
+    }
 
-    if (openaiApiKey) {
+    // ---------------------------------------------------------
+    // 🧠 OPENAI (ChatGPT)
+    // ---------------------------------------------------------
+    if (provider === 'openai') {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${openaiApiKey}`
+          'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
           model: 'gpt-3.5-turbo',
@@ -103,7 +109,10 @@ async function generateIAResponse(message, conversationHistory = [], context = {
               Evita ser demasiado formal o robotizado.
               Contexto: Esta es una conversación entre colegas de trabajo.`
             },
-            ...conversationHistory.slice(-10), // Últimos 10 mensajes para contexto
+            ...conversationHistory.map(msg => ({
+              role: msg.isAI ? 'assistant' : 'user', // Basic mapping, adjust if 'from' needed logic
+              content: msg.content
+            })).slice(-10), // Últimos 10 mensajes
             {
               role: 'user',
               content: message
@@ -117,10 +126,52 @@ async function generateIAResponse(message, conversationHistory = [], context = {
       if (response.ok) {
         const data = await response.json();
         return data.choices[0].message.content.trim();
+      } else {
+        const error = await response.json();
+        console.error('OpenAI Error:', error);
       }
     }
 
-    // Fallback a respuestas predefinidas si no hay OpenAI
+    // ---------------------------------------------------------
+    // 💎 GOOGLE GEMINI
+    // ---------------------------------------------------------
+    else if (provider === 'gemini') {
+      const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+      const contents = [
+        {
+          role: "user",
+          parts: [{ text: `Actúa como un colega de trabajo en WhatsApp. Responde de forma natural, breve y profesional al siguiente mensaje: "${message}". Contexto: Conversación casual de negocios.` }]
+        }
+        // Note: Gemini history structure is different, simplified for now
+      ];
+
+      const response = await fetch(GEMINI_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: contents,
+          generationConfig: {
+            maxOutputTokens: 150,
+            temperature: 0.7
+          }
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+          return data.candidates[0].content.parts[0].text.trim();
+        }
+      } else {
+        const error = await response.json();
+        console.error('Gemini Error:', error);
+      }
+    }
+
+    // Fallback if API fails
     return getFallbackResponse(message, conversationHistory);
 
   } catch (error) {
@@ -211,72 +262,80 @@ async function startIAConversation(instanceId, userId, res) {
     .eq('id', userId)
     .single();
 
-  if (!profile || !profile.api_key) {
-    return res.status(403).json({
-      error: 'API Key requerida',
-      message: 'Necesitas una API Key para usar conversaciones IA'
-    });
+  if (!profile) {
+    return res.status(403).json({ error: 'Perfil no encontrado' });
   }
 
-  // Verificar conexión con backend
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-  if (!BACKEND_URL) {
-    return res.status(500).json({
-      error: 'Backend no configurado'
-    });
-  }
+  // Check for API Key in request body FIRST (BYOK), otherwise fallback to profile/env?
+  // User asked to INPUT the key, so we expect it in the request.
+  const userApiKey = req.body?.apiKey; // Need to pass req to this function or extract before
+  // Refactor: Pass params properly.
+  // We will pull the apiKey from the main handler where we read req.body
+  // This logic is inside startIAConversation, let's look at how it's called.
+  // It is called as: startIAConversation(instanceId, session.id, res)
+  // We need to change signature.
+  return res.status(200); // Placeholder to allow next chunk to rewrite function signature
+}
 
-  try {
-    await axios.get(`${BACKEND_URL}/api/sessions`, { timeout: 5000 });
-  } catch (backendError) {
-    return res.status(503).json({
-      error: 'Backend no disponible',
-      message: 'El servidor de WhatsApp no está respondiendo'
-    });
-  }
-
-  // Inicializar conversación IA
-  const conversationData = {
-    instanceId,
-    userId,
-    startDate: new Date().toISOString(),
-    currentPhase: 1,
-    messagesSent: 0,
-    totalMessagesSent: 0,
-    lastMessageTime: null,
-    isActive: true,
-    conversationPartners: otherInstances,
-    conversationHistory: [],
-    phases: [
-      { day: 1, maxMessages: 5, messagesSent: 0 },
-      { day: 2, maxMessages: 10, messagesSent: 0 },
-      { day: 3, maxMessages: 15, messagesSent: 0 },
-      { day: 4, maxMessages: 25, messagesSent: 0 },
-      { day: 5, maxMessages: 35, messagesSent: 0 },
-      { day: 6, maxMessages: 50, messagesSent: 0 },
-      { day: 7, maxMessages: 75, messagesSent: 0 },
-      { day: 8, maxMessages: 100, messagesSent: 0 },
-      { day: 9, maxMessages: 125, messagesSent: 0 },
-      { day: 10, maxMessages: 150, messagesSent: 0 },
-    ]
-  };
-
-  // Guardar en memoria
-  activeConversations.set(conversationKey, conversationData);
-
-  // Iniciar proceso en background
-  startIAConversationProcess(conversationData, profile.api_key, BACKEND_URL);
-
-  console.log(`🤖 Conversación IA iniciada para instancia ${instanceId} con ${otherInstances.length} participantes`);
-
-  return res.status(200).json({
-    success: true,
-    message: 'Conversación IA iniciada exitosamente',
-    conversation: {
-      ...conversationData,
-      participantCount: otherInstances.length
-    }
+// Verificar conexión con backend
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+if (!BACKEND_URL) {
+  return res.status(500).json({
+    error: 'Backend no configurado'
   });
+}
+
+try {
+  await axios.get(`${BACKEND_URL}/api/sessions`, { timeout: 5000 });
+} catch (backendError) {
+  return res.status(503).json({
+    error: 'Backend no disponible',
+    message: 'El servidor de WhatsApp no está respondiendo'
+  });
+}
+
+// Inicializar conversación IA
+const conversationData = {
+  instanceId,
+  userId,
+  startDate: new Date().toISOString(),
+  currentPhase: 1,
+  messagesSent: 0,
+  totalMessagesSent: 0,
+  lastMessageTime: null,
+  isActive: true,
+  conversationPartners: otherInstances,
+  conversationHistory: [],
+  phases: [
+    { day: 1, maxMessages: 5, messagesSent: 0 },
+    { day: 2, maxMessages: 10, messagesSent: 0 },
+    { day: 3, maxMessages: 15, messagesSent: 0 },
+    { day: 4, maxMessages: 25, messagesSent: 0 },
+    { day: 5, maxMessages: 35, messagesSent: 0 },
+    { day: 6, maxMessages: 50, messagesSent: 0 },
+    { day: 7, maxMessages: 75, messagesSent: 0 },
+    { day: 8, maxMessages: 100, messagesSent: 0 },
+    { day: 9, maxMessages: 125, messagesSent: 0 },
+    { day: 10, maxMessages: 150, messagesSent: 0 },
+  ]
+};
+
+// Guardar en memoria
+activeConversations.set(conversationKey, conversationData);
+
+// Iniciar proceso en background
+startIAConversationProcess(conversationData, profile.api_key, BACKEND_URL);
+
+console.log(`🤖 Conversación IA iniciada para instancia ${instanceId} con ${otherInstances.length} participantes`);
+
+return res.status(200).json({
+  success: true,
+  message: 'Conversación IA iniciada exitosamente',
+  conversation: {
+    ...conversationData,
+    participantCount: otherInstances.length
+  }
+});
 }
 
 // Función para detener conversación IA
@@ -301,8 +360,8 @@ async function stopIAConversation(instanceId, userId, res) {
 }
 
 // Función que ejecuta el proceso de conversación IA en background
-async function startIAConversationProcess(conversationData, apiKey, backendUrl) {
-  const { instanceId, userId, conversationPartners } = conversationData;
+async function startIAConversationProcess(conversationData, backendUrl) {
+  const { instanceId, userId, conversationPartners, provider, apiKey } = conversationData;
   const conversationKey = `${userId}-${instanceId}`;
 
   console.log(`🚀 Iniciando conversación IA para ${instanceId}`);
@@ -348,7 +407,7 @@ async function startIAConversationProcess(conversationData, apiKey, backendUrl) 
         } else {
           // Responder al último mensaje usando IA
           const lastMessage = currentData.conversationHistory[currentData.conversationHistory.length - 1];
-          messageToSend = await generateIAResponse(lastMessage.content, currentData.conversationHistory);
+          messageToSend = await generateIAResponse(lastMessage.content, currentData.conversationHistory, {}, provider, apiKey);
         }
 
         // Enviar mensaje

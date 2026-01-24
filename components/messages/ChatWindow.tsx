@@ -29,33 +29,60 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const sortedMessages = [...messages].sort((a, b) =>
+  const [optimisticMessages, setOptimisticMessages] = useState<Message[]>([]);
+
+  // Combinar mensajes reales con optimistas
+  const allMessages = [...messages, ...optimisticMessages];
+  const sortedMessages = allMessages.sort((a, b) =>
     new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   );
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || sending) return;
 
+    const messageText = newMessage.trim();
+    setNewMessage(''); // Clear input immediately
+
+    // 1. Create temporary optimistic message
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMsg: Message = {
+      id: tempId,
+      chat_id: chat.chat_id,
+      instance_id: chat.instance_id,
+      message_text: messageText,
+      message_type: 'text',
+      from_me: true,
+      timestamp: new Date().toISOString(),
+      is_read: false,
+      status: 'sending' // Custom status indicator
+    };
+
+    // 2. Update UI immediately
+    setOptimisticMessages(prev => [...prev, optimisticMsg]);
+
     try {
-      setSending(true);
+      // 3. Send in background (fire and forget from UI perspective)
+      // setSending(true); // Don't block UI with sending state
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
       await axios.post(`${backendUrl}/api/messages/send`, {
         instanceId: chat.instance_id,
         chatId: chat.chat_id,
-        message: newMessage.trim(),
+        message: messageText,
       });
 
-      setNewMessage('');
-      toast.success('Mensaje enviado');
-
-      // Actualización inmediata (sin esperar 1 segundo)
+      // 4. On success, the refresh will eventually bring the real message.
+      // We keep the optimistic one until then, or remove it if we want to rely on the refresh.
+      // Usually, onRefresh() will update 'messages'. We can clear optimistic msg then.
       onRefresh();
+      setOptimisticMessages(prev => prev.filter(m => m.id !== tempId));
+
     } catch (error: any) {
       console.error('Error sending message:', error);
-      toast.error(error.response?.data?.error || 'Error al enviar mensaje');
-    } finally {
-      setSending(false);
+      toast.error('Error al enviar mensaje');
+      // Remove optimistic message on error and restore text?
+      setOptimisticMessages(prev => prev.filter(m => m.id !== tempId));
+      setNewMessage(messageText); // Restore text so user can try again
     }
   };
 
