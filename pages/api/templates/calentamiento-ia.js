@@ -346,14 +346,20 @@ async function startIAConversation(instanceId, userId, res, provider = 'openai',
   };
 
   // Obtener la clave interna del usuario para autenticar con el backend-whatsapp
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('api_key')
-    .eq('id', userId)
-    .single();
+  // (Solo si no se proporcionó una explícita)
+  if (!apiKey) {
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('api_key')
+      .eq('id', userId)
+      .single();
 
-  if (profile && profile.api_key) {
-    conversationData.userKey = profile.api_key;
+    if (profile && profile.api_key) {
+      conversationData.userKey = profile.api_key;
+    }
+  } else {
+    // Si el usuario dio una key explícita, usarla como principal
+    conversationData.userKey = apiKey;
   }
 
   // Guardar en memoria
