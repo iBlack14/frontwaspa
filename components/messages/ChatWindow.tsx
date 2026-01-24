@@ -244,26 +244,27 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
 
   // Send pasted image
   const sendPastedImage = async () => {
-    if (!pastedImage) return;
+    if (!pastedImage || !pastedImagePreview) return;
 
     setSending(true);
     try {
-      const formData = new FormData();
-      formData.append('to', chat.chat_id);
-      formData.append('media', pastedImage);
-      if (newMessage.trim()) {
-        formData.append('caption', newMessage.trim());
-      }
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
-      await axios.post(`${backendUrl}/api/send-image/${chat.instance_id}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      // Enviamos como JSON incluyendo la imagen en Base64 (pastedImagePreview)
+      // Usamos el nuevo endpoint desprotegido para el dashboard
+      await axios.post(`${backendUrl}/api/messages/send-image`, {
+        instanceId: chat.instance_id,
+        chatId: chat.chat_id,
+        file: pastedImagePreview,
+        message: newMessage.trim() || undefined
       });
 
       toast.success('✅ Imagen enviada');
       setNewMessage('');
       setPastedImage(null);
       setPastedImagePreview(null);
+
+      // Delay para asegurar consistencia en BD antes de refrescar
       setTimeout(onRefresh, 1000);
     } catch (error) {
       console.error('Error sending image:', error);
