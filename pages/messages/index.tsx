@@ -94,44 +94,9 @@ function MessagesContent() {
     return () => clearInterval(intervalId);
   }, [selectedInstance, selectedChat]);
 
-  // 2. Realtime: Intenta conectar por WebSockets para velocidad instantánea
-  // Si falla (pantalla roja), el Polling de arriba sigue funcionando.
-  useEffect(() => {
-    if (!supabase || !selectedInstance) return;
-
-    const channel = supabase
-      .channel(`room-${selectedInstance}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'messages', filter: `instance_id=eq.${selectedInstance}` },
-        (payload: any) => {
-          console.log('⚡ RT Msg:', payload);
-          if (selectedChat && payload.new.chat_id === selectedChat.chat_id) {
-            // Actualización instantánea
-            if (payload.eventType === 'INSERT') {
-              setMessages(prev => {
-                if (prev.some(m => m.message_id === payload.new.message_id)) return prev;
-                return [...prev, payload.new].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-              });
-              if (!payload.new.from_me) playNotificationSound();
-            } else if (payload.eventType === 'UPDATE') {
-              setMessages(prev => prev.map(m => m.message_id === payload.new.message_id ? payload.new : m));
-            }
-          }
-          fetchChats(selectedInstance);
-        }
-      )
-      .subscribe((status) => {
-        // Manejo silencioso de errores para evitar crash
-        if (status !== 'SUBSCRIBED') {
-          console.log(`🔌 Estado Realtime: ${status} (Usando Polling como backup)`);
-        }
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [supabase, selectedInstance, selectedChat]);
+  // 2. Realtime: DESHABILITADO (Por bloqueo de servidor - CORS/Reset)
+  // Se ha eliminado la conexión WebSocket para evitar errores en consola.
+  // El chat funciona 100% mediante el Polling de 1s definido arriba.
 
   const fetchInstances = async () => {
     try {
