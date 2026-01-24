@@ -350,12 +350,20 @@ async function startIAConversation(instanceId, userId, res, provider = 'openai',
   if (!apiKey) {
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('api_key')
+      .select('api_key, openai_api_key, gemini_api_key')
       .eq('id', userId)
       .single();
 
-    if (profile && profile.api_key) {
-      conversationData.userKey = profile.api_key;
+    if (profile) {
+      // Priorizar la key específica del proveedor seleccionado
+      if (provider === 'openai' && profile.openai_api_key) {
+        conversationData.userKey = profile.openai_api_key;
+      } else if (provider === 'gemini' && profile.gemini_api_key) {
+        conversationData.userKey = profile.gemini_api_key;
+      } else if (profile.api_key) {
+        // Fallback a la key genérica si existe
+        conversationData.userKey = profile.api_key;
+      }
     }
   } else {
     // Si el usuario dio una key explícita, usarla como principal
