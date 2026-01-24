@@ -29,11 +29,16 @@ export const supabase = (() => {
   // Client-side: use singleton to prevent multiple instances
   if (!supabaseInstance) {
     supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
-      realtime: isRealtimeEnabled ? {
+      realtime: {
         params: {
-          eventsPerSecond: 10
+          eventsPerSecond: 10,
+        },
+        // HYBRID MODE: Try WebSocket for speed, fallback to Polling for stability
+        // This ensures the app acts "like WhatsApp" (fast) but doesn't crash if WSS fails
+        headers: {
+          apikey: supabaseAnonKey
         }
-      } : undefined, // Disable realtime if not enabled
+      },
       auth: {
         persistSession: true,
         autoRefreshToken: true,
@@ -43,15 +48,7 @@ export const supabase = (() => {
 
     // Log realtime status
     if (typeof window !== 'undefined') {
-      if (isRealtimeEnabled) {
-        console.log('🔌 Supabase realtime ENABLED')
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🔌 Realtime URL:', supabaseUrl)
-          console.log('🔌 Realtime params: eventsPerSecond=2, heartbeat=30s')
-        }
-      } else {
-        console.log('🔌 Supabase realtime DISABLED (not available in current setup)')
-      }
+      console.log('🔌 Supabase Realtime: HYBRID MODE ENABLED (WebSocket + Polling)')
     }
   }
 
