@@ -141,28 +141,42 @@ function MessagesContent() {
           // Lógica de Fusión Inteligente
           const useNew = new Date(chat.last_message_at || 0).getTime() > new Date(existing.last_message_at || 0).getTime();
 
-          // Detectar nombres inválidos
-          const isInvalidName = (name?: string) => !name || name === '.' || name === 'Alonso Huancas' || name === cleanId;
+          // Detectar nombres inválidos (Aggressive filtering UNIVERSAL)
+          const isInvalidName = (name?: string) => {
+            if (!name) return true;
+            const n = name.trim();
+            // Filtramos si el nombre del chat es "." O es el nombre del PROPIO usuario actual (evitar auto-chat)
+            const currentUserName = session?.user?.name || '';
+            const isSelfName = currentUserName && n.includes(currentUserName);
+
+            return n === '.' || n === cleanId || isSelfName || n === 'Alonso Huancas'; // Mantenemos hardcode por si acaso el session name falla
+          };
+
           const currentHasBadName = isInvalidName(existing.chat_name);
           const newHasBadName = isInvalidName(chat.chat_name);
 
           // Decidir qué objeto base usar (generalmente el más reciente)
           let finalChat = useNew ? chat : existing;
 
-          // Pero... si el objeto que vamos a descartar tiene MEJOR NOMBRE, robamos ese nombre
-          if (useNew && !newHasBadName) {
-            // El nuevo es reciente y tiene buen nombre, perfecto. 
-          } else if (currentHasBadName && !newHasBadName) {
-            // El actual tiene nombre malo, el nuevo tiene buen nombre -> Usamos el nuevo (o robamos nombre)
-            finalChat = { ...finalChat, chat_name: chat.chat_name };
-          } else if (!currentHasBadName && newHasBadName) {
-            // El actual tiene buen nombre, el nuevo es malo -> Mantenemos nombre del actual
-            finalChat = { ...finalChat, chat_name: existing.chat_name };
+          // ESTRATEGIA DE NOMBRES:
+          // 1. Si el "final" tiene nombre malo y el "otro" tiene nombre bueno -> Usar el bueno.
+          // 2. Si ambos son malos -> Usar ID limpio como nombre temporal mejor que "Alonso".
+
+          if (isInvalidName(finalChat.chat_name)) {
+            const otherChat = useNew ? existing : chat;
+            if (!isInvalidName(otherChat.chat_name)) {
+              finalChat = { ...finalChat, chat_name: otherChat.chat_name };
+            } else {
+              // Ambos son malos: Forzar fallback al número si el nombre es Alonso o .
+              finalChat = { ...finalChat, chat_name: cleanId };
+            }
           }
 
           uniqueChatsMap.set(cleanId, finalChat);
         }
       });
+
+
 
       // Convertir a array y ordenar por fecha descendente
       const sortedChats = Array.from(uniqueChatsMap.values()).sort((a, b) => {
