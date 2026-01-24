@@ -746,7 +746,7 @@ function MessageBubble({
       text: '📝 Mensaje',
     };
 
-    const typeLabel = typeIcons[message.message_type] || '📎 Archivo';
+    const typeLabel = typeIcons[message.message_type] || `📎 Archivo (${message.message_type || '?'})`;
 
     // Intentar obtener nombre de archivo del metadata
     const fileName = (message.metadata as any)?.fileName;
