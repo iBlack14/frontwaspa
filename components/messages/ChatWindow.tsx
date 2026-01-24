@@ -47,6 +47,7 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
     const tempId = `temp-${Date.now()}`;
     const optimisticMsg: Message = {
       id: tempId,
+      message_id: tempId, // Required by Message interface
       chat_id: chat.chat_id,
       instance_id: chat.instance_id,
       message_text: messageText,
