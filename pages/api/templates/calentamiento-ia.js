@@ -205,8 +205,12 @@ async function generateIAResponse(message, conversationHistory = [], context = {
           return data.candidates[0].content.parts[0].text.trim();
         }
       } else {
-        const error = await response.json();
-        console.error('Gemini Error:', error);
+        if (response.status === 429) {
+          console.warn(`⚠️ [IA LIMIT] Gemini cuota excedida (Free Tier). Usando respuesta de respaldo.`);
+        } else {
+          const error = await response.json();
+          console.error('Gemini Error:', error);
+        }
       }
     }
 

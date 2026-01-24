@@ -105,6 +105,37 @@ function CalentamientoContent() {
 
       setInstances(connectedInstances);
       setAvailableInstances(connectedInstances);
+
+      // 🔍 AUTO-DETECT: Check status immediately after loading instances if any are connected
+      if (connectedInstances.length > 0) {
+        // We select the first one to check status, as status is usually shared per user session in this context
+        // Or we could check all, but let's check the first valid one.
+        const firstId = connectedInstances[0].documentId;
+
+        // Try to restore IA Status first (Premium)
+        try {
+          const { data: iaData } = await axios.get(`/api/templates/calentamiento-ia?instanceId=${firstId}`);
+          if (iaData && iaData.isActive) {
+            setUseIA(true);
+            setIaStatus(iaData);
+            setSelectedInstances([firstId]); // Auto select it to show UI
+            console.log('✅ Restaurado estado de Calentamiento IA');
+            return; // Exit if found
+          }
+        } catch (e) { /* ignore */ }
+
+        // Try to restore Normal Status
+        try {
+          const { data: normalData } = await axios.get(`/api/templates/calentamiento?instanceId=${firstId}`);
+          if (normalData && normalData.isActive) {
+            setUseIA(false);
+            setCalentamientoStatus(normalData);
+            setSelectedInstances([firstId]); // Auto select it
+            console.log('✅ Restaurado estado de Calentamiento Normal');
+          }
+        } catch (e) { /* ignore */ }
+      }
+
     } catch (error) {
       console.error('Error fetching instances:', error);
       toast.error('Error al cargar las instancias');
