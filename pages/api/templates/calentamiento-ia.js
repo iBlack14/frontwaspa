@@ -322,12 +322,12 @@ async function startIAConversation(instanceId, userId, res, provider = 'openai',
   // Obtener la clave interna del usuario para autenticar con el backend-whatsapp
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('key')
+    .select('api_key')
     .eq('id', userId)
     .single();
 
-  if (profile && profile.key) {
-    conversationData.userKey = profile.key;
+  if (profile && profile.api_key) {
+    conversationData.userKey = profile.api_key;
   }
 
   // Guardar en memoria
