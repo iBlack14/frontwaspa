@@ -215,28 +215,53 @@ async function generateIAResponse(message, conversationHistory = [], context = {
 
           if (response.status === 429) {
             retries++;
-            console.warn(`⚠️ [IA LIMIT] Gemini Cuota excedida (429). Reintento ${retries}/${maxRetries} en ${retries * 2}s...`);
+            // Default 30s-60s wait if we can't parse it (API asks for ~50s)
+            let waitTime = retries * 30000;
+
+            // Intentar leer el tiempo exacto que pide Google
+            try {
+              // Necesitamos leer el body, pero cuidado con consumirlo si no es necesario (aqui estamos en error flow asi que ok)
+              const errorBody = await response.json();
+
+              if (errorBody?.error?.message) {
+                // Regex para buscar "retry in 50.33s" o similar
+                const match = errorBody.error.message.match(/retry in (\d+(\.\d+)?)s/);
+                if (match && match[1]) {
+                  waitTime = Math.ceil(parseFloat(match[1])) * 1000 + 5000; // Tiempo sugerido + 5s buffer seguridad
+                  console.warn(`🕒 [IA LIMIT] Google pide esperar ${match[1]}s. Pausando ${waitTime / 1000}s...`);
+                }
+              }
+            } catch (e) {
+              console.warn(`⚠️ [IA LIMIT] Error leyendo body 429, usando espera default: ${waitTime / 1000}s`);
+            }
+
             if (retries <= maxRetries) {
-              await new Promise(resolve => setTimeout(resolve, retries * 2000)); // Espera exponencial: 2s, 4s, 6s...
+              console.warn(`⚠️ [IA LIMIT] Reintento ${retries}/${maxRetries} tras espera...`);
+              await new Promise(resolve => setTimeout(resolve, waitTime));
               continue;
             }
           }
 
-          // Si llegamos aquí es un error no-429 o se acabaron los retries
+          // Otros errores
           try {
+            // Si ya leímos el json arriba en el 429 block, esto fallaría si el stream se consumió?
+            // Fetch moderno permite leer varias veces si no es stream? No, response body is stream.
+            // Asi que idealmente deberiamos haber clonado response si fueramos a leerlo múltiples veces,
+            // pero como el 429 es un caso específico y hace 'continue', si llegamos aqui es otro error.
+            // O si falló el parse del 429.
             const errorData = await response.json();
             console.error('Gemini Error (No-Retry):', errorData);
           } catch (e) {
             console.error('Gemini Error Status:', response.status);
           }
-          break; // Salir del loop si es error definitivo
-
+          break; // Salir del loop
         } catch (fetchError) {
           console.error('Gemini Fetch Network Error:', fetchError);
           break;
         }
       }
     }
+
 
     // Fallback if API fails
     return getFallbackResponse(message, conversationHistory, theme);
