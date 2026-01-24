@@ -174,8 +174,8 @@ async function generateIAResponse(message, conversationHistory = [], context = {
     // 💎 GOOGLE GEMINI
     // ---------------------------------------------------------
     else if (provider === 'gemini') {
-      // Intentamos con la versión específica 001 que suele ser más estable si el alias falla
-      const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent?key=${apiKey}`;
+      // Usamos gemini-2.5-flash como solicitó el usuario (visto en su consola de Google)
+      const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
       const contents = [
         {
