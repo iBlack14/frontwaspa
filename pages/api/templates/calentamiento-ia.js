@@ -13,6 +13,13 @@ export default async function handler(req, res) {
   try {
     // Verificar sesión
     const session = await getServerSession(req, res, authOptions);
+    if (!session || !session.user || !session.user.email) {
+      // Note: session.id might be missing depending on mapping, usually session.user.id or sub
+      // Let's assume session structure is standard next-auth.
+      // If we used session.id previously, stick to it but ensure it exists.
+      // previous code used session.id.
+    }
+    // Revert to strict check from original code to avoid breaking existing auth logic
     if (!session || !session.id) {
       return res.status(401).json({ error: 'No autorizado' });
     }
@@ -110,7 +117,7 @@ async function generateIAResponse(message, conversationHistory = [], context = {
               Contexto: Esta es una conversación entre colegas de trabajo.`
             },
             ...conversationHistory.map(msg => ({
-              role: msg.isAI ? 'assistant' : 'user', // Basic mapping, adjust if 'from' needed logic
+              role: msg.isAI ? 'assistant' : 'user', // Basic mapping
               content: msg.content
             })).slice(-10), // Últimos 10 mensajes
             {
@@ -143,7 +150,6 @@ async function generateIAResponse(message, conversationHistory = [], context = {
           role: "user",
           parts: [{ text: `Actúa como un colega de trabajo en WhatsApp. Responde de forma natural, breve y profesional al siguiente mensaje: "${message}". Contexto: Conversación casual de negocios.` }]
         }
-        // Note: Gemini history structure is different, simplified for now
       ];
 
       const response = await fetch(GEMINI_URL, {
@@ -224,13 +230,21 @@ function getFallbackResponse(message, history) {
 }
 
 // Función para iniciar conversación IA
-async function startIAConversation(instanceId, userId, res) {
+async function startIAConversation(instanceId, userId, res, provider = 'openai', apiKey = null) {
   const conversationKey = `${userId}-${instanceId}`;
 
   // Verificar si ya hay una conversación activa
   if (activeConversations.has(conversationKey)) {
     return res.status(400).json({
       error: 'Ya hay una conversación IA activa para esta instancia'
+    });
+  }
+
+  // Validate API Key presence
+  if (!apiKey) {
+    return res.status(400).json({
+      error: 'Falta API Key',
+      message: 'Debes ingresar tu API Key de OpenAI o Gemini para iniciar.'
     });
   }
 
@@ -255,7 +269,8 @@ async function startIAConversation(instanceId, userId, res) {
     });
   }
 
-  // Obtener perfil del usuario para API key
+  // Obtener perfil del usuario para API key (opcional, ahora usamos BYOK)
+  // We keep this check if needed for other features, but usually not blocking if BYOK
   const { data: profile } = await supabaseAdmin
     .from('profiles')
     .select('api_key')
@@ -266,76 +281,67 @@ async function startIAConversation(instanceId, userId, res) {
     return res.status(403).json({ error: 'Perfil no encontrado' });
   }
 
-  // Check for API Key in request body FIRST (BYOK), otherwise fallback to profile/env?
-  // User asked to INPUT the key, so we expect it in the request.
-  const userApiKey = req.body?.apiKey; // Need to pass req to this function or extract before
-  // Refactor: Pass params properly.
-  // We will pull the apiKey from the main handler where we read req.body
-  // This logic is inside startIAConversation, let's look at how it's called.
-  // It is called as: startIAConversation(instanceId, session.id, res)
-  // We need to change signature.
-  return res.status(200); // Placeholder to allow next chunk to rewrite function signature
-}
-
-// Verificar conexión con backend
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-if (!BACKEND_URL) {
-  return res.status(500).json({
-    error: 'Backend no configurado'
-  });
-}
-
-try {
-  await axios.get(`${BACKEND_URL}/api/sessions`, { timeout: 5000 });
-} catch (backendError) {
-  return res.status(503).json({
-    error: 'Backend no disponible',
-    message: 'El servidor de WhatsApp no está respondiendo'
-  });
-}
-
-// Inicializar conversación IA
-const conversationData = {
-  instanceId,
-  userId,
-  startDate: new Date().toISOString(),
-  currentPhase: 1,
-  messagesSent: 0,
-  totalMessagesSent: 0,
-  lastMessageTime: null,
-  isActive: true,
-  conversationPartners: otherInstances,
-  conversationHistory: [],
-  phases: [
-    { day: 1, maxMessages: 5, messagesSent: 0 },
-    { day: 2, maxMessages: 10, messagesSent: 0 },
-    { day: 3, maxMessages: 15, messagesSent: 0 },
-    { day: 4, maxMessages: 25, messagesSent: 0 },
-    { day: 5, maxMessages: 35, messagesSent: 0 },
-    { day: 6, maxMessages: 50, messagesSent: 0 },
-    { day: 7, maxMessages: 75, messagesSent: 0 },
-    { day: 8, maxMessages: 100, messagesSent: 0 },
-    { day: 9, maxMessages: 125, messagesSent: 0 },
-    { day: 10, maxMessages: 150, messagesSent: 0 },
-  ]
-};
-
-// Guardar en memoria
-activeConversations.set(conversationKey, conversationData);
-
-// Iniciar proceso en background
-startIAConversationProcess(conversationData, profile.api_key, BACKEND_URL);
-
-console.log(`🤖 Conversación IA iniciada para instancia ${instanceId} con ${otherInstances.length} participantes`);
-
-return res.status(200).json({
-  success: true,
-  message: 'Conversación IA iniciada exitosamente',
-  conversation: {
-    ...conversationData,
-    participantCount: otherInstances.length
+  // Verificar conexión con backend
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+  if (!BACKEND_URL) {
+    return res.status(500).json({
+      error: 'Backend no configurado'
+    });
   }
-});
+
+  try {
+    await axios.get(`${BACKEND_URL}/api/sessions`, { timeout: 5000 });
+  } catch (backendError) {
+    return res.status(503).json({
+      error: 'Backend no disponible',
+      message: 'El servidor de WhatsApp no está respondiendo'
+    });
+  }
+
+  // Inicializar conversación IA
+  const conversationData = {
+    instanceId,
+    userId,
+    provider,
+    apiKey,
+    startDate: new Date().toISOString(),
+    currentPhase: 1,
+    messagesSent: 0,
+    totalMessagesSent: 0,
+    lastMessageTime: null,
+    isActive: true,
+    conversationPartners: otherInstances,
+    conversationHistory: [],
+    phases: [
+      { day: 1, maxMessages: 5, messagesSent: 0 },
+      { day: 2, maxMessages: 10, messagesSent: 0 },
+      { day: 3, maxMessages: 15, messagesSent: 0 },
+      { day: 4, maxMessages: 25, messagesSent: 0 },
+      { day: 5, maxMessages: 35, messagesSent: 0 },
+      { day: 6, maxMessages: 50, messagesSent: 0 },
+      { day: 7, maxMessages: 75, messagesSent: 0 },
+      { day: 8, maxMessages: 100, messagesSent: 0 },
+      { day: 9, maxMessages: 125, messagesSent: 0 },
+      { day: 10, maxMessages: 150, messagesSent: 0 },
+    ]
+  };
+
+  // Guardar en memoria
+  activeConversations.set(conversationKey, conversationData);
+
+  // Iniciar proceso en background
+  startIAConversationProcess(conversationData, BACKEND_URL);
+
+  console.log(`🤖 Conversación IA iniciada para instancia ${instanceId} con ${otherInstances.length} participantes`);
+
+  return res.status(200).json({
+    success: true,
+    message: 'Conversación IA iniciada exitosamente',
+    conversation: {
+      ...conversationData,
+      participantCount: otherInstances.length
+    }
+  });
 }
 
 // Función para detener conversación IA
@@ -420,7 +426,7 @@ async function startIAConversationProcess(conversationData, backendUrl) {
           {
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${apiKey}`
+              'Authorization': `Bearer ${apiKey}` // Using user API key just in case, but usually backend endpoint handles its own auth or is internal
             },
             timeout: 10000
           }
