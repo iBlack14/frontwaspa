@@ -467,19 +467,42 @@ async function startIAConversationProcess(conversationData, backendUrl) {
         let messageToSend;
 
         if (currentData.conversationHistory.length === 0) {
-          // Primer mensaje - algo para iniciar conversación
-          const starterMessages = [
-            `Hola ${randomPartner.name}, ¿cómo va todo por tu lado?`,
-            `¿Qué tal ${randomPartner.name}? ¿Alguna novedad interesante?`,
-            `Buenas ${randomPartner.name}, ¿cómo está resultando el proyecto?`,
-            `Hola, ¿has tenido oportunidad de revisar lo que comentamos?`,
-            `¿Qué opinas de las últimas actualizaciones del sistema?`
-          ];
-          messageToSend = starterMessages[Math.floor(Math.random() * starterMessages.length)];
+          // -------------------------------------------------------------
+          // 🎬 PRIMER MENSAJE (OPENER)
+          // -------------------------------------------------------------
+          if (currentData.theme && currentData.apiKey) {
+            // ✅ Generar apertura contextual con IA si hay tema
+            console.log(`🤖 IA: Generando frase inicial sobre "${currentData.theme}"...`);
+            messageToSend = await generateIAResponse(
+              `Instrucción interna: Inicia una conversación por WhatsApp con tu amigo ${randomPartner.name}. 
+               El tema es estrictamente: "${currentData.theme}". 
+               Solo escribe la primera frase de saludo y una pregunta o comentario sobre el tema. 
+               Sé casual, corto y natural.`,
+              [],
+              {},
+              provider,
+              apiKey,
+              currentData.theme
+            );
+          }
+
+          // Si falló la IA o no hay tema, usar fallbacks
+          if (!messageToSend || messageToSend.includes("Instrucción interna")) {
+            const starterMessages = [
+              `Hola ${randomPartner.name}, ¿cómo va todo?`,
+              `¿Qué tal ${randomPartner.name}?`,
+              `Buenas, ¿tienes un minuto?`,
+              `Hola!`,
+            ];
+            messageToSend = starterMessages[Math.floor(Math.random() * starterMessages.length)];
+          }
         } else {
+          // -------------------------------------------------------------
+          // 💬 RESPUESTA (REPLY)
+          // -------------------------------------------------------------
           // Responder al último mensaje usando IA
           const lastMessage = currentData.conversationHistory[currentData.conversationHistory.length - 1];
-          messageToSend = await generateIAResponse(lastMessage.content, currentData.conversationHistory, {}, provider, apiKey);
+          messageToSend = await generateIAResponse(lastMessage.content, currentData.conversationHistory, {}, provider, apiKey, currentData.theme);
         }
 
         // Enviar mensaje
