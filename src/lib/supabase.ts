@@ -14,9 +14,9 @@ export const supabase = (() => {
   if (typeof window === 'undefined') {
     // Server-side: create a new instance each time (SSR safe)
     return createClient(supabaseUrl, supabaseAnonKey, {
-      // @ts-ignore
       realtime: {
         // Force endpoint for server-side too (just in case)
+        // @ts-ignore
         endpoint: 'wss://realtime.wasapi-supabase.ld4pxg.easypanel.host/realtime/v1',
         timeout: 20000
       },
@@ -32,8 +32,8 @@ export const supabase = (() => {
     supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
       // PROPER CONFIGURATION:
       // Directly configure the RealtimeClient to use the correct WSS endpoint.
-      // @ts-ignore
       realtime: {
+        // @ts-ignore
         endpoint: 'wss://realtime.wasapi-supabase.ld4pxg.easypanel.host/realtime/v1',
         timeout: 10000,
         headers: {
