@@ -79,93 +79,57 @@ function MessagesContent() {
     }
   }, [selectedChat]);
 
-  // ✅ REALTIME HABILITADO - Sincronización automática de mensajes
+  // 🔄 HYBRID MODE: Polling (Backup) + Realtime (Speed)
+  // 1. Polling: Garantiza que funcione SIEMPRE (cada 1s)
+  useEffect(() => {
+    if (!selectedInstance) return;
+
+    const intervalId = setInterval(() => {
+      fetchChats(selectedInstance);
+      if (selectedChat) {
+        fetchMessages(selectedChat.instance_id, selectedChat.chat_id, true);
+      }
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [selectedInstance, selectedChat]);
+
+  // 2. Realtime: Intenta conectar por WebSockets para velocidad instantánea
+  // Si falla (pantalla roja), el Polling de arriba sigue funcionando.
   useEffect(() => {
     if (!supabase || !selectedInstance) return;
 
-    // Canal para nuevos mensajes
-    const messagesChannel = supabase
-      .channel(`messages-${selectedInstance}`)
+    const channel = supabase
+      .channel(`room-${selectedInstance}`)
       .on(
         'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `instance_id=eq.${selectedInstance}`,
-        },
+        { event: '*', schema: 'public', table: 'messages', filter: `instance_id=eq.${selectedInstance}` },
         (payload: any) => {
-          console.log('🔔 Nuevo mensaje:', payload.new);
-
-          // Si el mensaje es del chat actual, agregarlo
+          console.log('⚡ RT Msg:', payload);
           if (selectedChat && payload.new.chat_id === selectedChat.chat_id) {
-            setMessages((prev) => {
-              // Evitar duplicados
-              if (prev.some(m => m.message_id === payload.new.message_id)) {
-                return prev;
-              }
-              return [...prev, payload.new].sort((a, b) =>
-                new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-              );
-            });
+            // Actualización instantánea
+            if (payload.eventType === 'INSERT') {
+              setMessages(prev => {
+                if (prev.some(m => m.message_id === payload.new.message_id)) return prev;
+                return [...prev, payload.new].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+              });
+              if (!payload.new.from_me) playNotificationSound();
+            } else if (payload.eventType === 'UPDATE') {
+              setMessages(prev => prev.map(m => m.message_id === payload.new.message_id ? payload.new : m));
+            }
           }
-
-          // Actualizar lista de chats
-          fetchChats(selectedInstance);
-
-          // Notificación sonora solo para mensajes recibidos
-          if (!payload.new.from_me) {
-            playNotificationSound();
-            toast.success(`Nuevo mensaje de ${payload.new.sender_name || 'Desconocido'}`);
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'messages',
-          filter: `instance_id=eq.${selectedInstance}`,
-        },
-        (payload: any) => {
-          console.log('📝 Mensaje actualizado:', payload.new);
-
-          // Actualizar mensaje si es del chat actual
-          if (selectedChat && payload.new.chat_id === selectedChat.chat_id) {
-            setMessages((prev) =>
-              prev.map(m => m.message_id === payload.new.message_id ? payload.new : m)
-            );
-          }
-
-          // Actualizar lista de chats
           fetchChats(selectedInstance);
         }
       )
-      .subscribe();
-
-    // Canal para actualizaciones de chats
-    const chatsChannel = supabase
-      .channel(`chats-${selectedInstance}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'chats',
-          filter: `instance_id=eq.${selectedInstance}`,
-        },
-        (payload: any) => {
-          console.log('💬 Chat actualizado:', payload);
-          // Actualizar lista de chats
-          fetchChats(selectedInstance);
+      .subscribe((status) => {
+        // Manejo silencioso de errores para evitar crash
+        if (status !== 'SUBSCRIBED') {
+          console.log(`🔌 Estado Realtime: ${status} (Usando Polling como backup)`);
         }
-      )
-      .subscribe();
+      });
 
     return () => {
-      supabase.removeChannel(messagesChannel);
-      supabase.removeChannel(chatsChannel);
+      supabase.removeChannel(channel);
     };
   }, [supabase, selectedInstance, selectedChat]);
 

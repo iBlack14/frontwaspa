@@ -29,15 +29,17 @@ export const supabase = (() => {
   // Client-side: use singleton to prevent multiple instances
   if (!supabaseInstance) {
     supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
-      // NUCLEAR OPTION: WebSocket is blocked by Easypanel/Nginx.
-      // We force "polling" ONLY to stop the red errors and ensure stability.
+      // HYBRID CONFIGURATION:
+      // 1. Try WebSockets for 0-latency updates.
+      // 2. Client handles reconnection automatically.
+      // 3. We keep manual polling in the UI as a backup.
       realtime: {
-        timeout: 20000,
+        timeout: 10000,
         headers: {
           apikey: supabaseAnonKey
-        }
+        },
+        heartbeatIntervalMs: 5000, // Keep connection alive
       },
-      // Force polling in the internal GoTrue client as well if possible (though less exposed)
       auth: {
         persistSession: true,
         autoRefreshToken: true,
@@ -47,7 +49,7 @@ export const supabase = (() => {
 
     // Log realtime status
     if (typeof window !== 'undefined') {
-      console.log('🔌 Supabase Realtime: POLLING MODE FORCED (WebSocket Disabled)')
+      console.log('🔌 Supabase Realtime: HYBRID MODE (WebSocket + 1s Polling Backup)')
     }
   }
 
