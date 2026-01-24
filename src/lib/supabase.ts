@@ -47,9 +47,40 @@ export const supabase = (() => {
       }
     })
 
-    // Log realtime status
+    // 🔧 CUSTOM ENDPOINT PATCH (Fix for Easypanel Routing)
+    // We manually override the internal RealtimeClient to point to the correct "realtime." subdomain.
+    // The library defaults to the main URL, which fails here.
+    if (supabaseInstance.realtime) {
+      // 1. Disconnect default client
+      supabaseInstance.realtime.disconnect()
+
+      // 2. Define custom endpoint
+      const customRealtimeUrl = 'wss://realtime.wasapi-supabase.ld4pxg.easypanel.host/realtime/v1'
+
+      // 3. Create new RealtimeClient with same config
+      const { RealtimeClient } = require('@supabase/supabase-js') // Import dynamically to avoid top-level issues
+
+      const newRealtime = new RealtimeClient(customRealtimeUrl, {
+        params: {
+          apikey: supabaseAnonKey
+        },
+        timeout: 10000,
+        heartbeatIntervalMs: 5000
+      })
+
+      // 4. Overwrite internal property (TypeScript hack involved, but works in JS runtime)
+      // @ts-ignore
+      supabaseInstance.realtime = newRealtime
+
+      // 5. Connect new client
+      newRealtime.connect()
+
+      console.log(`🔌 Supabase Realtime: Custom Endpoint Configured -> ${customRealtimeUrl}`)
+    }
+
+    // Log status
     if (typeof window !== 'undefined') {
-      console.log('🔌 Supabase Realtime: HYBRID MODE (WebSocket + 1s Polling Backup)')
+      console.log('🔌 Supabase Realtime: HYBRID MODE (Custom WS Endpoint + 1s Polling)')
     }
   }
 
