@@ -77,7 +77,7 @@ export default async function handler(req, res) {
 
     // POST - Iniciar o detener conversación IA
     if (action === 'start') {
-      const { provider, apiKey, instanceIds, theme, unlimited, customLimit } = req.body;
+      const { provider, apiKey, instanceIds, theme, unlimited, customLimit, messageDelay } = req.body;
 
       if (!instanceIds || !Array.isArray(instanceIds) || instanceIds.length < 2) {
         return res.status(400).json({ error: 'Se requieren al menos 2 instanciaIds para conversar' });
@@ -86,7 +86,7 @@ export default async function handler(req, res) {
       const results = [];
       for (const id of instanceIds) {
         const resMock = { status: () => ({ json: () => { } }) }; // Simple mock for internal loops
-        const result = await startIAConversation(id, session.id, resMock, provider, apiKey, instanceIds, theme, unlimited, customLimit);
+        const result = await startIAConversation(id, session.id, resMock, provider, apiKey, instanceIds, theme, unlimited, customLimit, messageDelay);
         results.push(result);
       }
 
@@ -174,7 +174,8 @@ async function generateIAResponse(message, conversationHistory = [], context = {
     // 💎 GOOGLE GEMINI
     // ---------------------------------------------------------
     else if (provider === 'gemini') {
-      const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+      // Usamos gemini-1.5-flash que es el modelo estándar más rápido y estable actualmente para el tier gratuito
+      const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
       const contents = [
         {
@@ -185,31 +186,54 @@ async function generateIAResponse(message, conversationHistory = [], context = {
         }
       ];
 
-      const response = await fetch(GEMINI_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          contents: contents,
-          generationConfig: {
-            maxOutputTokens: 150,
-            temperature: 0.7
-          }
-        })
-      });
+      // Retry Logic para manejo de Rate Limits (429)
+      let retries = 0;
+      const maxRetries = 3;
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-          return data.candidates[0].content.parts[0].text.trim();
-        }
-      } else {
-        if (response.status === 429) {
-          console.warn(`⚠️ [IA LIMIT] Gemini cuota excedida (Free Tier). Usando respuesta de respaldo.`);
-        } else {
-          const error = await response.json();
-          console.error('Gemini Error:', error);
+      while (retries <= maxRetries) {
+        try {
+          const response = await fetch(GEMINI_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              contents: contents,
+              generationConfig: {
+                maxOutputTokens: 150,
+                temperature: 0.7
+              }
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+              return data.candidates[0].content.parts[0].text.trim();
+            }
+          }
+
+          if (response.status === 429) {
+            retries++;
+            console.warn(`⚠️ [IA LIMIT] Gemini Cuota excedida (429). Reintento ${retries}/${maxRetries} en ${retries * 2}s...`);
+            if (retries <= maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, retries * 2000)); // Espera exponencial: 2s, 4s, 6s...
+              continue;
+            }
+          }
+
+          // Si llegamos aquí es un error no-429 o se acabaron los retries
+          try {
+            const errorData = await response.json();
+            console.error('Gemini Error (No-Retry):', errorData);
+          } catch (e) {
+            console.error('Gemini Error Status:', response.status);
+          }
+          break; // Salir del loop si es error definitivo
+
+        } catch (fetchError) {
+          console.error('Gemini Fetch Network Error:', fetchError);
+          break;
         }
       }
     }
@@ -255,12 +279,12 @@ function getFallbackResponse(message, conversationHistory, theme = "negocios") {
   const selectedFallbacks = isBusiness ? businessFallbacks : generalFallbacks;
   return selectedFallbacks[Math.floor(Math.random() * selectedFallbacks.length)];
 }
-async function startIAConversation(instanceId, userId, res, provider = 'openai', apiKey = null, groupInstanceIds = null, theme = null, unlimited = false, customLimit = null) {
+async function startIAConversation(instanceId, userId, res, provider = 'openai', apiKey = null, groupInstanceIds = null, theme = null, unlimited = false, customLimit = null, messageDelay = null) {
   const conversationKey = `${userId}-${instanceId}`;
 
-  // Log de depuración para rastrear customLimit
+  // Log de depuración para rastrear customLimit y messageDelay
   console.log(`🔍 [IA-START] Petición recibida para ${instanceId}`);
-  console.log(`🔍 [IA-START] Params: customLimit=${customLimit} (Type: ${typeof customLimit}), Unlimited=${unlimited}`);
+  console.log(`🔍 [IA-START] Params: customLimit=${customLimit}, messageDelay=${messageDelay}, Unlimited=${unlimited}`);
   if (activeConversations.has(conversationKey)) {
     return { error: 'Ya activa' };
   }
@@ -353,6 +377,7 @@ async function startIAConversation(instanceId, userId, res, provider = 'openai',
     theme,
     unlimited,
     customLimit: customLimit ? parseInt(customLimit) : null,
+    messageDelay: messageDelay ? parseInt(messageDelay) : null,
     startDate: new Date().toISOString(),
     currentPhase: 1,
     messagesSent: 0,
@@ -572,8 +597,20 @@ async function startIAConversationProcess(conversationData, backendUrl) {
         pauseThreshold = Math.floor(Math.random() * 6) + 10;
       }
 
-      // Esperar entre 45-180 segundos (más tiempo para conversaciones naturales)
-      const delaySeconds = Math.random() * (180 - 45) + 45;
+      // Esperar tiempo configurado o aleatorio
+      let delaySeconds;
+      if (currentData.messageDelay) {
+        // Si hay configuración manual, usamos ese valor como base con pequeña variación natural (+/- 20%)
+        // Ejemplo: si es 10s, será entre 8s y 12s
+        const variation = currentData.messageDelay * 0.2;
+        delaySeconds = currentData.messageDelay + (Math.random() * variation * 2 - variation);
+        // Asegurar que no sea menor a 5 segundos por seguridad
+        if (delaySeconds < 5) delaySeconds = 5;
+      } else {
+        // Default: entre 45-180 segundos (conversación natural lenta)
+        delaySeconds = Math.random() * (180 - 45) + 45;
+      }
+
       console.log(`🤖 IA: Esperando ${Math.round(delaySeconds)} segundos para siguiente mensaje...`);
       await new Promise(resolve => setTimeout(resolve, delaySeconds * 1000));
     }

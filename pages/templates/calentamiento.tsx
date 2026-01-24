@@ -65,6 +65,7 @@ function CalentamientoContent() {
 
   const [useCustomLimit, setUseCustomLimit] = useState(false);
   const [customMessageLimit, setCustomMessageLimit] = useState(20);
+  const [messageDelay, setMessageDelay] = useState(45);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -242,7 +243,8 @@ function CalentamientoContent() {
         theme: conversationTheme,
         unlimited: isContinuous,
         // Enviar customLimit SÓLO si está activado el switch manual
-        customLimit: useCustomLimit ? (Number(customMessageLimit) || 1000) : null
+        customLimit: useCustomLimit ? (Number(customMessageLimit) || 1000) : null,
+        messageDelay: Number(messageDelay) || 45
       };
 
       const response = await axios.post('/api/templates/calentamiento-ia', payload);
@@ -548,39 +550,71 @@ function CalentamientoContent() {
                       </div>
                     </div>
                   )}
-                  {/* Move Limit UI here, inside the main config block or just before buttons */}
                   <div className="mt-6 mb-6 bg-white dark:bg-[#1e293b] rounded-xl p-4 border border-slate-200 dark:border-slate-700">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                      <h2 className="text-sm font-bold text-slate-700 dark:text-white flex items-center gap-2">
-                        <ArrowTrendingUpIcon className="w-5 h-5 text-blue-500" />
-                        Límite de Mensajes
-                      </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Límite de mensajes */}
+                      <div className="p-2">
+                        <div className="flex items-center justify-between gap-4 mb-3">
+                          <h2 className="text-sm font-bold text-slate-700 dark:text-white flex items-center gap-2">
+                            <ArrowTrendingUpIcon className="w-5 h-5 text-blue-500" />
+                            Límite de Mensajes
+                          </h2>
 
-                      <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-lg">
-                        <span className={`text-xs font-medium cursor-pointer px-2 py-1 rounded ${!useCustomLimit ? 'bg-white dark:bg-slate-600 shadow-sm text-blue-600' : 'text-slate-500'}`} onClick={() => setUseCustomLimit(false)}>Auto</span>
-                        <span className={`text-xs font-medium cursor-pointer px-2 py-1 rounded ${useCustomLimit ? 'bg-white dark:bg-slate-600 shadow-sm text-blue-600' : 'text-slate-500'}`} onClick={() => setUseCustomLimit(true)}>Manual</span>
+                          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+                            <span className={`text-[10px] font-bold cursor-pointer px-2 py-1 rounded ${!useCustomLimit ? 'bg-white dark:bg-slate-600 shadow-sm text-blue-600' : 'text-slate-500'}`} onClick={() => setUseCustomLimit(false)}>Auto</span>
+                            <span className={`text-[10px] font-bold cursor-pointer px-2 py-1 rounded ${useCustomLimit ? 'bg-white dark:bg-slate-600 shadow-sm text-blue-600' : 'text-slate-500'}`} onClick={() => setUseCustomLimit(true)}>Manual</span>
+                          </div>
+                        </div>
+
+                        {useCustomLimit ? (
+                          <div className="animate-fadeIn">
+                            <label className="text-xs font-bold text-slate-600 dark:text-slate-300 mb-1 block">
+                              Meta de sesión:
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              max="1000"
+                              value={customMessageLimit}
+                              onChange={(e) => setCustomMessageLimit(parseInt(e.target.value) || 0)}
+                              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-blue-300 dark:border-blue-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-lg font-bold text-blue-600 dark:text-blue-400"
+                            />
+                            <p className="text-[10px] text-slate-400 mt-1">Mensajes a enviar en esta sesión</p>
+                          </div>
+                        ) : (
+                          <div className="p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-700">
+                            <p className="text-xs text-slate-500 italic">
+                              El sistema usará fases de calentamiento seguro (5-150 msgs/día).
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Delay de mensajes */}
+                      <div className="p-2 border-l border-slate-100 dark:border-slate-800">
+                        <div className="flex items-center justify-between gap-4 mb-3">
+                          <h2 className="text-sm font-bold text-slate-700 dark:text-white flex items-center gap-2">
+                            <ClockIcon className="w-5 h-5 text-orange-500" />
+                            Delay entre Mensajes
+                          </h2>
+                        </div>
+
+                        <div className="animate-fadeIn">
+                          <label className="text-xs font-bold text-slate-600 dark:text-slate-300 mb-1 block">
+                            Segundos de espera:
+                          </label>
+                          <input
+                            type="number"
+                            min="5"
+                            max="3600"
+                            value={messageDelay}
+                            onChange={(e) => setMessageDelay(parseInt(e.target.value) || 0)}
+                            className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-orange-300 dark:border-orange-700 rounded-lg focus:ring-2 focus:ring-orange-500 text-lg font-bold text-orange-600 dark:text-orange-400"
+                          />
+                          <p className="text-[10px] text-slate-400 mt-1">Tiempo promedio entre cada mensaje enviado</p>
+                        </div>
                       </div>
                     </div>
-
-                    {useCustomLimit ? (
-                      <div className="animate-fadeIn">
-                        <label className="text-xs font-bold text-slate-600 dark:text-slate-300 mb-1 block">
-                          Meta de sesión (mensajes a enviar ahora):
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          max="1000"
-                          value={customMessageLimit}
-                          onChange={(e) => setCustomMessageLimit(parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-blue-300 dark:border-blue-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-lg font-bold text-blue-600 dark:text-blue-400"
-                        />
-                      </div>
-                    ) : (
-                      <p className="text-xs text-slate-500 italic">
-                        El sistema usará las fases automáticas (Día 1: 5 msgs, Día 2: 10 msgs...)
-                      </p>
-                    )}
                   </div>
 
                 </div>
