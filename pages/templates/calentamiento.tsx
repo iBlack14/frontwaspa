@@ -234,15 +234,18 @@ function CalentamientoContent() {
 
     setIsSubmitting(true);
     try {
-      const response = await axios.post('/api/templates/calentamiento-ia', {
+      const payload = {
         instanceIds: selectedInstances,
         action: 'start',
         provider: aiProvider,
         apiKey: apiKey,
         theme: conversationTheme,
         unlimited: isContinuous,
-        customLimit: useCustomLimit ? customMessageLimit : null
-      });
+        // Enviar customLimit SÓLO si está activado el switch manual
+        customLimit: useCustomLimit ? (Number(customMessageLimit) || 1000) : null
+      };
+
+      const response = await axios.post('/api/templates/calentamiento-ia', payload);
 
       toast.success('Conversación IA iniciada exitosamente');
       setIaStatus(response.data);
