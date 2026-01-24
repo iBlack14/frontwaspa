@@ -286,14 +286,8 @@ function MessageBubble({
     // Renderizar audio o nota de voz
     if ((message.message_type === 'audio' || message.message_type === 'voice') && message.media_url) {
       return (
-        <div className="mb-1">
-          <div className="flex items-center gap-2 bg-white/10 dark:bg-black/10 rounded-lg p-2">
-            {message.message_type === 'voice' ? '🎤' : '🎵'}
-            <audio controls className="flex-1" style={{ height: '32px' }}>
-              <source src={message.media_url} />
-              Tu navegador no soporta audio.
-            </audio>
-          </div>
+        <div className="mb-1 min-w-[240px]">
+          <CustomAudioPlayer src={message.media_url} isVoiceNote={message.message_type === 'voice'} />
           {message.message_text && (
             <p className="text-[14.2px] mt-1 px-1">{message.message_text}</p>
           )}
