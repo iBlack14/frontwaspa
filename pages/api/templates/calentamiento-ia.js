@@ -11,6 +11,8 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  console.log(`🔥 [API CALL] Calentamiento IA Handler invocado: ${req.method} Action: ${req.body?.action || req.query?.action}`);
+
   try {
     // Verificar sesión
     const session = await getServerSession(req, res, authOptions);
