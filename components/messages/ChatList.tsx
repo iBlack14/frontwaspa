@@ -48,9 +48,20 @@ export default function ChatList({ chats, selectedChat, onSelectChat, instanceId
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Contact[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [activeTab, setActiveTab] = useState<'all' | 'chats' | 'channels' | 'status'>('all');
 
-  const pinnedChats = chats.filter(c => c.is_pinned && !c.is_archived);
-  const regularChats = chats.filter(c => !c.is_pinned && !c.is_archived);
+  const filteredChats = chats.filter(chat => {
+    if (activeTab === 'all') return true;
+    if (activeTab === 'status') return chat.chat_id === 'status@broadcast';
+    if (activeTab === 'channels') return chat.chat_id.endsWith('@newsletter');
+    if (activeTab === 'chats') {
+      return chat.chat_id !== 'status@broadcast' && !chat.chat_id.endsWith('@newsletter');
+    }
+    return true;
+  });
+
+  const pinnedChats = filteredChats.filter(c => c.is_pinned && !c.is_archived);
+  const regularChats = filteredChats.filter(c => !c.is_pinned && !c.is_archived);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
@@ -113,6 +124,27 @@ export default function ChatList({ chats, selectedChat, onSelectChat, instanceId
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
+      </div>
+
+      {/* Filter Tabs */}
+      <div className="px-4 pb-2 bg-white/80 backdrop-blur-md dark:bg-[#1e293b]/80 border-b border-slate-100 dark:border-slate-800 flex gap-2 overflow-x-auto no-scrollbar">
+        {[
+          { id: 'all', label: 'Todos' },
+          { id: 'chats', label: 'Chats' },
+          { id: 'channels', label: 'Canales' },
+          { id: 'status', label: 'Estados' }
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${activeTab === tab.id
+              ? 'bg-indigo-500 text-white shadow-md shadow-indigo-200 dark:shadow-none'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* Chats or Search Results */}
