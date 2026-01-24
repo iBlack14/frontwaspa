@@ -1,6 +1,6 @@
-import { getServerSession } from 'next-auth';
+import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
-import { supabaseAdmin } from '../../../src/lib/supabase-admin';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -52,7 +52,7 @@ export default async function handler(req, res) {
           .update({ is_active: false })
           .eq('instance_id', instanceId);
       }
-      
+
       // Aquí puedes agregar lógica para desactivar otros templates
     }
 
@@ -61,13 +61,15 @@ export default async function handler(req, res) {
       .from('instances')
       .update({
         active_template: templateType,
-        template_updated_at: new Date().toISOString(),
       })
       .eq('document_id', instanceId);
 
     if (updateError) {
       console.error('Error actualizando template:', updateError);
-      return res.status(500).json({ error: 'Error al asignar template' });
+      return res.status(500).json({
+        error: 'Error al asignar template',
+        details: updateError.message
+      });
     }
 
     // Si el nuevo template es chatbot, activarlo
