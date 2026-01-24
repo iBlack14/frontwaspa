@@ -3,35 +3,40 @@ import { authOptions } from '../auth/[...nextauth]';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export default async function handler(req, res) {
+  console.log('[ASSIGN] 🚀 Iniciando asignación de template...');
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método no permitido' });
   }
 
   try {
-    // Obtener sesión del usuario
+    // 1. Verificar Sesión
+    console.log('[ASSIGN] 🔐 Verificando sesión...');
     const session = await getServerSession(req, res, authOptions);
 
     if (!session || !session.id) {
+      console.error('[ASSIGN] ❌ Sesión inválida:', { sessionExists: !!session, hasId: !!session?.id });
       return res.status(401).json({ error: 'No autorizado' });
     }
+    console.log('[ASSIGN] ✅ Sesión válida para usuario:', session.id);
 
+    // 2. Parsear Body
     const { instanceId, templateType } = req.body;
+    console.log('[ASSIGN] 📋 Datos recibidos:', { instanceId, templateType });
 
-    // Validaciones
-    if (!instanceId) {
-      return res.status(400).json({ error: 'instanceId es requerido' });
-    }
-
-    if (!templateType) {
-      return res.status(400).json({ error: 'templateType es requerido' });
+    if (!instanceId || !templateType) {
+      console.error('[ASSIGN] ❌ Faltan datos requeridos');
+      return res.status(400).json({ error: 'instanceId y templateType son requeridos' });
     }
 
     const validTemplates = ['none', 'spam', 'chatbot', 'calentamiento'];
     if (!validTemplates.includes(templateType)) {
+      console.error('[ASSIGN] ❌ Template inválido:', templateType);
       return res.status(400).json({ error: 'Template inválido' });
     }
 
-    // Verificar que la instancia pertenece al usuario
+    // 3. Verificar Instancia
+    console.log('[ASSIGN] 🔍 Buscando instancia:', instanceId);
     const { data: instance, error: instanceError } = await supabaseAdmin
       .from('instances')
       .select('document_id, user_id, active_template')
@@ -39,71 +44,94 @@ export default async function handler(req, res) {
       .eq('user_id', session.id)
       .single();
 
-    if (instanceError || !instance) {
+    if (instanceError) {
+      console.error('[ASSIGN] ❌ Error buscando instancia:', instanceError);
+      return res.status(404).json({ error: 'Error al buscar instancia', details: instanceError.message });
+    }
+
+    if (!instance) {
+      console.error('[ASSIGN] ❌ Instancia no encontrada');
       return res.status(404).json({ error: 'Instancia no encontrada o no autorizada' });
     }
+    console.log('[ASSIGN] ✅ Instancia encontrada. Template actual:', instance.active_template);
 
-    // Si está cambiando de template, desactivar el anterior
-    if (instance.active_template && instance.active_template !== 'none' && instance.active_template !== templateType) {
-      // Desactivar chatbot si existe
-      if (instance.active_template === 'chatbot') {
-        await supabaseAdmin
-          .from('chatbots')
-          .update({ is_active: false })
-          .eq('instance_id', instanceId);
+    // 4. Desactivar anterior si era chatbot
+    if (instance.active_template === 'chatbot' && templateType !== 'chatbot') {
+      console.log('[ASSIGN] 🤖 Desactivando chatbot anterior...');
+      const { error: deactivateError } = await supabaseAdmin
+        .from('chatbots')
+        .update({ is_active: false })
+        .eq('instance_id', instanceId);
+
+      if (deactivateError) {
+        console.warn('[ASSIGN] ⚠️ Error desactivando chatbot (no crítico):', deactivateError.message);
+      } else {
+        console.log('[ASSIGN] ✅ Chatbot anterior desactivado');
       }
-
-      // Aquí puedes agregar lógica para desactivar otros templates
     }
 
-    // Actualizar el template activo en la instancia
+    // 5. Actualizar Template Principal
+    console.log('[ASSIGN] 🔄 Actualizando active_template a:', templateType);
+    const updatePayload = {
+      active_template: templateType,
+    };
+
     const { error: updateError } = await supabaseAdmin
       .from('instances')
-      .update({
-        active_template: templateType,
-      })
+      .update(updatePayload)
       .eq('document_id', instanceId);
 
     if (updateError) {
-      console.error('Error actualizando template:', updateError);
+      console.error('[ASSIGN] ❌ Error en update active_template:', updateError);
       return res.status(500).json({
-        error: 'Error al asignar template',
-        details: updateError.message
+        error: 'Error de base de datos al asignar template',
+        details: updateError.message,
+        code: updateError.code
       });
     }
+    console.log('[ASSIGN] ✅ Tabla instances actualizada');
 
-    // Si el nuevo template es chatbot, activarlo
+    // 6. Activar chatbot si el nuevo es chatbot
     if (templateType === 'chatbot') {
-      const { data: chatbot } = await supabaseAdmin
+      console.log('[ASSIGN] 🤖 Activando logic para nuevo chatbot...');
+      const { data: chatbot, error: fetchChatbotError } = await supabaseAdmin
         .from('chatbots')
         .select('id')
         .eq('instance_id', instanceId)
-        .single();
+        .maybeSingle();
 
-      if (chatbot) {
-        await supabaseAdmin
+      if (fetchChatbotError) {
+        console.error('[ASSIGN] ❌ Error buscando chatbot para activar:', fetchChatbotError);
+      } else if (chatbot) {
+        const { error: activateError } = await supabaseAdmin
           .from('chatbots')
           .update({ is_active: true })
           .eq('id', chatbot.id);
+
+        if (activateError) {
+          console.error('[ASSIGN] ❌ Error activando chatbot:', activateError);
+        } else {
+          console.log('[ASSIGN] ✅ Chatbot activado correctamente');
+        }
+      } else {
+        console.log('[ASSIGN] ℹ️ No hay configuración de chatbot previa para esta instancia');
       }
     }
 
-    console.log('✅ Template asignado exitosamente:', {
-      instanceId,
-      templateType,
-      previousTemplate: instance.active_template,
-    });
+    console.log('✅ [ASSIGN] Proceso finalizado con éxito');
 
     return res.status(200).json({
       success: true,
       message: 'Template asignado exitosamente',
       templateType,
     });
+
   } catch (error) {
-    console.error('❌ Error en assign endpoint:', error);
+    console.error('❌ [ASSIGN] ERROR FATAL:', error);
     return res.status(500).json({
-      error: 'Error interno del servidor',
-      details: error.message,
+      error: 'Error interno del servidor (Crash)',
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }
