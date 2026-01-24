@@ -233,17 +233,13 @@ function getFallbackResponse(message, conversationHistory) {
 async function startIAConversation(instanceId, userId, res, provider = 'openai', apiKey = null, groupInstanceIds = null, theme = null, unlimited = false) {
   const conversationKey = `${userId}-${instanceId}`;
 
-  console.log(`🔍 [IA START DEBUG] Intentando iniciar para: ${instanceId} Usuario: ${userId}`);
-
   // Verificar si ya hay una conversación activa
   if (activeConversations.has(conversationKey)) {
-    console.log(`⚠️ [IA START DEBUG] Ya activa para ${instanceId}`);
     return { error: 'Ya activa' };
   }
 
   // Validate API Key presence
   if (!apiKey) {
-    console.error(`❌ [IA START DEBUG] Falta API Key`);
     return { error: 'Falta API Key' };
   }
 
@@ -251,33 +247,41 @@ async function startIAConversation(instanceId, userId, res, provider = 'openai',
   let otherInstances = [];
 
   if (groupInstanceIds && Array.isArray(groupInstanceIds)) {
-    console.log(`🔍 [IA START DEBUG] Buscando grupo de instancias: ${JSON.stringify(groupInstanceIds)}`);
-    const { data: allInstances, error: dbError } = await supabaseAdmin
+    const { data: allInstances } = await supabaseAdmin
       .from('instances')
-      .select('document_id, phone_number, name')
+      .select('document_id, phone_number, profile_name')
       .in('document_id', groupInstanceIds)
       .eq('state', 'Connected');
 
-    if (dbError) console.error(`❌ [IA START DEBUG] Error DB:`, dbError);
-
     if (allInstances) {
-      console.log(`✅ [IA START DEBUG] Instancias encontradas en DB: ${allInstances.length}`);
       otherInstances = allInstances
         .filter(inst => inst.document_id !== instanceId && inst.phone_number)
         .map(inst => ({
           id: inst.document_id,
           number: inst.phone_number.replace(/\D/g, ''),
-          name: inst.name || 'Colega'
+          name: inst.profile_name || 'Colega'
         }));
     }
   } else {
-    // ... (el código antiguo de fallback)
+    // Lógica fallback original
+    const { data: allInstances } = await supabaseAdmin
+      .from('instances')
+      .select('document_id, phone_number, profile_name')
+      .eq('user_id', userId)
+      .eq('state', 'Connected');
+
+    if (allInstances) {
+      otherInstances = allInstances
+        .filter(inst => inst.document_id !== instanceId && inst.phone_number)
+        .map(inst => ({
+          id: inst.document_id,
+          number: inst.phone_number.replace(/\D/g, ''),
+          name: inst.profile_name || 'Colega'
+        }));
+    }
   }
 
-  console.log(`📋 [IA START DEBUG] Compañeros válidos encontrados: ${otherInstances.length}`);
-
   if (otherInstances.length === 0) {
-    console.error(`❌ [IA START DEBUG] No se encontraron compañeros para conversar.`);
     return { error: 'No hay compañeros' };
   }
 
