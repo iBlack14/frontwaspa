@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import io, { Socket } from 'socket.io-client';
-import { logger } from '@/utils/logger';
+import { logger } from '../../utils/logger';
 import { useSession } from 'next-auth/react';
 
 interface UseWebSocketOptions {
