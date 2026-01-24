@@ -32,9 +32,6 @@ export const supabase = (() => {
       realtime: isRealtimeEnabled ? {
         params: {
           eventsPerSecond: 10
-        },
-        headers: {
-          apikey: supabaseAnonKey,
         }
       } : undefined, // Disable realtime if not enabled
       auth: {
