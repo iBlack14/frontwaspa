@@ -185,11 +185,13 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
         message: messageText,
       });
 
-      // 4. On success, the refresh will eventually bring the real message.
-      // We keep the optimistic one until then, or remove it if we want to rely on the refresh.
-      // Usually, onRefresh() will update 'messages'. We can clear optimistic msg then.
-      onRefresh();
-      setOptimisticMessages(prev => prev.filter(m => m.id !== tempId));
+      // 4. On success, wait a bit before refreshing to ensure DB consistency (Race Condition fix)
+      setTimeout(() => {
+        onRefresh();
+        // Only remove optimistic message AFTER we are sure the refresh happened (or keep it a bit longer)
+        // Better UX: Keep optimistic message until next full re-render confirms real message exists
+        setOptimisticMessages(prev => prev.filter(m => m.id !== tempId));
+      }, 1000);
 
     } catch (error: any) {
       console.error('Error sending message:', error);
