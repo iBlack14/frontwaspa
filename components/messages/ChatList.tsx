@@ -309,6 +309,22 @@ export default function ChatList({ chats, selectedChat, onSelectChat, instanceId
 
 // Definición correcta de ChatItem al final del archivo o fuera del export default
 function ChatItem({ chat, isSelected, onClick, isStatus }: { chat: Chat; isSelected: boolean; onClick: () => void; isStatus?: boolean }) {
+  // Determinar texto de previsualización
+  const getPreviewText = () => {
+    if (chat.last_message_text) return chat.last_message_text;
+    if (isStatus) return 'Nueva actualización de estado';
+
+    // Fallbacks por tipo si no hay texto
+    const type = (chat as any).last_message_type; // Suponiendo que viene del backend
+    if (type === 'view_once_image') return '👁️ Foto (Ver una vez)';
+    if (type === 'view_once_video') return '👁️ Video (Ver una vez)';
+    if (type === 'image') return '🖼️ Foto';
+    if (type === 'video') return '🎥 Video';
+    if (type === 'audio' || type === 'voice') return '🎤 Audio';
+
+    return '📎 Archivo multimedia';
+  };
+
   return (
     <div
       onClick={onClick}
@@ -364,8 +380,8 @@ function ChatItem({ chat, isSelected, onClick, isStatus }: { chat: Chat; isSelec
             </span>
           </div>
           <div className="flex justify-between items-center">
-            <p className={`text-sm truncate flex-1 ${isSelected ? 'text-indigo-600/80 dark:text-indigo-300/80' : 'text-slate-500 dark:text-slate-400'}`}>
-              {chat.last_message_text || (isStatus ? 'Nueva actualización de estado' : '📎 Archivo multimedia')}
+            <p className={`text-sm truncate flex-1 font-medium ${isSelected ? 'text-indigo-600/80 dark:text-indigo-300/80' : chat.unread_count > 0 ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>
+              {getPreviewText()}
             </p>
             {chat.unread_count > 0 && (
               <span className="ml-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center shadow-sm shadow-indigo-200 dark:shadow-none">

@@ -741,6 +741,9 @@ function MessageBubble({
       contacts: '👥 Contactos',
       poll: '📊 Encuesta',
       reaction: '❤️ Reacción',
+      view_once_image: '👁️ Foto (Ver una vez)',
+      view_once_video: '👁️ Video (Ver una vez)',
+      text: '📝 Mensaje',
     };
 
     const typeLabel = typeIcons[message.message_type] || '📎 Archivo';
