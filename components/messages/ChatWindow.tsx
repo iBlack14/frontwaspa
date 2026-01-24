@@ -395,10 +395,10 @@ function MessageBubble({
     }
 
     // Renderizar audio o nota de voz
-    if ((message.message_type === 'audio' || message.message_type === 'voice') && message.media_url) {
+    if ((message.message_type === 'audio' || message.message_type === 'voice' || message.message_type === 'ptt') && message.media_url) {
       return (
         <div className="mb-1 min-w-[240px]">
-          <CustomAudioPlayer src={message.media_url} isVoiceNote={message.message_type === 'voice'} />
+          <CustomAudioPlayer src={message.media_url} isVoiceNote={message.message_type === 'voice' || message.message_type === 'ptt'} />
           {message.message_text && (
             <p className="text-[14.2px] mt-1 px-1">{message.message_text}</p>
           )}
