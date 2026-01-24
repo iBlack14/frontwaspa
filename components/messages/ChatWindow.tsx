@@ -646,33 +646,74 @@ function MessageBubble({
     }
 
     // Renderizar View Once (Ver una vez)
-    if ((message.message_type === 'view_once_image' || message.message_type === 'view_once_video') && message.media_url) {
+    if (message.is_view_once || message.message_type === 'view_once_image' || message.message_type === 'view_once_video') {
       const isVideo = message.message_type === 'view_once_video';
+      const hasBeenOpened = message.view_once_opened_times && message.view_once_opened_times.length > 0;
+      const lastOpened = hasBeenOpened ? message.view_once_opened_times![message.view_once_opened_times!.length - 1] : null;
+
+      const handleViewOnceClick = async () => {
+        if (!message.media_url) return;
+
+        // Abrir media
+        window.open(message.media_url, '_blank');
+
+        // Marcar como visto (API)
+        try {
+          const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+          await axios.post(`${backendUrl}/api/messages/mark-viewed`, {
+            messageId: message.message_id
+          });
+          // Nota: El polling actualizará el estado visual en el próximo ciclo
+        } catch (error) {
+          console.error("Error marking view once as opened:", error);
+        }
+      };
+
       return (
-        <div className="mb-1 min-w-[200px]">
+        <div className="mb-1 min-w-[220px]">
           <button
-            onClick={() => window.open(message.media_url, '_blank')}
-            className="flex items-center gap-3 bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 w-full hover:bg-slate-200 dark:hover:bg-slate-700 transition group text-left"
+            onClick={handleViewOnceClick}
+            className={`flex items-center gap-3 rounded-xl p-3 w-full transition group text-left border ${hasBeenOpened
+                ? 'bg-slate-50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-700'
+                : 'bg-white dark:bg-slate-700 border-indigo-100 dark:border-slate-600 shadow-sm hover:shadow-md'
+              }`}
           >
-            <div className="w-10 h-10 rounded-full border-2 border-indigo-500 flex items-center justify-center flex-shrink-0">
-              <span className="text-indigo-500 font-bold text-sm">1</span>
+            <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${hasBeenOpened
+                ? 'border-slate-300 text-slate-400'
+                : 'border-indigo-500 text-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+              }`}>
+              {hasBeenOpened ? (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <span className="font-bold text-sm">1</span>
+              )}
             </div>
+
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+              <p className={`text-sm font-medium ${hasBeenOpened ? 'text-slate-500 dark:text-slate-400' : 'text-slate-800 dark:text-slate-200'
+                }`}>
                 {isVideo ? 'Video' : 'Foto'}
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Ver una vez
+              <p className="text-xs text-slate-400 dark:text-slate-500">
+                {hasBeenOpened
+                  ? `Visto ${lastOpened ? new Date(lastOpened).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}`
+                  : (isVideo ? 'Video (Ver una vez)' : 'Foto (Ver una vez)')}
               </p>
             </div>
-            <div className="text-slate-400 group-hover:text-indigo-500 transition">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
+
+            {!hasBeenOpened && (
+              <div className="text-indigo-400 group-hover:text-indigo-600 transition">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </div>
+            )}
           </button>
           {message.message_text && (
-            <p className="text-[14.2px] mt-1 px-1">{message.message_text}</p>
+            <p className="text-[14.2px] mt-2 px-1 text-slate-600 dark:text-slate-300 italic">{message.message_text}</p>
           )}
         </div>
       );

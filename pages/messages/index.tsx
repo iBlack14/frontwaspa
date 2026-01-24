@@ -38,6 +38,8 @@ export interface Message {
   is_read: boolean;
   metadata?: any;
   status?: 'sending' | 'sent' | 'error'; // Optimistic UI status
+  is_view_once?: boolean;
+  view_once_opened_times?: string[]; // Frontend recibe fechas como strings
 }
 
 function MessagesContent() {
