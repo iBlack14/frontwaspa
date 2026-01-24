@@ -43,6 +43,7 @@ function CalentamientoContent() {
   const [aiProvider, setAiProvider] = useState<'openai' | 'gemini'>('openai');
   const [apiKey, setApiKey] = useState('');
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+  const [isContinuous, setIsContinuous] = useState(false);
 
   // Saved keys from profile
   const [savedOpenaiKey, setSavedOpenaiKey] = useState('');
@@ -171,6 +172,19 @@ function CalentamientoContent() {
     }
   };
 
+  // Efecto para auto-refrescar estado en modo IA
+  useEffect(() => {
+    let interval: any;
+    if (useIA && iaStatus?.isActive) {
+      interval = setInterval(() => {
+        checkStatus();
+      }, 10000); // Cada 10 segundos
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [useIA, iaStatus?.isActive]);
+
   const startIAConversation = async () => {
     if (selectedInstances.length < 2) {
       toast.error('Selecciona al menos 2 instancias para conversar entre ellas');
@@ -189,7 +203,8 @@ function CalentamientoContent() {
         action: 'start',
         provider: aiProvider,
         apiKey: apiKey,
-        theme: conversationTheme
+        theme: conversationTheme,
+        unlimited: isContinuous
       });
 
       toast.success('Conversación IA iniciada exitosamente');
@@ -227,6 +242,8 @@ function CalentamientoContent() {
       </div>
     );
   }
+
+  const selectedInstanceId = selectedInstances[0] || '';
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-transparent p-6 sm:p-8">
@@ -446,6 +463,22 @@ function CalentamientoContent() {
                             </p>
                           </div>
 
+                          <div className="flex items-center gap-3 p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-2xl border-2 border-indigo-100 dark:border-indigo-800/30">
+                            <div className="flex items-center h-5">
+                              <input
+                                id="continuous-mode"
+                                type="checkbox"
+                                checked={isContinuous}
+                                onChange={(e) => setIsContinuous(e.target.checked)}
+                                className="w-5 h-5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer"
+                              />
+                            </div>
+                            <label htmlFor="continuous-mode" className="ml-2 cursor-pointer">
+                              <span className="block text-sm font-bold text-indigo-900 dark:text-indigo-300">🚀 Modo Infinito</span>
+                              <span className="block text-xs text-indigo-700 dark:text-indigo-400">Conversación sin límites diarios (continuar hasta detener manualmente).</span>
+                            </label>
+                          </div>
+
                           <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                               Tu API Key de {aiProvider === 'openai' ? 'OpenAI' : 'Google Gemini'}
@@ -610,6 +643,29 @@ function CalentamientoContent() {
               </p>
             </div>
           </div>
+
+          {/* Activity Log (SÓLO PARA IA) */}
+          {useIA && iaStatus?.conversationHistory?.length > 0 && (
+            <div className="mt-8">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                <ClockIcon className="w-5 h-5 text-purple-500" />
+                Log de Actividad en Tiempo Real
+              </h3>
+              <div className="bg-slate-900 rounded-2xl p-4 font-mono text-xs overflow-y-auto max-h-60 border border-slate-700">
+                <div className="space-y-2">
+                  {[...iaStatus.conversationHistory].reverse().map((log: any, index: number) => (
+                    <div key={index} className="flex gap-2 border-b border-slate-800 pb-2 last:border-0">
+                      <span className="text-slate-500">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
+                      <span className="text-emerald-400 font-bold">{log.from === selectedInstanceId ? 'TÚ' : 'INSTANCIA'}</span>
+                      <span className="text-slate-400">→</span>
+                      <span className="text-blue-400 font-bold">{log.to?.substring(0, 8) || 'DESTINO'}</span>
+                      <span className="text-slate-300 ml-2">{log.content}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
             <h3 className="font-bold text-slate-800 dark:text-white mb-2">

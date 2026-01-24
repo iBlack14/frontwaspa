@@ -80,7 +80,7 @@ export default async function handler(req, res) {
       const results = [];
       for (const id of instanceIds) {
         const resMock = { status: () => ({ json: () => { } }) }; // Simple mock for internal loops
-        const result = await startIAConversation(id, session.id, resMock, provider, apiKey, instanceIds, theme);
+        const result = await startIAConversation(id, session.id, resMock, provider, apiKey, instanceIds, theme, req.body.unlimited);
         results.push(result);
       }
 
@@ -216,7 +216,7 @@ async function generateIAResponse(message, conversationHistory = [], context = {
 // Let's actually provide the full replacement for startIAConversation to include the group logic
 
 // Función para iniciar conversación IA
-async function startIAConversation(instanceId, userId, res, provider = 'openai', apiKey = null, groupInstanceIds = null, theme = null) {
+async function startIAConversation(instanceId, userId, res, provider = 'openai', apiKey = null, groupInstanceIds = null, theme = null, unlimited = false) {
   const conversationKey = `${userId}-${instanceId}`;
 
   // Verificar si ya hay una conversación activa
@@ -281,6 +281,8 @@ async function startIAConversation(instanceId, userId, res, provider = 'openai',
     provider,
     apiKey,
     theme,
+    unlimited,
+    userKey: '', // Will be filled below
     startDate: new Date().toISOString(),
     currentPhase: 1,
     messagesSent: 0,
@@ -302,6 +304,17 @@ async function startIAConversation(instanceId, userId, res, provider = 'openai',
       { day: 10, maxMessages: 150, messagesSent: 0 },
     ]
   };
+
+  // Obtener la clave interna del usuario para autenticar con el backend-whatsapp
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('key')
+    .eq('id', userId)
+    .single();
+
+  if (profile && profile.key) {
+    conversationData.userKey = profile.key;
+  }
 
   // Guardar en memoria
   activeConversations.set(conversationKey, conversationData);
@@ -336,10 +349,13 @@ async function stopIAConversation(instanceId, userId, res) {
 
 // Función que ejecuta el proceso de conversación IA en background
 async function startIAConversationProcess(conversationData, backendUrl) {
-  const { instanceId, userId, conversationPartners, provider, apiKey } = conversationData;
+  const { instanceId, userId, conversationPartners, provider, apiKey, userKey } = conversationData;
   const conversationKey = `${userId}-${instanceId}`;
 
-  console.log(`🚀 Iniciando conversación IA para ${instanceId}`);
+  console.log(`🚀 Iniciando proceso IA para ${instanceId} (Auth Key: ${userKey ? 'Presente' : 'Faltante'})`);
+
+  // Pequeña espera inicial para que el usuario vea el cambio en el UI antes del primer mensaje
+  await new Promise(resolve => setTimeout(resolve, 5000));
 
   try {
     while (activeConversations.has(conversationKey)) {
@@ -349,8 +365,8 @@ async function startIAConversationProcess(conversationData, backendUrl) {
       const currentPhase = currentData.phases[currentData.currentPhase - 1];
       const todayMessages = currentPhase.messagesSent;
 
-      // Verificar si ya alcanzó el límite del día
-      if (todayMessages >= currentPhase.maxMessages) {
+      // Verificar si ya alcanzó el límite del día (SÓLO SI NO ES UNLIMITED)
+      if (!currentData.unlimited && todayMessages >= currentPhase.maxMessages) {
         if (currentData.currentPhase < 10) {
           currentData.currentPhase++;
           console.log(`📈 IA: Avanzando a fase ${currentData.currentPhase} para ${instanceId}`);
@@ -395,7 +411,7 @@ async function startIAConversationProcess(conversationData, backendUrl) {
           {
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${apiKey}` // Using user API key just in case, but usually backend endpoint handles its own auth or is internal
+              'Authorization': `Bearer ${userKey || apiKey}` // Priorizar userKey interna
             },
             timeout: 10000
           }
