@@ -30,7 +30,8 @@ function CalentamientoContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [instances, setInstances] = useState<Instance[]>([]);
-  const [selectedInstance, setSelectedInstance] = useState('');
+  const [selectedInstances, setSelectedInstances] = useState<string[]>([]);
+  const [conversationTheme, setConversationTheme] = useState('Temas de negocio y tecnología');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [calentamientoStatus, setCalentamientoStatus] = useState<any>(null);
@@ -110,20 +111,23 @@ function CalentamientoContent() {
   };
 
   const startCalentamiento = async () => {
-    if (!selectedInstance) {
-      toast.error('Selecciona una instancia');
+    if (selectedInstances.length === 0) {
+      toast.error('Selecciona al menos una instancia');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const response = await axios.post('/api/templates/calentamiento', {
-        instanceId: selectedInstance,
-        action: 'start'
-      });
+      // Iniciamos calentamiento tradicional para cada instancia seleccionada
+      for (const instanceId of selectedInstances) {
+        await axios.post('/api/templates/calentamiento', {
+          instanceId,
+          action: 'start'
+        });
+      }
 
       toast.success('Calentamiento iniciado exitosamente');
-      setCalentamientoStatus(response.data);
+      // Status will be updated via checkStatus or automatic polling if implemented
     } catch (error: any) {
       console.error('Error starting calentamiento:', error);
       toast.error(error.response?.data?.error || 'Error al iniciar calentamiento');
@@ -133,13 +137,15 @@ function CalentamientoContent() {
   };
 
   const stopCalentamiento = async () => {
-    if (!selectedInstance) return;
+    if (selectedInstances.length === 0) return;
 
     try {
-      await axios.post('/api/templates/calentamiento', {
-        instanceId: selectedInstance,
-        action: 'stop'
-      });
+      for (const instanceId of selectedInstances) {
+        await axios.post('/api/templates/calentamiento', {
+          instanceId,
+          action: 'stop'
+        });
+      }
 
       toast.success('Calentamiento detenido');
       setCalentamientoStatus(null);
@@ -149,15 +155,16 @@ function CalentamientoContent() {
   };
 
   const checkStatus = async () => {
-    if (!selectedInstance) return;
+    if (selectedInstances.length === 0) return;
 
     try {
+      const instanceId = selectedInstances[0]; // Consultamos el primero por defecto
       const endpoint = useIA ? '/api/templates/calentamiento-ia' : '/api/templates/calentamiento';
-      const response = await axios.get(`${endpoint}?instanceId=${selectedInstance}`);
+      const { data } = await axios.get(`${endpoint}?instanceId=${instanceId}`);
       if (useIA) {
-        setIaStatus(response.data);
+        setIaStatus(data);
       } else {
-        setCalentamientoStatus(response.data);
+        setCalentamientoStatus(data);
       }
     } catch (error: any) {
       console.error('Error checking status:', error);
@@ -165,8 +172,8 @@ function CalentamientoContent() {
   };
 
   const startIAConversation = async () => {
-    if (!selectedInstance) {
-      toast.error('Selecciona una instancia');
+    if (selectedInstances.length < 2) {
+      toast.error('Selecciona al menos 2 instancias para conversar entre ellas');
       return;
     }
 
@@ -178,10 +185,11 @@ function CalentamientoContent() {
     setIsSubmitting(true);
     try {
       const response = await axios.post('/api/templates/calentamiento-ia', {
-        instanceId: selectedInstance,
+        instanceIds: selectedInstances,
         action: 'start',
         provider: aiProvider,
-        apiKey: apiKey
+        apiKey: apiKey,
+        theme: conversationTheme
       });
 
       toast.success('Conversación IA iniciada exitosamente');
@@ -195,13 +203,15 @@ function CalentamientoContent() {
   };
 
   const stopIAConversation = async () => {
-    if (!selectedInstance) return;
+    if (selectedInstances.length === 0) return;
 
     try {
-      await axios.post('/api/templates/calentamiento-ia', {
-        instanceId: selectedInstance,
-        action: 'stop'
-      });
+      for (const instanceId of selectedInstances) {
+        await axios.post('/api/templates/calentamiento-ia', {
+          instanceId,
+          action: 'stop'
+        });
+      }
 
       toast.success('Conversación IA detenida');
       setIaStatus(null);
@@ -271,10 +281,13 @@ function CalentamientoContent() {
                 <button
                   key={instance.documentId}
                   onClick={() => {
-                    console.log('Seleccionando instancia:', instance.documentId);
-                    setSelectedInstance(instance.documentId);
+                    setSelectedInstances(prev =>
+                      prev.includes(instance.documentId)
+                        ? prev.filter(id => id !== instance.documentId)
+                        : [...prev, instance.documentId]
+                    );
                   }}
-                  className={`p-4 rounded-xl border-2 transition-all ${selectedInstance === instance.documentId
+                  className={`p-4 rounded-xl border-2 transition-all ${selectedInstances.includes(instance.documentId)
                     ? 'border-red-500 bg-red-50 dark:bg-red-900/10'
                     : 'border-slate-200 dark:border-slate-700 hover:border-red-300'
                     }`}
@@ -295,7 +308,7 @@ function CalentamientoContent() {
               ))}
             </div>
 
-            {selectedInstance && (
+            {selectedInstances.length > 0 && (
               <div className="space-y-4">
                 {/* Selección de tipo de calentamiento */}
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-xl p-4 border border-blue-100 dark:border-blue-800/30">
@@ -419,6 +432,22 @@ function CalentamientoContent() {
 
                           <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                              Tema o Personalidad de la Conversación
+                            </label>
+                            <input
+                              type="text"
+                              value={conversationTheme}
+                              onChange={(e) => setConversationTheme(e.target.value)}
+                              placeholder="Ej: Hablar sobre el cuidado de la Tierra y ecología"
+                              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border-2 border-purple-200 dark:border-purple-800 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all"
+                            />
+                            <p className="mt-1 text-[10px] text-slate-500">
+                              Define de qué hablarán las instancias entre sí.
+                            </p>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                               Tu API Key de {aiProvider === 'openai' ? 'OpenAI' : 'Google Gemini'}
                             </label>
                             <div className="relative group">
@@ -450,7 +479,7 @@ function CalentamientoContent() {
                 <div className="flex items-center gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
                   <button
                     onClick={useIA ? startIAConversation : startCalentamiento}
-                    disabled={isSubmitting || (useIA && availableInstances.length < 2) || (useIA && !apiKey)}
+                    disabled={isSubmitting || (selectedInstances.length === 0) || (useIA && selectedInstances.length < 2) || (useIA && !apiKey)}
                     className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-2.5 rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
                     <PlayIcon className="w-5 h-5" />
