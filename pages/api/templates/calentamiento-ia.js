@@ -254,11 +254,19 @@ async function startIAConversation(instanceId, userId, res, provider = 'openai',
   }
 
   // Obtener todas las instancias conectadas del usuario
-  const { data: allInstances } = await supabaseAdmin
+  const { data: allInstances, error: instancesError } = await supabaseAdmin
     .from('instances')
     .select('document_id, phone_number, name')
     .eq('user_id', userId)
     .eq('state', 'Connected');
+
+  if (instancesError || !allInstances || (!Array.isArray(allInstances))) {
+    console.error('Error fetching instances for IA:', instancesError);
+    return res.status(500).json({
+      error: 'Error al obtener instancias para conversaciones IA',
+      details: instancesError?.message
+    });
+  }
 
   const otherInstances = allInstances
     .filter(inst => inst.document_id !== instanceId && inst.phone_number)
@@ -270,7 +278,8 @@ async function startIAConversation(instanceId, userId, res, provider = 'openai',
 
   if (otherInstances.length === 0) {
     return res.status(400).json({
-      error: 'Se necesitan al menos 2 instancias conectadas para conversaciones IA'
+      error: 'Se necesitan al menos 2 instancias conectadas para conversaciones IA',
+      message: 'Asegúrate de tener otras instancias conectadas con número de teléfono configurado.'
     });
   }
 

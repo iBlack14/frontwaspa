@@ -43,6 +43,10 @@ function CalentamientoContent() {
   const [apiKey, setApiKey] = useState('');
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
 
+  // Saved keys from profile
+  const [savedOpenaiKey, setSavedOpenaiKey] = useState('');
+  const [savedGeminiKey, setSavedGeminiKey] = useState('');
+
   // Configuración del calentamiento por fases
   const calentamientoPhases = [
     { day: 1, messages: 5, description: "Inicio suave - 5 mensajes" },
@@ -62,8 +66,24 @@ function CalentamientoContent() {
       router.push('/login');
     } else if (status === 'authenticated') {
       fetchInstances();
+      fetchProfileKeys();
     }
   }, [status, router]);
+
+  const fetchProfileKeys = async () => {
+    try {
+      const response = await axios.post('/api/user/get');
+      const data = response.data;
+      setSavedOpenaiKey(data.openai_api_key || '');
+      setSavedGeminiKey(data.gemini_api_key || '');
+
+      // Initial fill for default provider
+      if (aiProvider === 'openai') setApiKey(data.openai_api_key || '');
+      else setApiKey(data.gemini_api_key || '');
+    } catch (error) {
+      console.error('Error fetching profile keys:', error);
+    }
+  };
 
   const fetchInstances = async () => {
     try {
@@ -370,7 +390,10 @@ function CalentamientoContent() {
                             <div className="grid grid-cols-2 gap-3">
                               <button
                                 type="button"
-                                onClick={() => setAiProvider('openai')}
+                                onClick={() => {
+                                  setAiProvider('openai');
+                                  setApiKey(savedOpenaiKey);
+                                }}
                                 className={`p-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${aiProvider === 'openai'
                                   ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
                                   : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
@@ -380,7 +403,10 @@ function CalentamientoContent() {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => setAiProvider('gemini')}
+                                onClick={() => {
+                                  setAiProvider('gemini');
+                                  setApiKey(savedGeminiKey);
+                                }}
                                 className={`p-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${aiProvider === 'gemini'
                                   ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
                                   : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'

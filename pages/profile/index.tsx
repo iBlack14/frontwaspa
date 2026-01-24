@@ -19,7 +19,8 @@ import {
   LinkIcon,
   ServerIcon,
   PencilIcon,
-  XMarkIcon
+  XMarkIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 import { toast } from 'sonner';
 
@@ -52,14 +53,20 @@ function ProfilePage() {
   const router = useRouter();
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<'general' | 'proxies'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'proxies' | 'ai'>('general');
 
   // General tab states
   const [email, setEmail] = useState('');
-  const [documentId, setDocumentId] = useState<number | null>(null);
+  const [documentId, setDocumentId] = useState<number | string>('');
   const [username, setUsername] = useState('');
   const [key, setKey] = useState('');
   const [isKeyVisible, setIsKeyVisible] = useState(false);
+
+  // AI config states
+  const [openaiKey, setOpenaiKey] = useState('');
+  const [geminiKey, setGeminiKey] = useState('');
+  const [isOpenaiVisible, setIsOpenaiVisible] = useState(false);
+  const [isGeminiVisible, setIsGeminiVisible] = useState(false);
 
   // Proxies management tab states
   const [proxies, setProxies] = useState<Proxy[]>([]);
@@ -97,21 +104,16 @@ function ProfilePage() {
         });
 
         const userData = response.data;
-        // Use session email as fallback for Google OAuth users
         setEmail(userData.email || (session as any)?.email || '');
         setUsername(userData.username || (session as any)?.username || '');
         setDocumentId(userData.documentId || '');
         setKey(userData.key || '');
+        setOpenaiKey(userData.openai_api_key || '');
+        setGeminiKey(userData.gemini_api_key || '');
       } catch (error: any) {
         console.error('Error al obtener información del usuario:', error);
-        // If API fails, use session data for Google OAuth users
-        if ((session as any)?.email) {
-          setEmail((session as any).email);
-        }
-        if ((session as any)?.username) {
-          setUsername((session as any).username);
-        }
-        // toast.error('Error al cargar datos del perfil');
+        if ((session as any)?.email) setEmail((session as any).email);
+        if ((session as any)?.username) setUsername((session as any).username);
       }
     };
 
@@ -119,7 +121,6 @@ function ProfilePage() {
       fetchUserData();
     }
   }, [typedSession, session]);
-
 
   const generateKey = () => {
     const newKey = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -131,6 +132,8 @@ function ProfilePage() {
       await axios.post('/api/user/update', {
         username,
         key,
+        openai_api_key: openaiKey,
+        gemini_api_key: geminiKey,
         jwt: typedSession?.jwt,
       });
 
@@ -186,12 +189,9 @@ function ProfilePage() {
 
   const handleSubmitProxy = async (e: React.FormEvent) => {
     e.preventDefault();
-
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      const headers = {
-        Authorization: `Bearer ${key}`
-      };
+      const headers = { Authorization: `Bearer ${key}` };
 
       if (editingProxy) {
         await axios.put(`${backendUrl}/api/proxies/${editingProxy.id}`, proxyFormData, { headers });
@@ -202,7 +202,6 @@ function ProfilePage() {
       }
 
       setShowProxyModal(false);
-      setEditingProxy(null);
       resetProxyForm();
       fetchProxies();
     } catch (error: any) {
@@ -212,13 +211,10 @@ function ProfilePage() {
 
   const handleDeleteProxy = async (id: string) => {
     if (!confirm('¿Estás seguro de eliminar este proxy?')) return;
-
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       await axios.delete(`${backendUrl}/api/proxies/${id}`, {
-        headers: {
-          Authorization: `Bearer ${key}`
-        }
+        headers: { Authorization: `Bearer ${key}` }
       });
       toast.success('Proxy eliminado');
       fetchProxies();
@@ -232,27 +228,19 @@ function ProfilePage() {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       toast.promise(
         axios.post(`${backendUrl}/api/proxies/${id}/health-check`, {}, {
-          headers: {
-            Authorization: `Bearer ${key}`
-          }
+          headers: { Authorization: `Bearer ${key}` }
         }),
         {
           loading: 'Verificando proxy...',
           success: (response) => {
-            if (response.data.healthy) {
-              fetchProxies();
-              return 'Proxy saludable ✅';
-            } else {
-              fetchProxies();
-              throw new Error('Proxy no disponible');
-            }
+            fetchProxies();
+            if (response.data.healthy) return 'Proxy saludable ✅';
+            throw new Error('Proxy no disponible');
           },
           error: 'Proxy no disponible ❌',
         }
       );
-    } catch (error: any) {
-      // Handled by toast.promise
-    }
+    } catch (error: any) { }
   };
 
   const openProxyModal = (proxy?: Proxy) => {
@@ -302,9 +290,7 @@ function ProfilePage() {
 
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      const headers = {
-        Authorization: `Bearer ${key}`
-      };
+      const headers = { Authorization: `Bearer ${key}` };
 
       for (const instanceId of selectedInstances) {
         await axios.post(`${backendUrl}/api/instance-proxies`, {
@@ -325,9 +311,7 @@ function ProfilePage() {
 
   const toggleInstanceSelection = (instanceId: string) => {
     setSelectedInstances(prev =>
-      prev.includes(instanceId)
-        ? prev.filter(id => id !== instanceId)
-        : [...prev, instanceId]
+      prev.includes(instanceId) ? prev.filter(id => id !== instanceId) : [...prev, instanceId]
     );
   };
 
@@ -341,481 +325,215 @@ function ProfilePage() {
 
   return (
     <div className="max-w-6xl mx-auto p-6 sm:p-8">
-
-
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-800 dark:text-white tracking-tight">
-          Mi Perfil
-        </h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">
-          Gestiona tu información personal y configuración de seguridad
-        </p>
+        <h1 className="text-3xl font-bold text-slate-800 dark:text-white tracking-tight">Mi Perfil</h1>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">Gestiona tu información personal y configuración de seguridad</p>
       </div>
 
       {/* Tabs */}
       <div className="flex space-x-2 mb-8 bg-slate-100 dark:bg-slate-800/50 p-1.5 rounded-2xl w-fit">
         <button
           onClick={() => setActiveTab('general')}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium text-sm transition-all duration-300 ${activeTab === 'general'
-            ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
-            : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
-            }`}
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium text-sm transition-all duration-300 ${activeTab === 'general' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
         >
-          <UserIcon className="w-5 h-5" />
-          Información General
+          <UserIcon className="w-5 h-5" /> Información General
         </button>
         <button
           onClick={() => setActiveTab('proxies')}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium text-sm transition-all duration-300 ${activeTab === 'proxies'
-            ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
-            : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
-            }`}
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium text-sm transition-all duration-300 ${activeTab === 'proxies' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
         >
-          <ServerIcon className="w-5 h-5" />
-          Gestión de Proxies
+          <ServerIcon className="w-5 h-5" /> Gestión de Proxies
+        </button>
+        <button
+          onClick={() => setActiveTab('ai')}
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium text-sm transition-all duration-300 ${activeTab === 'ai' ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
+        >
+          <SparklesIcon className="w-5 h-5" /> Configuración de IA
         </button>
       </div>
 
       {/* Tab Content */}
-      {activeTab === 'general' && (
-        <div className="bg-white dark:bg-[#1e293b] rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 p-8 max-w-2xl">
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
-            <ShieldCheckIcon className="w-6 h-6 text-indigo-500" />
-            Credenciales de Acceso
-          </h2>
-
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Correo Electrónico
-              </label>
-              <div className="relative">
-                <input
-                  type="email"
-                  value={email}
-                  readOnly
-                  className="w-full pl-4 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-500 dark:text-slate-400 focus:outline-none cursor-not-allowed"
-                />
+      <div className="mt-8">
+        {activeTab === 'general' && (
+          <div className="bg-white dark:bg-[#1e293b] rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 p-8 max-w-2xl">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
+              <ShieldCheckIcon className="w-6 h-6 text-indigo-500" /> Credenciales de Acceso
+            </h2>
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Correo Electrónico</label>
+                <input type="email" value={email} readOnly className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-500 dark:text-slate-400 cursor-not-allowed" />
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Nombre de Usuario
-              </label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                API Secret Key
-              </label>
-              <div className="flex gap-3">
-                <div className="relative flex-1">
-                  <input
-                    type={isKeyVisible ? 'text' : 'password'}
-                    value={key}
-                    readOnly
-                    className="w-full pl-10 pr-10 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 font-mono text-sm focus:outline-none"
-                  />
-                  <KeyIcon className="absolute left-3 top-3.5 w-5 h-5 text-slate-400" />
-                  <button
-                    onClick={() => setIsKeyVisible(!isKeyVisible)}
-                    className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-                  >
-                    {isKeyVisible ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Nombre de Usuario</label>
+                <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">API Secret Key</label>
+                <div className="flex gap-3">
+                  <div className="relative flex-1">
+                    <input type={isKeyVisible ? 'text' : 'password'} value={key} readOnly className="w-full pl-10 pr-10 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 font-mono text-sm" />
+                    <KeyIcon className="absolute left-3 top-3.5 w-5 h-5 text-slate-400" />
+                    <button onClick={() => setIsKeyVisible(!isKeyVisible)} className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                      {isKeyVisible ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  <button onClick={generateKey} className="px-4 py-3 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-xl hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors flex items-center gap-2 font-medium text-sm">
+                    <ArrowPathIcon className="w-5 h-5" /> Generar
                   </button>
                 </div>
-                <button
-                  onClick={generateKey}
-                  className="px-4 py-3 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-xl hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors flex items-center gap-2 font-medium text-sm"
-                  title="Generar nueva clave"
-                >
-                  <ArrowPathIcon className="w-5 h-5" />
-                  Generar
-                </button>
               </div>
-              <p className="text-xs text-slate-400 mt-2">
-                Esta clave se utiliza para autenticar tus peticiones a la API. No la compartas.
-              </p>
-            </div>
-
-            <div className="pt-4">
-              <button
-                onClick={handleSaveGeneral}
-                className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3.5 rounded-xl font-bold hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-300 transform hover:-translate-y-0.5"
-              >
-                Guardar Cambios
-              </button>
+              <div className="pt-4">
+                <button onClick={handleSaveGeneral} className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3.5 rounded-xl font-bold hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5">Guardar Cambios</button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Proxies Management Tab */}
-      {activeTab === 'proxies' && (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-indigo-50 dark:bg-indigo-900/10 p-6 rounded-3xl border border-indigo-100 dark:border-indigo-800/30">
-            <div>
-              <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                <GlobeAltIcon className="w-6 h-6 text-indigo-500" />
-                Tus Proxies
-              </h2>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                Configura proxies para rotar IPs y evitar bloqueos en tus instancias.
-              </p>
-            </div>
-            <button
-              onClick={() => openProxyModal()}
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-500/20 font-medium"
-            >
-              <PlusIcon className="w-5 h-5" />
-              Agregar Proxy
-            </button>
-          </div>
-
-          {loadingProxies ? (
-            <div className="flex flex-col items-center justify-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mb-4"></div>
-              <p className="text-slate-500 dark:text-slate-400">Cargando proxies...</p>
-            </div>
-          ) : proxies.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-100 dark:border-slate-800 border-dashed">
-              <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
-                <ServerIcon className="w-8 h-8 text-slate-400" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">No hay proxies configurados</h3>
-              <p className="text-slate-500 dark:text-slate-400 mb-6 text-center max-w-md">
-                Agrega tu primer proxy para mejorar la conectividad y seguridad de tus instancias.
-              </p>
-              <button
-                onClick={() => openProxyModal()}
-                className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline"
-              >
-                Configurar ahora &rarr;
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {proxies.map((proxy) => (
-                <div
-                  key={proxy.id}
-                  className="group bg-white dark:bg-[#1e293b] rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 hover:-translate-y-1"
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-xl ${proxy.is_healthy
-                        ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'
-                        : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
-                        }`}>
-                        <ServerIcon className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-slate-800 dark:text-white">{proxy.name}</h3>
-                        <span className="text-xs font-mono text-slate-400 uppercase">{proxy.type}</span>
-                      </div>
-                    </div>
-                    <div className={`w-3 h-3 rounded-full ${proxy.is_healthy ? 'bg-emerald-500' : 'bg-red-500'}`} title={proxy.is_healthy ? 'Online' : 'Offline'}></div>
-                  </div>
-
-                  <div className="space-y-3 mb-6">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Host</span>
-                      <span className="font-mono text-slate-700 dark:text-slate-300">{proxy.host}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Puerto</span>
-                      <span className="font-mono text-slate-700 dark:text-slate-300">{proxy.port}</span>
-                    </div>
-                    {proxy.country && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-500">Ubicación</span>
-                        <span className="text-slate-700 dark:text-slate-300">{proxy.city}, {proxy.country}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Uso</span>
-                      <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-xs font-medium text-slate-600 dark:text-slate-300">
-                        {proxy.usage_count} instancias
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-4 gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <button
-                      onClick={() => openAssignModal(proxy)}
-                      className="col-span-2 flex items-center justify-center gap-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 py-2 rounded-xl text-sm font-medium transition-colors"
-                      title="Asignar a instancias"
-                    >
-                      <LinkIcon className="w-4 h-4" />
-                      Asignar
-                    </button>
-                    <button
-                      onClick={() => handleHealthCheck(proxy.id)}
-                      className="flex items-center justify-center bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 py-2 rounded-xl transition-colors"
-                      title="Verificar estado"
-                    >
-                      <ArrowPathIcon className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => openProxyModal(proxy)}
-                      className="flex items-center justify-center bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 py-2 rounded-xl transition-colors"
-                      title="Editar"
-                    >
-                      <PencilIcon className="w-4 h-4" />
-                    </button>
-                    {/* <button
-                      onClick={() => handleDeleteProxy(proxy.id)}
-                      className="flex items-center justify-center bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 py-2 rounded-xl transition-colors"
-                      title="Eliminar"
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </button> */}
-                  </div>
-                  <button
-                    onClick={() => handleDeleteProxy(proxy.id)}
-                    className="w-full mt-2 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 py-2 rounded-xl text-sm font-medium transition-colors"
-                  >
-                    <TrashIcon className="w-4 h-4" />
-                    Eliminar Proxy
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Modal Asignar Proxy */}
-      {showAssignModal && (
-        <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#1e293b] rounded-3xl shadow-2xl w-full max-w-md p-6 border border-slate-100 dark:border-slate-800 transform transition-all scale-100 max-h-[85vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-slate-800 dark:text-white">
-                Asignar Proxy
-              </h3>
-              <button
-                onClick={() => setShowAssignModal(false)}
-                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
-              >
-                <XMarkIcon className="w-5 h-5 text-slate-500" />
-              </button>
-            </div>
-
-            <div className="mb-6 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-800/30">
-              <p className="text-sm font-medium text-indigo-900 dark:text-indigo-300">Proxy seleccionado:</p>
-              <p className="text-lg font-bold text-indigo-600 dark:text-indigo-400">{selectedProxyForAssign?.name}</p>
-            </div>
-
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-              Selecciona las instancias a las que deseas asignar este proxy:
+        {activeTab === 'ai' && (
+          <div className="bg-white dark:bg-[#1e293b] rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 p-8 max-w-2xl">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
+              <SparklesIcon className="w-6 h-6 text-purple-500" /> Configuración de Inteligencia Artificial
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-8">
+              Configura tus propias API Keys para habilitar las funciones de IA como el <span className="text-purple-500 font-semibold">Calentamiento con IA</span>.
             </p>
+            <div className="space-y-8">
+              <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center"><span className="text-xl">🧠</span></div>
+                  <div>
+                    <h3 className="font-bold text-slate-800 dark:text-white">OpenAI (ChatGPT)</h3>
+                    <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-500 hover:underline">Obtener API Key &rarr;</a>
+                  </div>
+                </div>
+                <div className="relative">
+                  <input type={isOpenaiVisible ? 'text' : 'password'} value={openaiKey} onChange={(e) => setOpenaiKey(e.target.value)} placeholder="sk-..." className="w-full pl-10 pr-10 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-mono text-sm" />
+                  <KeyIcon className="absolute left-3 top-3.5 w-5 h-5 text-slate-400" />
+                  <button type="button" onClick={() => setIsOpenaiVisible(!isOpenaiVisible)} className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                    {isOpenaiVisible ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+              <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center"><span className="text-xl">💎</span></div>
+                  <div>
+                    <h3 className="font-bold text-slate-800 dark:text-white">Google Gemini</h3>
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-500 hover:underline">Obtener API Key &rarr;</a>
+                  </div>
+                </div>
+                <div className="relative">
+                  <input type={isGeminiVisible ? 'text' : 'password'} value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} placeholder="AIza..." className="w-full pl-10 pr-10 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-mono text-sm" />
+                  <KeyIcon className="absolute left-3 top-3.5 w-5 h-5 text-slate-400" />
+                  <button type="button" onClick={() => setIsGeminiVisible(!isGeminiVisible)} className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                    {isGeminiVisible ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+              <div className="pt-4">
+                <button onClick={handleSaveGeneral} className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3.5 rounded-xl font-bold hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5">Guardar Configuración IA</button>
+              </div>
+            </div>
+          </div>
+        )}
 
-            {instances.length === 0 ? (
-              <div className="text-center py-8 text-slate-500">
-                No tienes instancias disponibles
+        {activeTab === 'proxies' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-indigo-50 dark:bg-indigo-900/10 p-6 rounded-3xl border border-indigo-100 dark:border-indigo-800/30">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                  <GlobeAltIcon className="w-6 h-6 text-indigo-500" /> Tus Proxies
+                </h2>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Configura proxies para rotar IPs y evitar bloqueos en tus instancias.</p>
+              </div>
+              <button onClick={() => openProxyModal()} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl transition-all shadow-lg font-medium">
+                <PlusIcon className="w-5 h-5" /> Agregar Proxy
+              </button>
+            </div>
+
+            {loadingProxies ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mb-4"></div>
+                <p className="text-slate-500 dark:text-slate-400">Cargando proxies...</p>
+              </div>
+            ) : proxies.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-[#1e293b] rounded-3xl border border-dashed border-slate-200">
+                <ServerIcon className="w-8 h-8 text-slate-400 mb-4" />
+                <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">No hay proxies configurados</h3>
+                <button onClick={() => openProxyModal()} className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">Configurar ahora &rarr;</button>
               </div>
             ) : (
-              <div className="space-y-2 mb-8">
-                {instances.map((instance) => (
-                  <label
-                    key={instance.documentId}
-                    className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-all ${selectedInstances.includes(instance.documentId)
-                      ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800'
-                      : 'bg-white border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700'
-                      }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedInstances.includes(instance.documentId)}
-                      onChange={() => toggleInstanceSelection(instance.documentId)}
-                      className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300"
-                    />
-                    <div className="flex-1">
-                      <p className="font-bold text-slate-800 dark:text-white text-sm">
-                        {instance.name || 'Instancia'}
-                      </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-                        {instance.phoneNumber || instance.documentId}
-                      </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {proxies.map(proxy => (
+                  <div key={proxy.id} className="bg-white dark:bg-[#1e293b] rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:-translate-y-1">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-xl ${proxy.is_healthy ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}><ServerIcon className="w-6 h-6" /></div>
+                        <div><h3 className="font-bold text-slate-800 dark:text-white">{proxy.name}</h3><span className="text-xs text-slate-400 uppercase">{proxy.type}</span></div>
+                      </div>
+                      <div className={`w-3 h-3 rounded-full ${proxy.is_healthy ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
                     </div>
-                    <span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase ${instance.state === 'Connected'
-                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                      : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
-                      }`}>
-                      {instance.state}
-                    </span>
-                  </label>
+                    <div className="space-y-2 mb-4 text-sm">
+                      <div className="flex justify-between"><span>Host</span><span className="font-mono">{proxy.host}</span></div>
+                      <div className="flex justify-between"><span>Puerto</span><span className="font-mono">{proxy.port}</span></div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => openAssignModal(proxy)} className="flex-1 bg-indigo-50 text-indigo-600 py-2 rounded-xl text-sm font-medium">Asignar</button>
+                      <button onClick={() => handleHealthCheck(proxy.id)} className="p-2 bg-slate-50 rounded-xl"><ArrowPathIcon className="w-4 h-4" /></button>
+                      <button onClick={() => openProxyModal(proxy)} className="p-2 bg-slate-50 rounded-xl"><PencilIcon className="w-4 h-4" /></button>
+                      <button onClick={() => handleDeleteProxy(proxy.id)} className="p-2 bg-red-50 text-red-600 rounded-xl"><TrashIcon className="w-4 h-4" /></button>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
+          </div>
+        )}
+      </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowAssignModal(false)}
-                className="flex-1 py-3 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 rounded-xl font-medium transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleAssignProxy}
-                disabled={selectedInstances.length === 0}
-                className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/20"
-              >
-                Asignar ({selectedInstances.length})
-              </button>
+      {/* Modals */}
+      {showAssignModal && (
+        <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#1e293b] rounded-3xl shadow-2xl w-full max-w-md p-6 border border-slate-100 overflow-y-auto max-h-[85vh]">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold">Asignar Proxy</h3>
+              <button onClick={() => setShowAssignModal(false)}><XMarkIcon className="w-5 h-5" /></button>
             </div>
+            <div className="mb-6 p-4 bg-indigo-50 rounded-2xl">
+              <p className="text-sm">Proxy: <span className="font-bold">{selectedProxyForAssign?.name}</span></p>
+            </div>
+            <div className="space-y-2 mb-8">
+              {instances.map(inst => (
+                <label key={inst.documentId} className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer ${selectedInstances.includes(inst.documentId) ? 'bg-indigo-50 border-indigo-200' : ''}`}>
+                  <input type="checkbox" checked={selectedInstances.includes(inst.documentId)} onChange={() => toggleInstanceSelection(inst.documentId)} className="w-5 h-5" />
+                  <div className="flex-1"><p className="font-bold text-sm">{inst.name || 'Instancia'}</p><p className="text-xs">{inst.phoneNumber || inst.documentId}</p></div>
+                </label>
+              ))}
+            </div>
+            <button onClick={handleAssignProxy} className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold">Asignar ({selectedInstances.length})</button>
           </div>
         </div>
       )}
 
-      {/* Modal Crear/Editar Proxy */}
       {showProxyModal && (
         <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#1e293b] rounded-3xl shadow-2xl w-full max-w-md p-6 border border-slate-100 dark:border-slate-800 transform transition-all scale-100 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-[#1e293b] rounded-3xl shadow-2xl w-full max-w-md p-6 border border-slate-100 overflow-y-auto max-h-[90vh]">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-slate-800 dark:text-white">
-                {editingProxy ? 'Editar Proxy' : 'Nuevo Proxy'}
-              </h3>
-              <button
-                onClick={() => setShowProxyModal(false)}
-                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
-              >
-                <XMarkIcon className="w-5 h-5 text-slate-500" />
-              </button>
+              <h3 className="text-xl font-bold">{editingProxy ? 'Editar Proxy' : 'Nuevo Proxy'}</h3>
+              <button onClick={() => setShowProxyModal(false)}><XMarkIcon className="w-5 h-5" /></button>
             </div>
-
             <form onSubmit={handleSubmitProxy} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Nombre Identificativo
-                </label>
-                <input
-                  type="text"
-                  value={proxyFormData.name}
-                  onChange={(e) => setProxyFormData({ ...proxyFormData, name: e.target.value })}
-                  placeholder="Ej: Proxy USA Premium"
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  required
-                />
-              </div>
-
+              <input type="text" value={proxyFormData.name} onChange={e => setProxyFormData({ ...proxyFormData, name: e.target.value })} placeholder="Nombre" className="w-full px-4 py-3 border rounded-xl" required />
               <div className="grid grid-cols-3 gap-4">
-                <div className="col-span-1">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Tipo
-                  </label>
-                  <select
-                    value={proxyFormData.type}
-                    onChange={(e) => setProxyFormData({ ...proxyFormData, type: e.target.value as any })}
-                    className="w-full px-3 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  >
-                    <option value="http">HTTP</option>
-                    <option value="https">HTTPS</option>
-                    <option value="socks4">SOCKS4</option>
-                    <option value="socks5">SOCKS5</option>
-                  </select>
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Host / IP
-                  </label>
-                  <input
-                    type="text"
-                    value={proxyFormData.host}
-                    onChange={(e) => setProxyFormData({ ...proxyFormData, host: e.target.value })}
-                    placeholder="192.168.1.1"
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                    required
-                  />
-                </div>
+                <select value={proxyFormData.type} onChange={e => setProxyFormData({ ...proxyFormData, type: e.target.value as any })} className="border rounded-xl px-2"><option value="http">HTTP</option><option value="https">HTTPS</option><option value="socks4">SOCKS4</option><option value="socks5">SOCKS5</option></select>
+                <input type="text" value={proxyFormData.host} onChange={e => setProxyFormData({ ...proxyFormData, host: e.target.value })} placeholder="Host" className="col-span-2 px-4 py-3 border rounded-xl" required />
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Puerto
-                </label>
-                <input
-                  type="number"
-                  value={proxyFormData.port}
-                  onChange={(e) => setProxyFormData({ ...proxyFormData, port: parseInt(e.target.value) })}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Usuario (Opcional)
-                  </label>
-                  <input
-                    type="text"
-                    value={proxyFormData.username}
-                    onChange={(e) => setProxyFormData({ ...proxyFormData, username: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Contraseña (Opcional)
-                  </label>
-                  <input
-                    type="password"
-                    value={proxyFormData.password}
-                    onChange={(e) => setProxyFormData({ ...proxyFormData, password: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    País (Opcional)
-                  </label>
-                  <input
-                    type="text"
-                    value={proxyFormData.country}
-                    onChange={(e) => setProxyFormData({ ...proxyFormData, country: e.target.value })}
-                    placeholder="Ej: US"
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Ciudad (Opcional)
-                  </label>
-                  <input
-                    type="text"
-                    value={proxyFormData.city}
-                    onChange={(e) => setProxyFormData({ ...proxyFormData, city: e.target.value })}
-                    placeholder="Ej: New York"
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-4 flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowProxyModal(false)}
-                  className="flex-1 py-3 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 rounded-xl font-medium transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/20"
-                >
-                  {editingProxy ? 'Guardar Cambios' : 'Crear Proxy'}
-                </button>
+              <input type="number" value={proxyFormData.port} onChange={e => setProxyFormData({ ...proxyFormData, port: parseInt(e.target.value) })} placeholder="Puerto" className="w-full px-4 py-3 border rounded-xl" required />
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setShowProxyModal(false)} className="flex-1 py-3 border rounded-xl">Cancelar</button>
+                <button type="submit" className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold">Guardar</button>
               </div>
             </form>
           </div>

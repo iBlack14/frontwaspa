@@ -34,9 +34,13 @@ export default async function handler(req, res) {
     }
 
     // Actualizar perfil en la tabla profiles
+    const updateData = { api_key: key };
+    if (req.body.openai_api_key) updateData.openai_api_key = req.body.openai_api_key;
+    if (req.body.gemini_api_key) updateData.gemini_api_key = req.body.gemini_api_key;
+
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
-      .update({ api_key: key })
+      .update(updateData)
       .eq('id', session.id);
 
     if (profileError) {
@@ -44,9 +48,9 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Error al actualizar perfil' });
     }
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       success: true,
-      message: 'Usuario actualizado correctamente' 
+      message: 'Usuario actualizado correctamente'
     });
   } catch (error) {
     console.error('Error al actualizar la info del usuario:', error.message);

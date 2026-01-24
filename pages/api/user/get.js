@@ -41,6 +41,8 @@ export default async function handler(req, res) {
       email: user.email || session.email,
       username: profile?.username || user.user_metadata?.username || user.email?.split('@')[0] || 'Usuario',
       key: profile?.api_key || '',
+      openai_api_key: profile?.openai_api_key || '',
+      gemini_api_key: profile?.gemini_api_key || '',
       status_plan: profile?.status_plan || false,
       plan_type: profile?.plan_type || 'free',
     });
