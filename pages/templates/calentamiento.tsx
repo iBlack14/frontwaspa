@@ -342,221 +342,228 @@ function CalentamientoContent() {
                   {/* Configuración de IA */}
                   {useIA && (
                     <div className="mt-4 p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 animate-fadeIn">
-                      <h4 className="font-bold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
-                        <KeyIcon className="w-4 h-4 text-purple-500" />
-                        Configuración de IA
-                      </h4>
+                      <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border-2 border-purple-200 dark:border-purple-800/50 shadow-sm">
+                        <h4 className="font-bold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
+                          <SparklesIcon className="w-5 h-5 text-purple-500 animate-pulse" />
+                          Configuración de IA Requerida
+                        </h4>
+                        <p className="text-sm text-purple-600 dark:text-purple-300 mb-4">
+                          Para usar conversaciones inteligentes, necesitas ingresar tu propia API Key. Esto permite diálogos realistas y personalizados.
+                        </p>
 
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Proveedor de Inteligencia Artificial
-                          </label>
-                          <div className="grid grid-cols-2 gap-3">
-                            <button
-                              onClick={() => setAiProvider('openai')}
-                              className={`p-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${aiProvider === 'openai'
-                                ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
-                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
-                                }`}
-                            >
-                              <span>ChatGPT (OpenAI)</span>
-                            </button>
-                            <button
-                              onClick={() => setAiProvider('gemini')}
-                              className={`p-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${aiProvider === 'gemini'
-                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
-                                }`}
-                            >
-                              <span>Google Gemini</span>
-                            </button>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                              Proveedor de Inteligencia Artificial
+                            </label>
+                            <div className="grid grid-cols-2 gap-3">
+                              <button
+                                onClick={() => setAiProvider('openai')}
+                                className={`p-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${aiProvider === 'openai'
+                                  ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
+                                  : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                                  }`}
+                              >
+                                <span>ChatGPT (OpenAI)</span>
+                              </button>
+                              <button
+                                onClick={() => setAiProvider('gemini')}
+                                className={`p-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${aiProvider === 'gemini'
+                                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                                  : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                                  }`}
+                              >
+                                <span>Google Gemini</span>
+                              </button>
+                            </div>
                           </div>
-                        </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            Tu API Key de {aiProvider === 'openai' ? 'OpenAI' : 'Google Gemini'}
-                          </label>
-                          <div className="relative">
-                            <input
-                              type="password"
-                              value={apiKey}
-                              onChange={(e) => setApiKey(e.target.value)}
-                              placeholder={aiProvider === 'openai' ? "sk-..." : "AIza..."}
-                              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all"
-                            />
-                            <KeyIcon className="w-5 h-5 text-slate-400 absolute left-3 top-2.5" />
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                              Tu API Key de {aiProvider === 'openai' ? 'OpenAI' : 'Google Gemini'}
+                            </label>
+                            <div className="relative group">
+                              <input
+                                type="password"
+                                value={apiKey}
+                                onChange={(e) => setApiKey(e.target.value)}
+                                placeholder={aiProvider === 'openai' ? "sk-..." : "AIza..."}
+                                className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-900 border-2 border-purple-300 dark:border-purple-700 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all shadow-sm group-hover:border-purple-400"
+                              />
+                              <KeyIcon className="w-5 h-5 text-purple-400 absolute left-3 top-3.5" />
+                            </div>
+                            <div className="mt-2 flex items-center gap-2 text-xs font-medium bg-slate-100 dark:bg-slate-700 p-2 rounded-lg">
+                              <KeyIcon className="w-3.5 h-3.5" />
+                              <span>
+                                {aiProvider === 'openai'
+                                  ? 'Crea tu key en: platform.openai.com/api-keys'
+                                  : 'Crea tu key en: aistudio.google.com/app/apikey'}
+                              </span>
+                            </div>
                           </div>
-                          <p className="text-xs text-slate-500 mt-1">
-                            {aiProvider === 'openai'
-                              ? 'Obtén tu key en platform.openai.com'
-                              : 'Obtén tu key en aistudio.google.com'}
-                          </p>
                         </div>
                       </div>
-                    </div>
                   )}
-                </div>
+                    </div>
 
                 {/* Botones de control */}
-                <div className="flex items-center gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-                  <button
-                    onClick={useIA ? startIAConversation : startCalentamiento}
-                    disabled={isSubmitting || (useIA && availableInstances.length < 2) || (useIA && !apiKey)}
-                    className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-2.5 rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                  >
-                    <PlayIcon className="w-5 h-5" />
-                    {isSubmitting
-                      ? 'Iniciando...'
-                      : useIA
-                        ? 'Iniciar Conversaciones IA'
-                        : 'Iniciar Calentamiento'
-                    }
-                  </button>
+                  <div className="flex items-center gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <button
+                      onClick={useIA ? startIAConversation : startCalentamiento}
+                      disabled={isSubmitting || (useIA && availableInstances.length < 2) || (useIA && !apiKey)}
+                      className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-2.5 rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                      <PlayIcon className="w-5 h-5" />
+                      {isSubmitting
+                        ? 'Iniciando...'
+                        : useIA
+                          ? 'Iniciar Conversaciones IA'
+                          : 'Iniciar Calentamiento'
+                      }
+                    </button>
 
-                  <button
-                    onClick={useIA ? stopIAConversation : stopCalentamiento}
-                    className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-6 py-2.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
-                  >
-                    <StopIcon className="w-5 h-5" />
-                    Detener
-                  </button>
+                    <button
+                      onClick={useIA ? stopIAConversation : stopCalentamiento}
+                      className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-6 py-2.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                    >
+                      <StopIcon className="w-5 h-5" />
+                      Detener
+                    </button>
 
-                  <button
-                    onClick={checkStatus}
-                    className="flex items-center gap-2 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-6 py-2.5 rounded-xl hover:bg-blue-200 dark:hover:bg-blue-800/30 transition-all"
-                  >
-                    <ChartBarIcon className="w-5 h-5" />
-                    Ver Estado
-                  </button>
+                    <button
+                      onClick={checkStatus}
+                      className="flex items-center gap-2 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-6 py-2.5 rounded-xl hover:bg-blue-200 dark:hover:bg-blue-800/30 transition-all"
+                    >
+                      <ChartBarIcon className="w-5 h-5" />
+                      Ver Estado
+                    </button>
+                  </div>
                 </div>
+            )}
               </div>
             )}
           </div>
-        )}
-      </div>
 
       {/* Calentamiento Phases */}
-      <div className="bg-white dark:bg-[#1e293b] rounded-3xl p-6 border border-slate-100 dark:border-slate-800 mb-8">
-        <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-3">
-          <ArrowTrendingUpIcon className="w-6 h-6" />
-          Fases del Calentamiento
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {calentamientoPhases.map((phase, index) => (
-            <div
-              key={phase.day}
-              className={`p-4 rounded-xl border-2 transition-all ${(useIA ? iaStatus : calentamientoStatus)?.currentPhase >= phase.day
-                ? 'border-emerald-200 bg-emerald-50 dark:bg-emerald-900/10'
-                : 'border-slate-200 dark:border-slate-700'
-                }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                  Día {phase.day}
-                </span>
-                {(useIA ? iaStatus : calentamientoStatus)?.currentPhase >= phase.day && (
-                  <CheckCircleIcon className="w-5 h-5 text-emerald-500" />
-                )}
-              </div>
-              <div className="flex items-center gap-2 mb-1">
-                <FireIcon className="w-4 h-4 text-red-500" />
-                <span className="font-bold text-slate-800 dark:text-white">
-                  {phase.messages} mensajes
-                </span>
-              </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                {phase.description}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Status Information */}
-      {(calentamientoStatus || iaStatus) && (
-        <div className="bg-white dark:bg-[#1e293b] rounded-3xl p-6 border border-slate-100 dark:border-slate-800">
+        <div className="bg-white dark:bg-[#1e293b] rounded-3xl p-6 border border-slate-100 dark:border-slate-800 mb-8">
           <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-3">
-            {useIA ? <SparklesIcon className="w-6 h-6 text-purple-500" /> : <FireIcon className="w-6 h-6 text-red-500" />}
-            Estado del {useIA ? 'Calentamiento IA' : 'Calentamiento'}
+            <ArrowTrendingUpIcon className="w-6 h-6" />
+            Fases del Calentamiento
           </h2>
 
-          {useIA && iaStatus && (
-            <div className="mb-4 p-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg border border-purple-200 dark:border-purple-800/30">
-              <div className="flex items-center gap-2 text-purple-700 dark:text-purple-400">
-                <SparklesIcon className="w-5 h-5" />
-                <span className="font-medium">
-                  Conversación IA activa con {iaStatus.participantCount || 0} participantes
-                </span>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {calentamientoPhases.map((phase, index) => (
+              <div
+                key={phase.day}
+                className={`p-4 rounded-xl border-2 transition-all ${(useIA ? iaStatus : calentamientoStatus)?.currentPhase >= phase.day
+                  ? 'border-emerald-200 bg-emerald-50 dark:bg-emerald-900/10'
+                  : 'border-slate-200 dark:border-slate-700'
+                  }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                    Día {phase.day}
+                  </span>
+                  {(useIA ? iaStatus : calentamientoStatus)?.currentPhase >= phase.day && (
+                    <CheckCircleIcon className="w-5 h-5 text-emerald-500" />
+                  )}
+                </div>
+                <div className="flex items-center gap-2 mb-1">
+                  <FireIcon className="w-4 h-4 text-red-500" />
+                  <span className="font-bold text-slate-800 dark:text-white">
+                    {phase.messages} mensajes
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  {phase.description}
+                </p>
               </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-2xl p-6 border border-blue-100 dark:border-blue-800/30">
-              <div className="flex items-center gap-3 mb-3">
-                <ClockIcon className="w-6 h-6 text-blue-500" />
-                <span className="font-bold text-slate-800 dark:text-white">Fase Actual</span>
-              </div>
-              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                {(useIA ? iaStatus : calentamientoStatus)?.currentPhase || 1}
-              </div>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                de 10 fases
-              </p>
-            </div>
-
-            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/10 dark:to-teal-900/10 rounded-2xl p-6 border border-emerald-100 dark:border-emerald-800/30">
-              <div className="flex items-center gap-3 mb-3">
-                <CheckCircleIcon className="w-6 h-6 text-emerald-500" />
-                <span className="font-bold text-slate-800 dark:text-white">Mensajes Enviados</span>
-              </div>
-              <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
-                {(useIA ? iaStatus : calentamientoStatus)?.messagesSent || 0}
-              </div>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                hoy
-              </p>
-            </div>
-
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10 rounded-2xl p-6 border border-amber-100 dark:border-amber-800/30">
-              <div className="flex items-center gap-3 mb-3">
-                <FireIcon className="w-6 h-6 text-amber-500" />
-                <span className="font-bold text-slate-800 dark:text-white">Próximo Límite</span>
-              </div>
-              <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">
-                {calentamientoPhases[((useIA ? iaStatus : calentamientoStatus)?.currentPhase || 1) - 1]?.messages || 5}
-              </div>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                mensajes diarios
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-            <h3 className="font-bold text-slate-800 dark:text-white mb-2">
-              💡 Consejos para el calentamiento:
-            </h3>
-            <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
-              <li>• Envía mensajes naturales y variados</li>
-              <li>• Mantén conversaciones bidireccionales</li>
-              <li>• No envíes todos los mensajes de golpe</li>
-              <li>• Respeta los límites diarios de cada fase</li>
-              <li>• Si ves errores, reduce la velocidad</li>
-            </ul>
+            ))}
           </div>
         </div>
-      )}
-    </div>
-  );
+
+        {/* Status Information */}
+        {(calentamientoStatus || iaStatus) && (
+          <div className="bg-white dark:bg-[#1e293b] rounded-3xl p-6 border border-slate-100 dark:border-slate-800">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-3">
+              {useIA ? <SparklesIcon className="w-6 h-6 text-purple-500" /> : <FireIcon className="w-6 h-6 text-red-500" />}
+              Estado del {useIA ? 'Calentamiento IA' : 'Calentamiento'}
+            </h2>
+
+            {useIA && iaStatus && (
+              <div className="mb-4 p-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg border border-purple-200 dark:border-purple-800/30">
+                <div className="flex items-center gap-2 text-purple-700 dark:text-purple-400">
+                  <SparklesIcon className="w-5 h-5" />
+                  <span className="font-medium">
+                    Conversación IA activa con {iaStatus.participantCount || 0} participantes
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-2xl p-6 border border-blue-100 dark:border-blue-800/30">
+                <div className="flex items-center gap-3 mb-3">
+                  <ClockIcon className="w-6 h-6 text-blue-500" />
+                  <span className="font-bold text-slate-800 dark:text-white">Fase Actual</span>
+                </div>
+                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                  {(useIA ? iaStatus : calentamientoStatus)?.currentPhase || 1}
+                </div>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                  de 10 fases
+                </p>
+              </div>
+
+              <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/10 dark:to-teal-900/10 rounded-2xl p-6 border border-emerald-100 dark:border-emerald-800/30">
+                <div className="flex items-center gap-3 mb-3">
+                  <CheckCircleIcon className="w-6 h-6 text-emerald-500" />
+                  <span className="font-bold text-slate-800 dark:text-white">Mensajes Enviados</span>
+                </div>
+                <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+                  {(useIA ? iaStatus : calentamientoStatus)?.messagesSent || 0}
+                </div>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                  hoy
+                </p>
+              </div>
+
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10 rounded-2xl p-6 border border-amber-100 dark:border-amber-800/30">
+                <div className="flex items-center gap-3 mb-3">
+                  <FireIcon className="w-6 h-6 text-amber-500" />
+                  <span className="font-bold text-slate-800 dark:text-white">Próximo Límite</span>
+                </div>
+                <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">
+                  {calentamientoPhases[((useIA ? iaStatus : calentamientoStatus)?.currentPhase || 1) - 1]?.messages || 5}
+                </div>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                  mensajes diarios
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+              <h3 className="font-bold text-slate-800 dark:text-white mb-2">
+                💡 Consejos para el calentamiento:
+              </h3>
+              <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
+                <li>• Envía mensajes naturales y variados</li>
+                <li>• Mantén conversaciones bidireccionales</li>
+                <li>• No envíes todos los mensajes de golpe</li>
+                <li>• Respeta los límites diarios de cada fase</li>
+                <li>• Si ves errores, reduce la velocidad</li>
+              </ul>
+            </div>
+          </div>
+        )}
+      </div>
+      );
 }
 
-export default function Calentamiento() {
+      export default function Calentamiento() {
   return (
-    <Sidebard>
-      <CalentamientoContent />
-    </Sidebard>
-  );
+      <Sidebard>
+        <CalentamientoContent />
+      </Sidebard>
+      );
 }

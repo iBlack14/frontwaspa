@@ -109,24 +109,27 @@ async function generateIAResponse(message, conversationHistory = [], context = {
           messages: [
             {
               role: 'system',
-              content: `Eres un profesional en una conversación de WhatsApp sobre temas de negocio, tecnología y trabajo.
-              Mantén conversaciones naturales, profesionales pero amigables.
-              Responde de manera concisa pero completa.
-              Usa un tono conversacional como si estuvieras chateando con un colega.
-              Evita ser demasiado formal o robotizado.
-              Contexto: Esta es una conversación entre colegas de trabajo.`
+              content: `Eres un profesional en una conversación de WhatsApp sobre temas de negocio, tecnología, marketing y emprendimiento. 
+              TU OBJETIVO es mantener un flujo de conversación natural y realista.
+              INSTRUCCIONES CRÍTICAS:
+              1. NO respondas con una sola palabra.
+              2. Tus respuestas deben tener entre 20 y 60 palabras.
+              3. Usa un lenguaje natural de chat (puedes usar algún emoji, preguntar de vuelta, comentar algo interesante).
+              4. Varía los temas: habla sobre retos diarios, reuniones, nuevas herramientas de IA, o planes de fin de semana.
+              5. Actúa como si realmente conocieras a la otra persona hace tiempo.
+              6. NO seas demasiado formal ni robótico.`
             },
             ...conversationHistory.map(msg => ({
-              role: msg.isAI ? 'assistant' : 'user', // Basic mapping
+              role: msg.isAI ? 'assistant' : 'user',
               content: msg.content
-            })).slice(-10), // Últimos 10 mensajes
+            })).slice(-10),
             {
               role: 'user',
               content: message
             }
           ],
-          max_tokens: 150,
-          temperature: 0.8
+          max_tokens: 300,
+          temperature: 0.9
         })
       });
 
@@ -148,7 +151,9 @@ async function generateIAResponse(message, conversationHistory = [], context = {
       const contents = [
         {
           role: "user",
-          parts: [{ text: `Actúa como un colega de trabajo en WhatsApp. Responde de forma natural, breve y profesional al siguiente mensaje: "${message}". Contexto: Conversación casual de negocios.` }]
+          parts: [{
+            text: `Actúa como un colega de trabajo en WhatsApp. Responde de forma muy natural y fluida al siguiente mensaje: "${message}". 
+          REGLAS: No seas breve, escribe al menos 2 ó 3 oraciones completas (25-50 palabras). Pregunta algo relacionado para seguir el hilo. Usa un tono de oficina casual.` }]
         }
       ];
 
