@@ -652,7 +652,7 @@ function MessageBubble({
       const lastOpened = hasBeenOpened ? message.view_once_opened_times![message.view_once_opened_times!.length - 1] : null;
 
       const handleViewOnceClick = async () => {
-        if (!message.media_url) return;
+        if (!message.media_url) return toast.error('La imagen no está disponible');
 
         // Abrir media
         window.open(message.media_url, '_blank');
@@ -663,20 +663,22 @@ function MessageBubble({
           await axios.post(`${backendUrl}/api/messages/mark-viewed`, {
             messageId: message.message_id
           });
-          // Nota: El polling actualizará el estado visual en el próximo ciclo
         } catch (error) {
           console.error("Error marking view once as opened:", error);
         }
       };
 
+      const isMediaAvailable = !!message.media_url;
+
       return (
         <div className="mb-1 min-w-[220px]">
           <button
             onClick={handleViewOnceClick}
-            className={`flex items-center gap-3 rounded-xl p-3 w-full transition group text-left border ${hasBeenOpened
+            disabled={!isMediaAvailable}
+            className={`flex items-center gap-3 rounded-xl p-3 w-full transition group text-left border relative overflow-hidden ${hasBeenOpened
                 ? 'bg-slate-50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-700'
                 : 'bg-white dark:bg-slate-700 border-indigo-100 dark:border-slate-600 shadow-sm hover:shadow-md'
-              }`}
+              } ${!isMediaAvailable ? 'opacity-75 cursor-not-allowed' : ''}`}
           >
             <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${hasBeenOpened
                 ? 'border-slate-300 text-slate-400'
@@ -699,11 +701,11 @@ function MessageBubble({
               <p className="text-xs text-slate-400 dark:text-slate-500">
                 {hasBeenOpened
                   ? `Visto ${lastOpened ? new Date(lastOpened).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}`
-                  : (isVideo ? 'Video (Ver una vez)' : 'Foto (Ver una vez)')}
+                  : (isMediaAvailable ? (isVideo ? 'Video (Ver una vez)' : 'Foto (Ver una vez)') : 'No disponible')}
               </p>
             </div>
 
-            {!hasBeenOpened && (
+            {!hasBeenOpened && isMediaAvailable && (
               <div className="text-indigo-400 group-hover:text-indigo-600 transition">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />

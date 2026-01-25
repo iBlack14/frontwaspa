@@ -15,6 +15,7 @@ interface Chat {
   unread_count: number;
   is_archived: boolean;
   is_pinned: boolean;
+  last_message_type?: string;
 }
 
 interface Contact {
@@ -311,18 +312,25 @@ export default function ChatList({ chats, selectedChat, onSelectChat, instanceId
 function ChatItem({ chat, isSelected, onClick, isStatus }: { chat: Chat; isSelected: boolean; onClick: () => void; isStatus?: boolean }) {
   // Determinar texto de previsualización
   const getPreviewText = () => {
-    if (chat.last_message_text) return chat.last_message_text;
     if (isStatus) return 'Nueva actualización de estado';
 
-    // Fallbacks por tipo si no hay texto
-    const type = (chat as any).last_message_type; // Suponiendo que viene del backend
-    if (type === 'view_once_image') return '👁️ Foto (Ver una vez)';
-    if (type === 'view_once_video') return '👁️ Video (Ver una vez)';
-    if (type === 'image') return '🖼️ Foto';
-    if (type === 'video') return '🎥 Video';
-    if (type === 'audio' || type === 'voice') return '🎤 Audio';
+    const text = chat.last_message_text;
+    const type = chat.last_message_type || (chat as any).last_message_type;
 
-    return '📎 Archivo multimedia';
+    // Si el texto es genérico "[Media]" o vacío, o tenemos un tipo específico, intentamos mejorar
+    if (!text || text === '[Media]' || text === '📎 Archivo' || type) {
+      if (type === 'view_once_image' || text?.includes('Ver una vez')) return '🔐 Foto (Ver una vez)';
+      if (type === 'view_once_video') return '🔐 Video (Ver una vez)';
+      if (type === 'image') return '🖼️ Foto';
+      if (type === 'video') return '🎥 Video';
+      if (type === 'audio' || type === 'voice' || type === 'ptt') return '🎤 Nota de voz';
+      if (type === 'sticker') return '🎨 Sticker';
+      if (type === 'document') return '📄 Documento';
+      if (type === 'location') return '📍 Ubicación';
+      if (type === 'contact') return '👤 Contacto';
+    }
+
+    return text || '📎 Archivo multimedia';
   };
 
   return (
