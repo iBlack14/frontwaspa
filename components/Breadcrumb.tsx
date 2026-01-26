@@ -3,12 +3,17 @@
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { ChevronRightIcon, HomeIcon } from '@heroicons/react/24/outline';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import SidebarComponent from './SidebarComponent';
 
 export default function Breadcrumb() {
     const router = useRouter();
-    const pathname = router.asPath;
+    const [pathname, setPathname] = useState('');
+
+    useEffect(() => {
+        setPathname(router.asPath);
+    }, [router.asPath]);
+
     if (!pathname) return null;
 
     const pathParts = pathname.split('/').filter(Boolean);

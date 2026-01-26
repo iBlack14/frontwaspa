@@ -31,7 +31,6 @@ import {
 
 function SidebarLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const pathname = router.asPath;
   const { session, status, signOut } = useAuth();
   const email = session?.user?.email;
   const username = session?.username;
@@ -41,6 +40,7 @@ function SidebarLayout({ children }: { children: React.ReactNode }) {
   const [isMobile, setIsMobile] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [pathname, setPathname] = useState('');
 
   // Notifications Logic
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -49,6 +49,7 @@ function SidebarLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setHasMounted(true);
+    setPathname(router.asPath);
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
@@ -65,7 +66,7 @@ function SidebarLayout({ children }: { children: React.ReactNode }) {
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [router.asPath]);
 
   useEffect(() => {
     if (status !== 'authenticated') return;
