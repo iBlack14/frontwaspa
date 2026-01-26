@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/router';
 import { SparklesIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 
 export default function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const router = useRouter();
 
   return (
     <nav className="fixed top-0 w-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-lg z-50 border-b border-gray-200 dark:border-zinc-800">
@@ -13,7 +14,7 @@ export default function Navigation() {
             <SparklesIcon className="h-8 w-8 text-emerald-600" />
             <span className="ml-2 text-xl font-bold text-gray-900 dark:text-white">BLXK Connect</span>
           </div>
-          
+
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-8">
             <a href="#features" className="text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition">
@@ -26,7 +27,7 @@ export default function Navigation() {
               Testimonios
             </a>
             <button
-              onClick={() => signIn()}
+              onClick={() => router.push('/login')}
               className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 transition font-medium"
             >
               Iniciar Sesión
@@ -57,7 +58,7 @@ export default function Navigation() {
               Testimonios
             </a>
             <button
-              onClick={() => signIn()}
+              onClick={() => router.push('/login')}
               className="w-full bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 transition font-medium"
             >
               Iniciar Sesión

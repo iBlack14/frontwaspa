@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 import axios from 'axios';
 
 interface InstanceData {
@@ -18,7 +18,7 @@ interface DebugData {
 }
 
 export default function DebugStats() {
-  const { data: session } = useSession();
+  const { session } = useAuth();
   const [data, setData] = useState<DebugData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -107,11 +107,10 @@ export default function DebugStats() {
               {data.instances.map((instance, index) => (
                 <div
                   key={index}
-                  className={`rounded-lg p-6 border ${
-                    instance.hasData
+                  className={`rounded-lg p-6 border ${instance.hasData
                       ? 'bg-emerald-900/20 border-emerald-500'
                       : 'bg-zinc-800 border-zinc-700'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div>
@@ -124,20 +123,18 @@ export default function DebugStats() {
                     </div>
                     <div className="flex items-center gap-3">
                       <span
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          instance.state === 'Connected'
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${instance.state === 'Connected'
                             ? 'bg-emerald-500/20 text-emerald-400'
                             : 'bg-red-500/20 text-red-400'
-                        }`}
+                          }`}
                       >
                         {instance.state}
                       </span>
                       <span
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          instance.hasData
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${instance.hasData
                             ? 'bg-blue-500/20 text-blue-400'
                             : 'bg-zinc-700 text-zinc-400'
-                        }`}
+                          }`}
                       >
                         {instance.hasData ? '✅ Con Datos' : '❌ Sin Datos'}
                       </span>

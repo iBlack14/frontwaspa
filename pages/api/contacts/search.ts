@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getSession } from 'next-auth/react';
+import { createClient } from '@/src/utils/supabase/server';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -7,9 +7,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Verificar sesión
-    const session = await getSession({ req });
-    if (!session) {
+    // Verificar sesión con Supabase
+    const supabase = createClient(req, res);
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 

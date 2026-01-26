@@ -1,6 +1,6 @@
-import { SessionProvider, useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import axios from 'axios';
 import Sidebard from '../components/dashboard/index';
@@ -26,7 +26,7 @@ interface SystemInfo {
 }
 
 function CacheMonitorContent() {
-  const { data: session, status } = useSession();
+  const { session, status } = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState<CacheStats | null>(null);
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
@@ -117,7 +117,7 @@ function CacheMonitorContent() {
         {stats && (
           <div className="mb-8 bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <h2 className="text-xl font-bold mb-4">💾 Estadísticas del Cache LRU</h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-zinc-800 rounded-lg p-4">
                 <div className="text-zinc-400 text-sm mb-1">Tamaño Actual</div>
@@ -152,13 +152,12 @@ function CacheMonitorContent() {
               </div>
               <div className="w-full bg-zinc-800 rounded-full h-4">
                 <div
-                  className={`h-4 rounded-full transition-all ${
-                    parseFloat(stats.usage) > 80
+                  className={`h-4 rounded-full transition-all ${parseFloat(stats.usage) > 80
                       ? 'bg-red-500'
                       : parseFloat(stats.usage) > 50
-                      ? 'bg-yellow-500'
-                      : 'bg-green-500'
-                  }`}
+                        ? 'bg-yellow-500'
+                        : 'bg-green-500'
+                    }`}
                   style={{ width: stats.usage }}
                 />
               </div>
@@ -177,7 +176,7 @@ function CacheMonitorContent() {
         {systemInfo && (
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <h2 className="text-xl font-bold mb-4">🖥️ Información del Sistema</h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>

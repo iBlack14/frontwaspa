@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/router';
 import axios from 'axios';
 import { toast } from 'sonner';
 import Sidebar from '../components/dashboard/index';
 import ChatList from '../../components/messages/ChatList';
 import ChatWindow from '../../components/messages/ChatWindow';
-import { supabase } from '@/lib/supabase';
 
 export interface Chat {
   id: string;
@@ -43,7 +42,7 @@ export interface Message {
 }
 
 function MessagesContent() {
-  const { data: session, status } = useSession();
+  const { session, status } = useAuth();
   const router = useRouter();
   const [instances, setInstances] = useState<any[]>([]);
   const [selectedInstance, setSelectedInstance] = useState<string | null>(null);
@@ -57,8 +56,6 @@ function MessagesContent() {
       router.push('/login');
     }
   }, [status, router]);
-
-  // Inicializar Supabase
 
   // Cargar instancias
   useEffect(() => {
@@ -82,8 +79,7 @@ function MessagesContent() {
     }
   }, [selectedChat]);
 
-  // 🔄 HYBRID MODE: Polling (Backup) + Realtime (Speed)
-  // 1. Polling: Garantiza que funcione SIEMPRE (cada 1s)
+  // 🔄 Polling: Garantiza que funcione SIEMPRE (cada 1s)
   useEffect(() => {
     if (!selectedInstance) return;
 
@@ -96,10 +92,6 @@ function MessagesContent() {
 
     return () => clearInterval(intervalId);
   }, [selectedInstance, selectedChat]);
-
-  // 2. Realtime: DESHABILITADO (Por bloqueo de servidor - CORS/Reset)
-  // Se ha eliminado la conexión WebSocket para evitar errores en consola.
-  // El chat funciona 100% mediante el Polling de 1s definido arriba.
 
   const fetchInstances = async () => {
     try {
@@ -124,13 +116,12 @@ function MessagesContent() {
       const response = await axios.get(`${backendUrl}/api/messages/chats/${instanceId}`);
       const rawChats: Chat[] = response.data.chats || [];
 
-      // Helper para normalizar ID (eliminar sufijos @s.whatsapp.net y server info)
+      // Helper para normalizar ID
       const normalizeId = (id: string) => {
         if (!id) return '';
         return id.replace(/@s\.whatsapp\.net/g, '').replace(/@g\.us/g, '').split(':')[0];
       };
 
-      // Deduplicación robusta usando un Map
       const uniqueChatsMap = new Map<string, Chat>();
 
       rawChats.forEach((chat) => {
@@ -140,45 +131,24 @@ function MessagesContent() {
         if (!existing) {
           uniqueChatsMap.set(cleanId, chat);
         } else {
-          // Lógica de Fusión Inteligente
           const useNew = new Date(chat.last_message_at || 0).getTime() > new Date(existing.last_message_at || 0).getTime();
 
-          // Detectar nombres inválidos (Aggressive filtering UNIVERSAL)
           const isInvalidName = (name?: string) => {
             if (!name) return true;
-            // Normalizar: Minúsculas y Sin tildes para comparar bien
             const n = name.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-            // Obtener nombre de usuario actual normalizado
-            const sessionName = session?.user?.name || 'Alonso Huancas';
+            const sessionName = (session as any)?.user?.name || 'User';
             const uName = sessionName.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
             const isSelfName = uName && n.includes(uName);
-
-            // Es inválido si:
-            // 1. Es "." 
-            // 2. Es igual al ID (ej. es un número de teléfono crudo)
-            // 3. Es el nombre del usuario actual (Auto-chat bug)
-            // 4. Contiene "alonso huancas" hardcoded por si acaso
-            return n === '.' || n === cleanId || isSelfName || n.includes('alonso huancas');
+            return n === '.' || n === cleanId || isSelfName;
           };
 
-          const currentHasBadName = isInvalidName(existing.chat_name);
-          const newHasBadName = isInvalidName(chat.chat_name);
-
-          // Decidir qué objeto base usar (generalmente el más reciente)
           let finalChat = useNew ? chat : existing;
-
-          // ESTRATEGIA DE NOMBRES:
-          // 1. Si el "final" tiene nombre malo y el "otro" tiene nombre bueno -> Usar el bueno.
-          // 2. Si ambos son malos -> Usar ID limpio como nombre temporal mejor que "Alonso".
 
           if (isInvalidName(finalChat.chat_name)) {
             const otherChat = useNew ? existing : chat;
             if (!isInvalidName(otherChat.chat_name)) {
               finalChat = { ...finalChat, chat_name: otherChat.chat_name };
             } else {
-              // Ambos son malos: Forzar fallback al número si el nombre es Alonso o .
               finalChat = { ...finalChat, chat_name: cleanId };
             }
           }
@@ -187,9 +157,6 @@ function MessagesContent() {
         }
       });
 
-
-
-      // Convertir a array y ordenar por fecha descendente
       const sortedChats = Array.from(uniqueChatsMap.values()).sort((a, b) => {
         return new Date(b.last_message_at || 0).getTime() - new Date(a.last_message_at || 0).getTime();
       });
@@ -207,14 +174,12 @@ function MessagesContent() {
 
       setMessages((prevMessages) => {
         const newMessages = response.data.messages || [];
-        // Solo actualizar si hay cambios
         if (JSON.stringify(prevMessages) !== JSON.stringify(newMessages)) {
           return newMessages;
         }
         return prevMessages;
       });
 
-      // Marcar como leído solo si no es silencioso
       if (!silent) {
         await markAsRead(instanceId, chatId);
       }
@@ -232,21 +197,9 @@ function MessagesContent() {
         instanceId,
         chatId,
       });
-
-      // Actualizar lista de chats
       fetchChats(instanceId);
     } catch (error) {
       console.error('Error marking as read:', error);
-    }
-  };
-
-  const playNotificationSound = () => {
-    try {
-      const audio = new Audio('/sounds/notification.mp3');
-      audio.volume = 0.5;
-      audio.play().catch(() => { });
-    } catch (error) {
-      // Silenciar error si no hay sonido
     }
   };
 
@@ -281,7 +234,6 @@ function MessagesContent() {
 
   return (
     <div className="h-screen flex flex-col bg-[#f0f2f5] dark:bg-[#111b21]">
-      {/* Header - Estilo WhatsApp */}
       <div className="bg-[#f0f2f5] dark:bg-[#202c33] border-b border-[#d1d7db] dark:border-[#2a3942] px-4 py-3">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-semibold text-[#111b21] dark:text-[#e9edef]">Connect BLXK</h1>
@@ -301,19 +253,16 @@ function MessagesContent() {
         </div>
       </div>
 
-      {/* Chat Interface - Layout WhatsApp */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Chat List */}
         <div className="w-[30%] min-w-[300px] border-r border-[#d1d7db] dark:border-[#2a3942] overflow-hidden">
           <ChatList
             chats={chats}
             selectedChat={selectedChat}
             onSelectChat={setSelectedChat}
-            instanceId={selectedInstance}
+            instanceId={selectedInstance || ''}
           />
         </div>
 
-        {/* Chat Window */}
         <div className="flex-1 bg-[#efeae2] dark:bg-[#0b141a]">
           {selectedChat ? (
             <ChatWindow
@@ -323,7 +272,6 @@ function MessagesContent() {
             />
           ) : (
             <div className="flex flex-col h-full bg-[#f0f2f5] dark:bg-[#0b141a] relative overflow-hidden">
-              {/* Background Pattern */}
               <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
                 <div className="absolute top-0 left-0 w-full h-full" style={{
                   backgroundImage: `radial-gradient(circle at 25% 25%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
@@ -331,9 +279,7 @@ function MessagesContent() {
                 }}></div>
               </div>
 
-              {/* Main Content */}
               <div className="flex-1 flex flex-col items-center justify-center p-8 relative">
-                {/* Hero Icon with Animation */}
                 <div className="relative mb-6 group">
                   <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-500 animate-pulse"></div>
                   <div className="relative w-24 h-24 bg-white dark:bg-[#202c33] rounded-full flex items-center justify-center shadow-xl border-2 border-indigo-100 dark:border-indigo-900/30 transform transition-transform group-hover:scale-110 duration-300">
@@ -343,7 +289,6 @@ function MessagesContent() {
                   </div>
                 </div>
 
-                {/* Title & Description */}
                 <h2 className="text-4xl font-bold text-slate-800 dark:text-[#e9edef] mb-3 tracking-tight">
                   Connect BLXK Web
                 </h2>
@@ -351,9 +296,7 @@ function MessagesContent() {
                   Envía y recibe mensajes sin necesidad de mantener tu teléfono conectado.
                 </p>
 
-                {/* Features Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl w-full mb-8">
-                  {/* Feature 1 */}
                   <div className="bg-white dark:bg-[#202c33] rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700/50 hover:shadow-md transition-shadow">
                     <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center mb-4">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-indigo-600 dark:text-indigo-400">
@@ -364,7 +307,6 @@ function MessagesContent() {
                     <p className="text-sm text-slate-500 dark:text-[#8696a0]">Cifrado de extremo a extremo en todos tus mensajes</p>
                   </div>
 
-                  {/* Feature 2 */}
                   <div className="bg-white dark:bg-[#202c33] rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700/50 hover:shadow-md transition-shadow">
                     <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center mb-4">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-purple-600 dark:text-purple-400">
@@ -375,7 +317,6 @@ function MessagesContent() {
                     <p className="text-sm text-slate-500 dark:text-[#8696a0]">Usa hasta 4 dispositivos vinculados simultáneamente</p>
                   </div>
 
-                  {/* Feature 3 */}
                   <div className="bg-white dark:bg-[#202c33] rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700/50 hover:shadow-md transition-shadow">
                     <div className="w-12 h-12 bg-pink-100 dark:bg-pink-900/30 rounded-xl flex items-center justify-center mb-4">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-pink-600 dark:text-pink-400">
@@ -387,7 +328,6 @@ function MessagesContent() {
                   </div>
                 </div>
 
-                {/* CTA */}
                 <div className="text-center">
                   <p className="text-sm text-slate-500 dark:text-[#8696a0] mb-4">
                     👈 Selecciona un chat para comenzar
@@ -395,7 +335,6 @@ function MessagesContent() {
                 </div>
               </div>
 
-              {/* Footer Gradient */}
               <div className="h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
             </div>
           )}

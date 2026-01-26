@@ -1,6 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../pages/api/auth/[...nextauth]';
+import { createClient } from '@/src/utils/supabase/server';
 
 /**
  * Configuración de límites por endpoint
@@ -11,11 +10,11 @@ const RATE_LIMITS = {
   '/api/templates/chatbot': { limit: 20, window: 60 }, // 20 por hora
   '/api/instances': { limit: 50, window: 60 }, // 50 por hora
   '/api/templates/assign': { limit: 30, window: 60 }, // 30 por hora
-  
+
   // Endpoints normales
   '/api/messages': { limit: 100, window: 60 }, // 100 por hora
   '/api/user': { limit: 100, window: 60 }, // 100 por hora
-  
+
   // Default para otros endpoints
   'default': { limit: 200, window: 60 }, // 200 por hora
 };
@@ -28,15 +27,16 @@ const RATE_LIMITS = {
  */
 export async function rateLimitByUser(req, res, next) {
   try {
-    // Obtener sesión del usuario
-    const session = await getServerSession(req, res, authOptions);
-    
-    if (!session || !session.id) {
+    // Obtener sesión del usuario con Supabase
+    const supabase = createClient(req, res);
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
       // Si no hay sesión, aplicar rate limit por IP
       return rateLimitByIP(req, res, next);
     }
 
-    const userId = session.id;
+    const userId = user.id;
     const endpoint = getEndpointKey(req.url);
     const config = RATE_LIMITS[endpoint] || RATE_LIMITS['default'];
 
@@ -155,7 +155,7 @@ async function rateLimitByIP(req, res, next) {
     if (newCount > config.limit) {
       // Bloquear IP
       const blockedUntil = new Date(new Date(existing.window_start).getTime() + config.window * 60 * 1000);
-      
+
       await supabaseAdmin
         .from('rate_limits_ip')
         .update({
@@ -197,22 +197,11 @@ async function rateLimitByIP(req, res, next) {
  */
 function getEndpointKey(url) {
   if (!url) return 'default';
-  
-  // Remover query params
   const path = url.split('?')[0];
-  
-  // Buscar coincidencia exacta
-  if (RATE_LIMITS[path]) {
-    return path;
-  }
-  
-  // Buscar coincidencia parcial
+  if (RATE_LIMITS[path]) return path;
   for (const key of Object.keys(RATE_LIMITS)) {
-    if (path.startsWith(key)) {
-      return key;
-    }
+    if (path.startsWith(key)) return key;
   }
-  
   return 'default';
 }
 

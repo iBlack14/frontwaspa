@@ -1,6 +1,6 @@
-import { SessionProvider, useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -67,7 +67,7 @@ const templateInfo = {
 };
 
 function ManageTemplatesContent() {
-  const { data: session, status } = useSession();
+  const { session, status } = useAuth();
   const router = useRouter();
   const [instances, setInstances] = useState<Instance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -149,8 +149,6 @@ function ManageTemplatesContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-transparent p-6 sm:p-8">
-
-
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-4 mb-2">
@@ -183,7 +181,6 @@ function ManageTemplatesContent() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* CPU */}
           <div className="bg-white dark:bg-[#1e293b] rounded-2xl p-4 border border-slate-100 dark:border-slate-800">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -200,7 +197,6 @@ function ManageTemplatesContent() {
             </div>
           </div>
 
-          {/* Memoria */}
           <div className="bg-white dark:bg-[#1e293b] rounded-2xl p-4 border border-slate-100 dark:border-slate-800">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -217,7 +213,6 @@ function ManageTemplatesContent() {
             </div>
           </div>
 
-          {/* Ancho de Banda */}
           <div className="bg-white dark:bg-[#1e293b] rounded-2xl p-4 border border-slate-100 dark:border-slate-800">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">

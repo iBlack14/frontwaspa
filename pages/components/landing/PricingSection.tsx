@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/router';
 import { CheckCircleIcon } from '@heroicons/react/24/outline';
 import IzipayModal from '../../../components/payment/IzipayModal';
 
 export default function PricingSection() {
+  const router = useRouter();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const plans = [
@@ -40,7 +41,7 @@ export default function PricingSection() {
     if (plan.name === 'Enterprise') {
       window.open('mailto:sales@blxkstudio.com');
     } else if (plan.name === 'Free') {
-      signIn();
+      router.push('/login');
     } else {
       // Abrir modal de pago para planes de pago
       setSelectedPlan(plan);
@@ -64,11 +65,10 @@ export default function PricingSection() {
           {plans.map((plan, index) => (
             <div
               key={index}
-              className={`bg-white dark:bg-zinc-900 rounded-2xl p-8 border-2 transition ${
-                plan.highlighted
-                  ? 'border-emerald-500 transform md:scale-105 shadow-2xl bg-gradient-to-br from-emerald-600 to-teal-600'
-                  : 'border-gray-200 dark:border-zinc-700 hover:border-emerald-500'
-              } ${plan.highlighted ? 'relative' : ''}`}
+              className={`bg-white dark:bg-zinc-900 rounded-2xl p-8 border-2 transition ${plan.highlighted
+                ? 'border-emerald-500 transform md:scale-105 shadow-2xl bg-gradient-to-br from-emerald-600 to-teal-600'
+                : 'border-gray-200 dark:border-zinc-700 hover:border-emerald-500'
+                } ${plan.highlighted ? 'relative' : ''}`}
             >
               {plan.highlighted && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-gray-900 px-4 py-1 rounded-full text-sm font-bold">
@@ -98,11 +98,10 @@ export default function PricingSection() {
               </ul>
               <button
                 onClick={() => handlePlanClick(plan)}
-                className={`w-full py-3 rounded-lg transition font-medium ${
-                  plan.highlighted
-                    ? 'bg-white text-emerald-600 hover:bg-gray-100'
-                    : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100'
-                }`}
+                className={`w-full py-3 rounded-lg transition font-medium ${plan.highlighted
+                  ? 'bg-white text-emerald-600 hover:bg-gray-100'
+                  : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100'
+                  }`}
               >
                 {plan.cta}
               </button>

@@ -1,7 +1,8 @@
-import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/router';
 import { ArrowRightIcon } from '@heroicons/react/24/outline';
 
 export default function CTASection() {
+  const router = useRouter();
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-emerald-600 to-teal-600 dark:from-emerald-700 dark:to-teal-700">
       <div className="max-w-4xl mx-auto text-center">
@@ -13,7 +14,7 @@ export default function CTASection() {
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button
-            onClick={() => signIn()}
+            onClick={() => router.push('/login')}
             className="bg-white text-emerald-600 px-8 py-4 rounded-lg hover:bg-gray-100 transition font-medium text-lg flex items-center justify-center group"
           >
             Comenzar Gratis Ahora

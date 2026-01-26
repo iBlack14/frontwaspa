@@ -1,4 +1,4 @@
-import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/router';
 import {
   SparklesIcon,
   CheckCircleIcon,
@@ -15,8 +15,8 @@ import {
 const MockMessage = ({ own, text, time }: { own?: boolean, text: string, time: string }) => (
   <div className={`flex ${own ? 'justify-end' : 'justify-start'} mb-4`}>
     <div className={`max-w-[80%] rounded-2xl px-4 py-2 ${own
-        ? 'bg-emerald-600 text-white rounded-br-sm'
-        : 'bg-white dark:bg-zinc-700 text-gray-800 dark:text-gray-200 shadow-sm border border-gray-100 dark:border-zinc-600 rounded-bl-sm'
+      ? 'bg-emerald-600 text-white rounded-br-sm'
+      : 'bg-white dark:bg-zinc-700 text-gray-800 dark:text-gray-200 shadow-sm border border-gray-100 dark:border-zinc-600 rounded-bl-sm'
       }`}>
       <p className="text-sm">{text}</p>
       <p className={`text-[10px] mt-1 ${own ? 'text-emerald-100' : 'text-gray-400'}`}>{time}</p>
@@ -47,6 +47,7 @@ const MockChatIem = ({ name, msg, time, active, badge }: { name: string, msg: st
 );
 
 export default function HeroSection() {
+  const router = useRouter();
   return (
     <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-800">
       {/* Decorative Elements */}
@@ -78,7 +79,7 @@ export default function HeroSection() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <button
-              onClick={() => signIn()}
+              onClick={() => router.push('/login')}
               className="bg-emerald-600 text-white px-8 py-4 rounded-xl hover:bg-emerald-700 transition shadow-lg shadow-emerald-200/50 dark:shadow-none font-medium text-lg flex items-center group w-full sm:w-auto justify-center"
             >
               Probar Gratis Ahora
