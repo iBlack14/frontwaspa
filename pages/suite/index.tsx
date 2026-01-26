@@ -26,19 +26,6 @@ import {
   CheckCircleIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
-import { Session } from 'next-auth';
-
-interface CustomSession extends Session {
-  user?: {
-    name?: string | null;
-    email?: string | null;
-    image?: string | null;
-  };
-  expires: string;
-  id?: string;
-  username?: string;
-  jwt?: string;
-}
 
 interface WorkspaceStruture {
   id: number;
@@ -72,9 +59,7 @@ interface ResourceUsage {
 }
 
 function DashboardContent() {
-  const { data: session, status } = useSession();
-  const username = (session as CustomSession | null)?.username;
-  const typedSession = session as CustomSession | null;
+  const { session, status } = useAuth();
   const router = useRouter();
   const [workspace, setWorkspaceStruture] = useState<WorkspaceStruture[]>([]);
   const [selectedWorkspace, setSelectedWorkspace] = useState<WorkspaceStruture | null>(null);
@@ -99,12 +84,14 @@ function DashboardContent() {
     }));
   };
 
+  const username = session?.user?.user_metadata?.username || session?.user?.email?.split('@')[0] || 'Usuario';
+
   const fetchWorkspaces = async () => {
-    if (!typedSession?.id) return;
+    if (!session?.access_token) return;
     try {
-      const { data } = await axios.get(`/api/suite?token=${typedSession.jwt}`, {
+      const { data } = await axios.get(`/api/suite?token=${session.access_token}`, {
         headers: {
-          Authorization: `Bearer ''`,
+          Authorization: `Bearer ${session.access_token}`,
         },
       });
 
@@ -178,7 +165,6 @@ function DashboardContent() {
     try {
       console.log(`Checking status for ${workspace.name}...`);
 
-      // Usar el nuevo endpoint de verificación de estado
       const response = await axios.post('/api/suite/status', {
         name_service: workspace.name,
       }, {
@@ -189,36 +175,29 @@ function DashboardContent() {
       const statusData = response.data;
 
       if (statusData.instance_ready && statusData.n8n_ready) {
-        // Instancia completamente lista
         toast.success(`¡${workspace.name} está listo y funcionando! 🎉`);
-        fetchWorkspaces(); // Refrescar la lista
+        fetchWorkspaces();
       } else if (statusData.status === 'running' && !statusData.n8n_ready) {
-        // Contenedor corriendo pero n8n aún inicializando
         toast.info(`${workspace.name}: Contenedor activo, N8N inicializando base de datos. ${statusData.note || 'Intenta de nuevo en unos minutos.'}`, {
           duration: 6000
         });
       } else if (statusData.status === 'initializing') {
-        // Aún inicializando
         toast.info(`${workspace.name}: ${statusData.message || 'Aún se está inicializando...'}`, {
           duration: 5000
         });
       } else if (statusData.status === 'starting') {
-        // Contenedor corriendo pero servicio no listo
         toast.info(`${workspace.name}: Contenedor activo, esperando que N8N esté listo...`, {
           duration: 4000
         });
       } else if (statusData.status === 'dns_error') {
-        // Problema de DNS/routing
         toast.error(`${workspace.name}: Error de DNS. ${statusData.note || 'Verificar configuración de Easypanel.'}`, {
           duration: 8000
         });
       } else if (statusData.status === 'backend_unavailable') {
-        // Backend no disponible
         toast.warning(`${workspace.name}: No se pudo verificar con backend. ${statusData.message || ''}`, {
           duration: 6000
         });
       } else {
-        // Otro estado
         toast.info(`${workspace.name}: ${statusData.message || 'Estado desconocido'}`, {
           duration: 4000
         });
@@ -287,6 +266,8 @@ function DashboardContent() {
       fetchWorkspaces();
       fetchProducts();
       fetchUserPlan();
+    } else if (status === 'unauthenticated') {
+      router.push('/login');
     }
   }, [status]);
 
@@ -409,7 +390,8 @@ function DashboardContent() {
 
       toast.loading('Creando instancia de n8n...', { id: 'creating' });
 
-      const response = await axios.post(
+      // send session access token if needed for backend validation
+      await axios.post(
         '/api/suite/create-n8n',
         {
           service_name: serviceName,
@@ -435,15 +417,13 @@ function DashboardContent() {
       const suiteWasCreated = errorData?.suite_created === true;
 
       if (isTimeoutError && suiteWasCreated) {
-        // Suite created but container creation timed out - show success with warning
         toast.success('Instancia creada exitosamente. El contenedor se está configurando.', {
           id: 'creating',
           duration: 8000,
           description: 'Puede tomar unos minutos adicionales. Use el botón de verificación para comprobar el progreso.'
         });
-        fetchWorkspaces(); // Refresh to show the created instance
+        fetchWorkspaces();
       } else {
-        // Actual error
         toast.error(errorData?.error || errorData?.message || 'Error al crear nueva instancia', { id: 'creating' });
       }
     } finally {
@@ -494,7 +474,7 @@ function DashboardContent() {
     setIsLoading(true);
     try {
       await axios.post('/api/suite/init', {
-        token: typedSession?.jwt,
+        token: session?.access_token,
         name_service: selectedWorkspace?.name,
       }, {
         headers: { 'Content-Type': 'application/json' },
@@ -526,7 +506,7 @@ function DashboardContent() {
     setIsLoading(true);
     try {
       await axios.post('/api/suite/pause', {
-        token: typedSession?.jwt,
+        token: session?.access_token,
         name_service: selectedWorkspace?.name,
       }, {
         headers: { 'Content-Type': 'application/json' },
@@ -558,7 +538,7 @@ function DashboardContent() {
     setIsLoading(true);
     try {
       await axios.post('/api/suite/delete', {
-        token: typedSession?.jwt,
+        token: session?.access_token,
         name_service: selectedWorkspace?.name,
       }, {
         headers: { 'Content-Type': 'application/json' },
@@ -1029,4 +1009,3 @@ export default function Dashboard() {
     </Sidebard>
   );
 }
-

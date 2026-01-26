@@ -22,12 +22,6 @@ import type { ChartOptions } from 'chart.js';
 // ✅ Lazy load Chart.js
 const LazyChart = lazy(() => import('@/components/ChartComponent'));
 
-interface CustomSession {
-  id?: string;
-  jwt?: string;
-  firstName?: string;
-}
-
 interface WhatsAppSession {
   id: number;
   documentId: string;
@@ -47,8 +41,7 @@ interface WhatsAppSession {
 }
 
 function DashboardContent() {
-  const { data: session, status } = useSession();
-  const typedSession = session as CustomSession | null;
+  const { session, status } = useAuth();
   const router = useRouter();
   const [instances, setInstances] = useState<WhatsAppSession[]>([]);
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
@@ -268,6 +261,10 @@ function DashboardContent() {
     },
   };
 
+  const userName = session?.user?.user_metadata?.full_name ||
+    session?.user?.email?.split('@')[0] ||
+    'Usuario';
+
   return (
     <div className="p-6 space-y-8 bg-slate-50 dark:bg-transparent min-h-screen">
 
@@ -290,7 +287,7 @@ function DashboardContent() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
               <h1 className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">Dashboard</h1>
-              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Bienvenido de nuevo, {session?.user?.name || 'Usuario'}</p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Bienvenido de nuevo, {userName}</p>
             </div>
 
             {/* Delicate Instance Dropdown */}
@@ -519,10 +516,4 @@ export default function Dashboard() {
       <DashboardContent />
     </Sidebar>
   );
-}
-
-export async function getServerSideProps() {
-  return {
-    props: {},
-  };
 }
