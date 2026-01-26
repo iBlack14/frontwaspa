@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { createClient } from '@/src/utils/supabase/server';
+import { createClient } from '@/utils/supabase/server';
 
 /**
  * Configuración de límites por endpoint
