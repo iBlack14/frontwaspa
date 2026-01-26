@@ -1,15 +1,14 @@
-'use client';
 import Image from 'next/image';
 import { EyeIcon, UserIcon } from '@heroicons/react/24/solid';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/utils/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 import Link from 'next/link';
-import wazone from '../../../public/logo/wallpaper-wazone.webp';
-import fondo from '../../../public/img/fondo.webp';
-import fondo_transparent from '../../../public/logo/wazilrest_white.png';
-import { Toaster, toast } from 'sonner'; // Import Sonner
+import wazone from '../public/logo/wallpaper-wazone.webp';
+import fondo from '../public/img/fondo.webp';
+import fondo_transparent from '../public/logo/wazilrest_white.png';
+import { Toaster, toast } from 'sonner';
 
 export default function Register() {
   const [username, setUsername] = useState<string>('');
@@ -27,7 +26,7 @@ export default function Register() {
 
     // Basic client-side validation
     if (password !== confirmPassword) {
-      toast.error('Las contraseñas no coinciden'); // Use Sonner toast for error
+      toast.error('Las contraseñas no coinciden');
       return;
     }
 
@@ -52,7 +51,7 @@ export default function Register() {
       }, 2000);
 
     } catch (error) {
-      toast.error('Error en el servidor'); // Use Sonner toast for error
+      toast.error('Error en el servidor');
     }
   };
 
@@ -96,7 +95,7 @@ export default function Register() {
         backgroundImage: `url(${fondo.src})`,
       }}
     >
-      <Toaster richColors position="top-right" expand={true} closeButton /> {/* Add Sonner Toaster */}
+      <Toaster richColors position="top-right" expand={true} closeButton />
       <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black opacity-70"></div>
 
       <div className="bg-opacity-90 shadow-2xl shadow-black w-full max-w-6xl flex flex-col lg:flex-row animate-fadeIn">

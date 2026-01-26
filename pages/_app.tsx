@@ -4,7 +4,7 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from 'sonner';
 // import MessageNotifier from '../components/MessageNotifier';
-import '../src/app/globals.css';
+import '../styles/globals.css';
 
 export default function App({ Component, pageProps }: AppProps) {
   return (

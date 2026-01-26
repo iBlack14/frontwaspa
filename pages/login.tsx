@@ -1,17 +1,16 @@
-'use client';
 import Image from 'next/image';
 import { EyeIcon, UserIcon } from '@heroicons/react/24/solid';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 import Link from 'next/link';
-import wazone from '../../../public/logo/wallpaper-wazone.webp';
-import fondo from '../../../public/img/fondo.webp';
-import fondo_transparent from '../../../public/logo/wazilrest_white.png';
+import wazone from '../public/logo/wallpaper-wazone.webp';
+import fondo from '../public/img/fondo.webp';
+import fondo_transparent from '../public/logo/wazilrest_white.png';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/utils/supabase/client';
-import { Toaster, toast } from 'sonner'; // Import Sonner
+import { Toaster, toast } from 'sonner';
 
-export default function Home() {
+export default function Login() {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [rememberMe, setRememberMe] = useState<boolean>(false);
@@ -29,9 +28,9 @@ export default function Home() {
     });
 
     if (error) {
-      toast.error(error.message || 'Credenciales incorrectas'); // Use Sonner toast for error
+      toast.error(error.message || 'Credenciales incorrectas');
     } else {
-      toast.success('¡Login exitoso! Redirigiendo...'); // Use Sonner toast for success
+      toast.success('¡Login exitoso! Redirigiendo...');
       setTimeout(() => {
         router.push('/home');
       }, 1000);
@@ -74,7 +73,7 @@ export default function Home() {
         backgroundImage: `url(${fondo.src})`,
       }}
     >
-      <Toaster richColors position="top-right" expand={true} closeButton /> {/* Add Sonner Toaster */}
+      <Toaster richColors position="top-right" expand={true} closeButton />
       <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black opacity-70"></div>
 
       <div className="bg-opacity-90 shadow-2xl shadow-black w-full max-w-5xl flex flex-col lg:flex-row animate-fadeIn">

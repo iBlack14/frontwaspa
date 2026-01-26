@@ -1,53 +1,36 @@
-'use client';
 import { useState, FormEvent } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import axios from 'axios';
-import { Toaster, toast } from 'sonner'; // Import Sonner
-import wazone from '../../../public/logo/wallpaper-wazone.webp';
-import fondo from '../../../public/img/fondo.webp';
-import fondo_transparent from '../../../public/logo/wazilrest_white.png';
-import { useRouter } from 'next/navigation';
+import { Toaster, toast } from 'sonner';
+import { useRouter } from 'next/router';
+import wazone from '../public/logo/wallpaper-wazone.webp';
+import fondo from '../public/img/fondo.webp';
+import fondo_transparent from '../public/logo/wazilrest_white.png';
 
-export default function ForgotPassword() {
+export default function ResetPassword() {
   const router = useRouter();
-  const [email, setEmail] = useState<string>('');
+  const { code } = router.query; // Get code from query params
+  const [password, setPassword] = useState<string>('');
+  const [passwordConfirmation, setPasswordConfirmation] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    
-    // Validar formato de email
-    if (!validateEmail(email)) {
-      toast.error('Por favor, ingresa un email válido.');
-      return;
-    }
-    
     setLoading(true);
     try {
-      await axios.post(`${process.env.NEXT_PUBLIC_STRAPI_URL}/api/auth/forgot-password`, {
-        email,
+      await axios.post(`${process.env.NEXT_PUBLIC_STRAPI_URL}/api/auth/reset-password`, {
+        code,
+        password,
+        passwordConfirmation,
       });
-      toast.success('Revisa tu correo para restablecer tu contraseña.');
+      toast.success('Contraseña restablecida con éxito.');
       setTimeout(() => {
         router.push('/login');
       }, 2000);
 
-    } catch (error: any) {
-      console.error('Forgot password error:', error);
-      
-      if (error.response?.status === 404) {
-        toast.error('No existe una cuenta con este email.');
-      } else if (error.response?.data?.message) {
-        toast.error(error.response.data.message);
-      } else {
-        toast.error('Ocurrió un error. Intenta nuevamente.');
-      }
+    } catch (error) {
+      toast.error('Ocurrió un error. Intenta nuevamente.');
     } finally {
       setLoading(false);
     }
@@ -60,7 +43,7 @@ export default function ForgotPassword() {
         backgroundImage: `url(${fondo.src})`,
       }}
     >
-      <Toaster richColors position="top-right" expand={true} closeButton /> {/* Add Sonner Toaster */}
+      <Toaster richColors position="top-right" expand={true} closeButton />
       <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black opacity-70"></div>
 
       <div className="bg-opacity-90 shadow-2xl shadow-black w-full max-w-5xl flex flex-col lg:flex-row animate-fadeIn">
@@ -84,31 +67,40 @@ export default function ForgotPassword() {
             className="mx-auto"
           />
           <h1 className="text-3xl font-bold text-center text-slate-100 mb-2 tracking-tight">
-            ¿Olvidaste tu contraseña?
+            Restablecer Contraseña
           </h1>
           <p className="text-sm text-center text-slate-300 mb-6">
-            Ingresa tu correo electrónico para recibir un enlace de restablecimiento.
+            Ingresa tu nueva contraseña para restablecerla.
           </p>
-          <form onSubmit={handleSubmit} className="w-full max-w-md space-y-5">
+          <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4">
             <div className="relative group">
               <input
-                type="email"
-                placeholder="tu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="password"
+                placeholder="Nueva contraseña"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
                 className="w-full px-4 py-3 placeholder-zinc-400 bg-white/10 text-lg text-slate-100 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent placeholder-opacity-70 backdrop-blur-sm transition-all duration-300 hover:bg-white/15"
               />
             </div>
-
+            <div className="relative group">
+              <input
+                type="password"
+                placeholder="Confirmar nueva contraseña"
+                value={passwordConfirmation}
+                onChange={(e) => setPasswordConfirmation(e.target.value)}
+                required
+                className="w-full px-4 py-3 placeholder-zinc-400 bg-white/10 text-lg text-slate-100 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent placeholder-opacity-70 backdrop-blur-sm transition-all duration-300 hover:bg-white/15"
+              />
+            </div>
             <button
               type="submit"
               disabled={loading}
-              className={`w-full bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-green-500/30 hover:shadow-green-500/50 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] ${
+              className={`w-full mt-2 bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-green-500/30 hover:shadow-green-500/50 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] ${
                 loading ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
-              {loading ? 'Enviando...' : 'Enviar enlace'}
+              {loading ? 'Restableciendo...' : 'Restablecer Contraseña'}
             </button>
           </form>
           <p className="text-center text-sm text-slate-300 mt-6">
