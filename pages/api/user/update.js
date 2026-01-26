@@ -1,6 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
+import { createClient } from '@/utils/supabase/api';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -13,16 +12,21 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Obtener sesión del usuario
-    const session = await getServerSession(req, res, authOptions);
+    // Inicializar cliente de Supabase para API
+    const supabase = createClient(req, res);
 
-    if (!session || !session.id) {
+    // Obtener el usuario autenticado directamente desde Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
       return res.status(401).json({ error: 'No autorizado - Inicia sesión' });
     }
 
+    const userId = user.id;
+
     // Actualizar metadata del usuario en auth
-    const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
-      session.id,
+    const { error: adminAuthError } = await supabaseAdmin.auth.admin.updateUserById(
+      userId,
       {
         user_metadata: { username }
       }
@@ -41,7 +45,7 @@ export default async function handler(req, res) {
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .update(updateData)
-      .eq('id', session.id);
+      .eq('id', userId);
 
     if (profileError) {
       console.error('Error updating profile:', profileError);

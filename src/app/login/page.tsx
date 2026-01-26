@@ -2,13 +2,13 @@
 import Image from 'next/image';
 import { EyeIcon, UserIcon } from '@heroicons/react/24/solid';
 import { useEffect, useState } from 'react';
-import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import wazone from '../../../public/logo/wallpaper-wazone.webp';
 import fondo from '../../../public/img/fondo.webp';
 import fondo_transparent from '../../../public/logo/wazilrest_white.png';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
+import { createClient } from '@/utils/supabase/client';
 import { Toaster, toast } from 'sonner'; // Import Sonner
 
 export default function Home() {
@@ -17,19 +17,19 @@ export default function Home() {
   const [rememberMe, setRememberMe] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { status } = useAuth();
+  const supabase = createClient();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const result = await signIn('credentials', {
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
-      redirect: false,
     });
 
-    if (result?.error) {
-      toast.error('Credenciales incorrectas'); // Use Sonner toast for error
+    if (error) {
+      toast.error(error.message || 'Credenciales incorrectas'); // Use Sonner toast for error
     } else {
       toast.success('¡Login exitoso! Redirigiendo...'); // Use Sonner toast for success
       setTimeout(() => {
@@ -40,24 +40,16 @@ export default function Home() {
 
   const handleGoogleSignIn = async () => {
     try {
-      const result = await signIn('google', { redirect: false });
-      
-      if (result?.error) {
-        console.error('Google Sign In Error:', result.error);
-        
-        // Mensajes de error más específicos
-        if (result.error === 'OAuthCallback') {
-          toast.error('Error en la autenticación con Google. Por favor, intenta nuevamente.');
-        } else if (result.error === 'AccessDenied') {
-          toast.error('Acceso denegado. Debes dar permisos para continuar.');
-        } else {
-          toast.error(`Error: ${result.error}`);
-        }
-      } else if (result?.ok) {
-        toast.success('¡Inicio de sesión con Google exitoso! Redirigiendo...');
-        setTimeout(() => {
-          router.push('/home');
-        }, 1000);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        console.error('Google Sign In Error:', error);
+        toast.error(`Error: ${error.message}`);
       }
     } catch (error: any) {
       console.error('Unexpected error during Google Sign In:', error);
@@ -69,7 +61,7 @@ export default function Home() {
     if (status === 'authenticated') {
       router.push('/home');
     }
-  }, [status]);
+  }, [status, router]);
 
   const togglePasswordVisibility = () => {
     setShowPassword((prev) => !prev);

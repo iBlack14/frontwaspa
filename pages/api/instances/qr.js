@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
+import { createClient } from '@/utils/supabase/api';
 
 export default async function handler(req, res) {
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -17,18 +16,23 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Obtener sesión del usuario
-    const session = await getServerSession(req, res, authOptions);
+    // Inicializar cliente de Supabase para API
+    const supabase = createClient(req, res);
 
-    if (!session || !session.id) {
-      return res.status(401).json({ error: 'No autorizado - Inicia sesión' });
+    // Obtener el usuario autenticado directamente desde Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return res.status(401).json({ error: 'No autorizado - Inicia sesión con Supabase' });
     }
+
+    const userId = user.id;
 
     // Verificar plan del usuario (API key NO es requerida para generar QR)
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('status_plan, api_key')
-      .eq('id', session.id)
+      .eq('id', userId)
       .single();
 
     if (!profile || profile.status_plan === false) {
@@ -41,12 +45,12 @@ export default async function handler(req, res) {
     // Actualizar estado en Supabase antes de generar QR
     await supabaseAdmin
       .from('instances')
-      .update({ 
+      .update({
         qr_loading: true,
         state: 'Initializing'
       })
       .eq('document_id', clientId)
-      .eq('user_id', session.id);
+      .eq('user_id', userId);
 
     // ✅ Llamar al backend de WhatsApp
     const response = await axios.post(

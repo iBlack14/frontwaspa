@@ -1,24 +1,29 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from './auth/[...nextauth]';
+import { createClient } from '@/utils/supabase/api';
 import axios from 'axios';
 
 export default async function handler(req, res) {
   const { method, body } = req;
-  
+
   try {
-    // Verificar sesión
-    const session = await getServerSession(req, res, authOptions);
-    if (!session || !session.id) {
-      return res.status(401).json({ error: 'No autorizado' });
+    // Inicializar cliente de Supabase para API
+    const supabase = createClient(req, res);
+
+    // Obtener el usuario autenticado directamente desde Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return res.status(401).json({ error: 'No autorizado - Inicia sesión con Supabase' });
     }
+
+    const userId = user.id;
 
     if (method === 'GET') {
       // Obtener instancias de Suite del usuario desde Supabase
       const { data: suites, error } = await supabaseAdmin
         .from('suites')
         .select('*')
-        .eq('user_id', session.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -45,13 +50,13 @@ export default async function handler(req, res) {
       const { data: existing } = await supabaseAdmin
         .from('suites')
         .select('id')
-        .eq('user_id', session.id)
+        .eq('user_id', userId)
         .eq('name', service_name)
         .single();
 
       if (existing) {
-        return res.status(400).json({ 
-          error: 'Ya existe una instancia con ese nombre' 
+        return res.status(400).json({
+          error: 'Ya existe una instancia con ese nombre'
         });
       }
 
@@ -63,13 +68,13 @@ export default async function handler(req, res) {
       const { data: newSuite, error: insertError } = await supabaseAdmin
         .from('suites')
         .insert({
-          user_id: session.id,
+          user_id: userId,
           name: service_name,
           url: generatedUrl,
           activo: false,
           credencials: {
             product: product_name || 'N8N',
-            created_by: session.email || session.user?.email,
+            created_by: user.email,
             mode: 'development',
             note: 'Instancia en modo desarrollo - contenedor Docker no creado aún',
           },

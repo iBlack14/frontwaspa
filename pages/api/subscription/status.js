@@ -1,6 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
+import { createClient } from '@/utils/supabase/api';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET' && req.method !== 'POST') {
@@ -8,19 +7,24 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Obtener sesión del usuario
-    const session = await getServerSession(req, res, authOptions);
+    // Inicializar cliente de Supabase para API
+    const supabase = createClient(req, res);
 
-    if (!session || !session.id) {
-      return res.status(401).json({ error: 'No autorizado - Inicia sesión' });
+    // Obtener el usuario autenticado directamente desde Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return res.status(401).json({ error: 'No autorizado - Inicia sesión con Supabase' });
     }
+
+    const userId = user.id;
 
     if (req.method === 'GET') {
       // Obtener estado de suscripción
       const { data: profile, error } = await supabaseAdmin
         .from('profiles')
         .select('status_plan, plan_type, created_at')
-        .eq('id', session.id)
+        .eq('id', userId)
         .single();
 
       if (error) {
@@ -50,7 +54,7 @@ export default async function handler(req, res) {
           plan_type,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', session.id)
+        .eq('id', userId)
         .select()
         .single();
 

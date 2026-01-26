@@ -1,6 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
+import { createClient } from '@/utils/supabase/api';
 import formidable from 'formidable';
 import XLSX from 'xlsx';
 import fs from 'fs';
@@ -96,11 +95,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Verificar sesión
-    const session = await getServerSession(req, res, authOptions);
-    if (!session || !session.id) {
-      return res.status(401).json({ error: 'No autorizado' });
+    // Inicializar cliente de Supabase para API
+    const supabase = createClient(req, res);
+
+    // Obtener el usuario autenticado directamente desde Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return res.status(401).json({ error: 'No autorizado - Inicia sesión con Supabase' });
     }
+
+    const userId = user.id;
 
     // ✅ VALIDAR PLAN - FREE solo puede usar spam con limitaciones
     const planValidation = await validatePlan(req, res, 'spam');
@@ -122,7 +127,7 @@ export default async function handler(req, res) {
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('status_plan, api_key, proxy_enabled, proxy_type, proxy_host, proxy_port, proxy_username, proxy_password, proxy_country')
-      .eq('id', session.id)
+      .eq('id', userId)
       .single();
 
     if (!profile || !profile.status_plan) {
@@ -229,7 +234,7 @@ export default async function handler(req, res) {
       .from('instances')
       .select('document_id, state')
       .eq('document_id', instanceId)
-      .eq('user_id', session.id)
+      .eq('user_id', userId)
       .single();
 
     if (!instance) {
@@ -332,7 +337,7 @@ export default async function handler(req, res) {
 
     // ... (rest of the code)
 
-    const spamCreated = createSpam(spamId, contacts.length, session.id);
+    const spamCreated = createSpam(spamId, contacts.length, userId);
     console.log('[SPAM-WHATSAPP] Spam creado:', spamCreated ? 'Sí' : 'No');
 
     // ✅✅ IMPORTANTE: Ejecutar el proceso de envío en segundo plano

@@ -1,6 +1,6 @@
-import { SessionProvider, useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -34,7 +34,7 @@ interface ChatbotRule {
 }
 
 function ChatbotContent() {
-  const { data: session, status } = useSession();
+  const { session, status } = useAuth();
   const router = useRouter();
   const [instances, setInstances] = useState<Instance[]>([]);
   const [selectedInstance, setSelectedInstance] = useState('');

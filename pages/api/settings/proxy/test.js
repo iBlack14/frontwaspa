@@ -1,20 +1,25 @@
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../auth/[...nextauth]';
+import { createClient } from '@/utils/supabase/api';
 import axios from 'axios';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { SocksProxyAgent } from 'socks-proxy-agent';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método no permitido' });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Verificar sesión
-    const session = await getServerSession(req, res, authOptions);
-    if (!session || !session.id) {
+    // Inicializar cliente de Supabase para API
+    const supabase = createClient(req, res);
+
+    // Obtener el usuario autenticado directamente desde Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
       return res.status(401).json({ error: 'No autorizado' });
     }
+
+    const userId = user.id;
 
     const {
       proxy_type,
@@ -76,9 +81,9 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error('[PROXY-TEST] ❌ Error:', error.message);
-    
+
     let errorMessage = 'No se pudo conectar al proxy';
-    
+
     if (error.code === 'ECONNREFUSED') {
       errorMessage = 'Conexión rechazada. Verifica host y puerto';
     } else if (error.code === 'ETIMEDOUT') {

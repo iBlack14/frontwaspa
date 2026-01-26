@@ -1,6 +1,5 @@
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { createClient } from '@/utils/supabase/api';
 import { validatePlan } from '../../../src/middleware/plan-validation.middleware';
 
 export default async function handler(req, res) {
@@ -9,12 +8,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Obtener sesión del usuario
-    const session = await getServerSession(req, res, authOptions);
+    // Inicializar cliente de Supabase para API
+    const supabase = createClient(req, res);
 
-    if (!session || !session.id) {
-      return res.status(401).json({ error: 'No autorizado' });
+    // Obtener el usuario autenticado directamente desde Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return res.status(401).json({ error: 'No autorizado - Inicia sesión con Supabase' });
     }
+
+    const userId = user.id;
 
     // ✅ VALIDAR PLAN - FREE solo puede usar chatbot con limitaciones
     const planValidation = await validatePlan(req, res, 'chatbot');
@@ -49,7 +53,7 @@ export default async function handler(req, res) {
       .from('instances')
       .select('document_id, user_id')
       .eq('document_id', instanceId)
-      .eq('user_id', session.id)
+      .eq('user_id', userId)
       .single();
 
     if (instanceError || !instance) {
@@ -58,7 +62,7 @@ export default async function handler(req, res) {
 
     // Guardar configuración del chatbot en Supabase
     const chatbotConfig = {
-      user_id: session.id,
+      user_id: userId,
       instance_id: instanceId,
       chatbot_name: chatbotName.trim(),
       welcome_message: welcomeMessage?.trim() || null,

@@ -1,6 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
+import { createClient } from '@/utils/supabase/api';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -8,18 +7,23 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Obtener sesión del usuario
-    const session = await getServerSession(req, res, authOptions);
+    // Inicializar cliente de Supabase para API
+    const supabase = createClient(req, res);
 
-    if (!session || !session.id) {
-      return res.status(401).json({ error: 'No autorizado - Inicia sesión' });
+    // Obtener el usuario autenticado directamente desde Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return res.status(401).json({ error: 'No autorizado - Inicia sesión con Supabase' });
     }
+
+    const userId = user.id;
 
     // Obtener resumen de uso del usuario
     const { data: usage, error } = await supabaseAdmin
       .from('user_usage_summary')
       .select('*')
-      .eq('user_id', session.id)
+      .eq('user_id', userId)
       .single();
 
     if (error) {
@@ -28,7 +32,7 @@ export default async function handler(req, res) {
     }
 
     // Calcular porcentajes
-    const instancesPercent = usage.max_instances > 0 
+    const instancesPercent = usage.max_instances > 0
       ? Math.round((usage.current_instances / usage.max_instances) * 100)
       : 0;
 

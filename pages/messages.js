@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast, Toaster } from 'sonner';
 import { io } from 'socket.io-client';
 import { SparklesIcon, MagnifyingGlassIcon, FunnelIcon, ChatBubbleLeftRightIcon, ArrowRightIcon, PhotoIcon, VideoCameraIcon, DocumentIcon, MicrophoneIcon, FaceSmileIcon, MapPinIcon, UserIcon, PhoneIcon } from '@heroicons/react/24/outline';
 import ContactSearch from '../components/contacts/ContactSearch';
 
 export default function MessagesPage() {
-  const { data: session, status } = useSession();
+  const { status } = useAuth();
   const [messages, setMessages] = useState([]);
   const [instances, setInstances] = useState([]);
   const [selectedInstance, setSelectedInstance] = useState('all');
@@ -55,7 +55,7 @@ export default function MessagesPage() {
 
   const setupWebSocket = () => {
     const socket = io(process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000');
-    
+
     socket.on('new_message', (message) => {
       setMessages(prev => [message, ...prev]);
       toast.success(`Nuevo mensaje de ${message.sender}`);
@@ -67,7 +67,7 @@ export default function MessagesPage() {
   // Filtrar mensajes
   const filteredMessages = messages.filter(msg => {
     const matchesInstance = selectedInstance === 'all' || msg.instanceId === selectedInstance;
-    const matchesSearch = 
+    const matchesSearch =
       msg.text?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       msg.sender?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesInstance && matchesSearch;
@@ -170,7 +170,7 @@ export default function MessagesPage() {
               <ChatBubbleLeftRightIcon className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-zinc-500" />
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No hay mensajes</h3>
               <p className="text-gray-600 dark:text-zinc-400 text-sm">
-                {searchTerm || selectedInstance !== 'all' 
+                {searchTerm || selectedInstance !== 'all'
                   ? 'No se encontraron mensajes con los filtros aplicados'
                   : 'Aún no has recibido mensajes'}
               </p>
@@ -221,14 +221,14 @@ function getMessageType(message) {
   if (message.type && message.type !== 'text' && message.type !== 'unknown') {
     return message.type.toLowerCase();
   }
-  
+
   // 2. Detectar por contenido del mensaje si no viene del backend
   if (message.hasMedia || message.media) {
     if (message.mediaType) {
       return message.mediaType.toLowerCase();
     }
   }
-  
+
   // 3. Detectar por el texto si dice [Mensaje multimedia]
   const text = message.text || '';
   if (text === '[Mensaje multimedia]' || text.startsWith('[') && text.endsWith(']')) {
@@ -242,10 +242,10 @@ function getMessageType(message) {
     }
     return 'media';
   }
-  
+
   // 4. Si tiene texto real, es texto
   if (text && text.length > 0 && !text.startsWith('[')) return 'text';
-  
+
   // 5. Por defecto, texto
   return 'text';
 }
@@ -265,7 +265,7 @@ function getMessageTypeInfo(type) {
     call: { icon: PhoneIcon, label: 'Llamada', color: 'text-cyan-600', bg: 'bg-cyan-100 dark:bg-cyan-900/30' },
     media: { icon: PhotoIcon, label: 'Multimedia', color: 'text-orange-600', bg: 'bg-orange-100 dark:bg-orange-900/30' },
   };
-  
+
   return types[type] || types.text;
 }
 
@@ -273,12 +273,12 @@ function getMessageTypeInfo(type) {
 function MessageCard({ message, instances }) {
   const instance = instances.find(i => i.document_id === message.instanceId);
   const instanceName = instance?.name || instance?.phone_number || 'Desconocida';
-  
+
   // Detectar tipo de mensaje
   const messageType = getMessageType(message);
   const typeInfo = getMessageTypeInfo(messageType);
   const TypeIcon = typeInfo.icon;
-  
+
   // Colores aleatorios basados en el instanceId para diferenciar visualmente
   const getInstanceColor = (id) => {
     const colors = [

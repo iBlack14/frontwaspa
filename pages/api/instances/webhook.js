@@ -1,7 +1,6 @@
 // pages/api/instances/webhook.js
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
+import { createClient } from '@/utils/supabase/api';
 import axios from 'axios';
 
 export default async function handler(req, res) {
@@ -10,12 +9,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Obtener sesión del usuario
-    const session = await getServerSession(req, res, authOptions);
+    // Inicializar cliente de Supabase para API
+    const supabase = createClient(req, res);
 
-    if (!session || !session.id) {
-      return res.status(401).json({ error: 'No autorizado - Inicia sesión' });
+    // Obtener el usuario autenticado directamente desde Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return res.status(401).json({ error: 'No autorizado - Inicia sesión con Supabase' });
     }
+
+    const userId = user.id;
 
     const { documentId } = req.query;
     const { webhook_url } = req.body;
@@ -27,7 +31,7 @@ export default async function handler(req, res) {
       .from('instances')
       .update({ webhook_url })
       .eq('document_id', documentId)
-      .eq('user_id', session.id)
+      .eq('user_id', userId)
       .select()
       .single();
 
@@ -52,9 +56,9 @@ export default async function handler(req, res) {
 
     console.log(`✅ Webhook updated successfully for ${documentId}`);
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       success: true,
-      data: instance 
+      data: instance
     });
   } catch (error) {
     console.error('Error in webhook update:', error);

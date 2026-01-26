@@ -1,28 +1,25 @@
 // pages/api/instances.js
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { createClient } from '@/utils/supabase/api';
 import axios from 'axios';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from './auth/[...nextauth]';
 import { createWhatsAppSession } from '@/lib/backend-api';
 
 export default async function handler(req, res) {
   const { method, headers, body, query } = req;
-  const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL; // Server-side env variable
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL; // Server-side env variable
 
-  const token_read = process.env.NEXT_PUBLIC_BACKEND_READ_TOKEN; // Server-side env variable
-  const token_update = process.env.NEXT_PUBLIC_BACKEND_UPDATE_INSTANCE_TOKEN; // Server-side env variable
+  // Inicializar cliente de Supabase para API
+  const supabase = createClient(req, res);
 
-  // Obtener sesión del usuario
-  const session = await getServerSession(req, res, authOptions);
+  // Obtener el usuario autenticado directamente desde Supabase
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-  if (!session || !session.id) {
-    return res.status(401).json({ 
-      error: 'No autorizado - Inicia sesión',
-      sessionExists: !!session,
-      hasId: !!session?.id
+  if (authError || !user) {
+    return res.status(401).json({
+      error: 'No autorizado - Inicia sesión con Supabase',
     })
   }
+
+  const userId = user.id;
 
   try {
     if (method === 'GET') {
@@ -30,7 +27,7 @@ export default async function handler(req, res) {
       const { data: instances, error } = await supabaseAdmin
         .from('instances')
         .select('*')
-        .eq('user_id', session.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -39,91 +36,57 @@ export default async function handler(req, res) {
 
       return res.status(200).json({ instances });
 
-
-
     } else if (method === 'POST') {
-      // Create new instance
-      
-      // Verificar plan del usuario (API key NO es requerida para crear instancias)
+      // Verificar plan del usuario
       const { data: profile } = await supabaseAdmin
         .from('profiles')
         .select('status_plan, api_key')
-        .eq('id', session.id)
+        .eq('id', userId)
         .single()
 
       if (!profile || profile.status_plan === false) {
         return res.status(400).json({ message: 'No tienes un plan activo' });
       }
 
-      // ℹ️ API key es opcional para crear instancias
-      // Solo se requiere para usar templates 
-
       // Generar clientId único
-      const clientId = `${session.id}-${Date.now()}`;
+      const clientId = `${userId}-${Date.now()}`;
 
-      // ✅ Llamar DIRECTAMENTE al backend con API key del usuario
+      // Llamar al backend
       try {
         console.log('[INSTANCES] 🚀 Creando sesión de WhatsApp...');
-        console.log('[INSTANCES] 📋 ClientId:', clientId);
-        console.log('[INSTANCES] 👤 UserId:', session.id);
-        console.log('[INSTANCES] 🔑 API Key:', profile.api_key ? 'Existe ✅' : 'No existe ❌');
-        
-        const response = await createWhatsAppSession(session.id, clientId);
-        
-        console.log('[INSTANCES] ✅ Respuesta del backend:', response);
+        const response = await createWhatsAppSession(userId, clientId);
 
         // Guardar instancia en Supabase
         const { error: insertError } = await supabaseAdmin
           .from('instances')
           .insert({
             document_id: clientId,
-            user_id: session.id,
+            user_id: userId,
             state: 'Initializing',
             created_at: new Date().toISOString(),
           });
 
-        if (insertError) {
-          console.error('[INSTANCES] ❌ Error guardando en Supabase:', insertError);
-        } else {
-          console.log('[INSTANCES] ✅ Instancia guardada en Supabase');
-        }
+        if (insertError) console.error('[INSTANCES] ❌ Error guardando en Supabase:', insertError);
 
-        return res.status(200).json({ 
+        return res.status(200).json({
           success: true,
           message: 'Instancia creada exitosamente',
           clientId,
           data: response
         });
       } catch (backendError) {
-        console.error('[INSTANCES] ❌ Error llamando al backend:', backendError);
-        console.error('[INSTANCES] 📋 Detalles del error:', {
-          message: backendError.message,
-          response: backendError.response?.data,
-          status: backendError.response?.status,
-        });
-        
-        return res.status(500).json({ 
+        return res.status(500).json({
           error: 'Error al crear la sesión de WhatsApp',
           details: backendError.response?.data || backendError.message
         });
       }
 
-
-
     } else if (method === 'PUT') {
-      // Update webhook or instance
-      // Obtener sesión del usuario
-      const session = await getServerSession(req, res, authOptions);
-
-      if (!session || !session.id) {
-        return res.status(401).json({ error: 'No autorizado - Inicia sesión' })
-      }
-
       // Verificar plan
       const { data: profile } = await supabaseAdmin
         .from('profiles')
         .select('status_plan')
-        .eq('id', session.id)
+        .eq('id', userId)
         .single()
 
       if (!profile || profile.status_plan === false) {
@@ -131,19 +94,17 @@ export default async function handler(req, res) {
       }
 
       const { documentId } = query;
-      
+
       // Actualizar instancia en Supabase
       const { data: instance, error } = await supabaseAdmin
         .from('instances')
         .update(body.data)
         .eq('document_id', documentId)
-        .eq('user_id', session.id)
+        .eq('user_id', userId)
         .select()
         .single()
 
-      if (error) {
-        return res.status(500).json({ error: error.message })
-      }
+      if (error) return res.status(500).json({ error: error.message })
 
 
       // Extraer webhook_url correctamente del body
@@ -153,7 +114,7 @@ export default async function handler(req, res) {
         return res.status(200).json({ data: instance });
       } else {
         const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-        
+
         await axios.post(
           `${BACKEND_URL}/api/update-weebhook/${documentId}`,
           { webhook_url: webhookUrl },

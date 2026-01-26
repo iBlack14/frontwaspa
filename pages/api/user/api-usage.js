@@ -1,5 +1,4 @@
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
+import { createClient } from '@/utils/supabase/api';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 /**
@@ -11,27 +10,32 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Verificar sesión
-    const session = await getServerSession(req, res, authOptions);
-    
-    if (!session || !session.id) {
+    // Inicializar cliente de Supabase para API
+    const supabase = createClient(req, res);
+
+    // Obtener el usuario autenticado directamente desde Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
       return res.status(401).json({ error: 'No autorizado' });
     }
+
+    const userId = user.id;
 
     const { days = 7 } = req.query;
 
     // Obtener estadísticas usando función SQL
     const { data: stats, error: statsError } = await supabaseAdmin
       .rpc('get_api_usage_stats', {
-        p_user_id: session.id,
+        p_user_id: userId,
         p_days: parseInt(days),
       });
 
     if (statsError) {
       console.error('[API-USAGE] Error obteniendo stats:', statsError);
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Error al obtener estadísticas',
-        details: statsError.message 
+        details: statsError.message
       });
     }
 
@@ -39,7 +43,7 @@ export default async function handler(req, res) {
     const { data: recentCalls, error: callsError } = await supabaseAdmin
       .from('api_key_usage')
       .select('endpoint, method, status_code, response_time_ms, timestamp')
-      .eq('user_id', session.id)
+      .eq('user_id', userId)
       .order('timestamp', { ascending: false })
       .limit(20);
 
@@ -63,9 +67,9 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error('[API-USAGE] Error:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Error interno del servidor',
-      details: error.message 
+      details: error.message
     });
   }
 }

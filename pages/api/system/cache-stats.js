@@ -1,5 +1,4 @@
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
+import { createClient } from '@/utils/supabase/api';
 import { getCacheStats } from '../../../src/lib/spam-control';
 
 /**
@@ -12,11 +11,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Verificar sesión
-    const session = await getServerSession(req, res, authOptions);
-    if (!session || !session.id) {
+    // Inicializar cliente de Supabase para API
+    const supabase = createClient(req, res);
+
+    // Obtener el usuario autenticado directamente desde Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
       return res.status(401).json({ error: 'No autorizado' });
     }
+
+    const userId = user.id;
 
     // TODO: Verificar que el usuario sea admin
     // const { data: profile } = await supabaseAdmin

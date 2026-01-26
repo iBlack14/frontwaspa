@@ -4,7 +4,7 @@ import Image from 'next/image';
 const fondo_transparent = '/logo/wazilrest_white.png';
 const wazilrest_logo = '/logo/wazilrest_logo.png';
 
-import { useSession, signOut } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
@@ -32,7 +32,7 @@ import {
 function SidebarLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { data: session, status } = useSession();
+  const { session, status, signOut } = useAuth();
   const email = session?.user?.email;
   const username = session?.username;
   const photourl = session?.user?.image;
@@ -141,7 +141,7 @@ function SidebarLayout({ children }: { children: React.ReactNode }) {
 
   const handleLogout = async () => {
     try {
-      await signOut({ redirect: false });
+      await signOut();
       if (typeof window !== 'undefined') {
         localStorage.removeItem('sidebarCollapsed');
       }

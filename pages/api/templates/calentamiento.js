@@ -1,6 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
+import { createClient } from '@/utils/supabase/api';
 import axios from 'axios';
 
 // Store active calentamiento processes (in production, use Redis/database)
@@ -12,11 +11,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Verificar sesión
-    const session = await getServerSession(req, res, authOptions);
-    if (!session || !session.id) {
-      return res.status(401).json({ error: 'No autorizado' });
+    // Inicializar cliente de Supabase para API
+    const supabase = createClient(req, res);
+
+    // Obtener el usuario autenticado directamente desde Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return res.status(401).json({ error: 'No autorizado - Inicia sesión con Supabase' });
     }
+
+    const userId = user.id;
 
     const { instanceId, action } = req.method === 'POST' ? req.body : req.query;
 
@@ -29,7 +34,7 @@ export default async function handler(req, res) {
       .from('instances')
       .select('document_id, state, user_id')
       .eq('document_id', instanceId)
-      .eq('user_id', session.id)
+      .eq('user_id', userId)
       .single();
 
     if (!instance) {
@@ -45,7 +50,7 @@ export default async function handler(req, res) {
 
     // GET - Obtener estado del calentamiento
     if (req.method === 'GET') {
-      const calentamientoKey = `${session.id}-${instanceId}`;
+      const calentamientoKey = `${userId}-${instanceId}`;
       const calentamientoData = activeCalentamientos.get(calentamientoKey);
 
       if (!calentamientoData) {
@@ -63,9 +68,9 @@ export default async function handler(req, res) {
 
     // POST - Iniciar o detener calentamiento
     if (action === 'start') {
-      return await startCalentamiento(instanceId, session.id, res);
+      return await startCalentamiento(instanceId, userId, res);
     } else if (action === 'stop') {
-      return await stopCalentamiento(instanceId, session.id, res);
+      return await stopCalentamiento(instanceId, userId, res);
     } else {
       return res.status(400).json({ error: 'Acción inválida. Use "start" o "stop"' });
     }

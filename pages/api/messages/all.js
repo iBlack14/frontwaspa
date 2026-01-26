@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getServerSession } from 'next-auth/next';
+import { createClient } from '@/utils/supabase/api';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -7,13 +7,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Verificar autenticación
-    const session = await getServerSession(req, res);
-    if (!session) {
-      return res.status(401).json({ error: 'No autorizado' });
+    // Inicializar cliente de Supabase para API
+    const supabase = createClient(req, res);
+
+    // Obtener el usuario autenticado directamente desde Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return res.status(401).json({ error: 'No autorizado - Inicia sesión con Supabase' });
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
     const { instanceId, limit = 100, offset = 0 } = req.query;
 
     // Obtener todas las instancias del usuario

@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface WooCommerceProduct {
   id: number;
@@ -13,10 +13,10 @@ interface WooCommerceProduct {
 
 // ProductCard Component
 function ProductCard({ product }: { product: WooCommerceProduct }) {
-  const { data: session } = useSession();
+  const { session } = useAuth();
 
   const checkoutUrl = `https://wazilrest.com/?clear_cart_and_add=${product.id}&email=${encodeURIComponent(
-    session?.email ?? ''
+    session?.user?.email ?? ''
   )}`;
   const imageUrl = product.images && product.images.length > 0 ? product.images[0].src : '/images/placeholder-image.jpg';
 
@@ -108,9 +108,8 @@ export default function SidebarComponent({ isOpen, onToggle }: SidebarComponentP
 
   return (
     <div
-      className={`fixed top-0 right-0 h-full w-xl bg-zinc-900/95 backdrop-blur-md p-8 shadow-lg transform transition-transform duration-500 ease-in-out ${
-        isOpen ? 'translate-x-0' : 'translate-x-full'
-      } overflow-y-auto`}
+      className={`fixed top-0 right-0 h-full w-xl bg-zinc-900/95 backdrop-blur-md p-8 shadow-lg transform transition-transform duration-500 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'
+        } overflow-y-auto`}
       onMouseLeave={() => isOpen && onToggle()}
     >
       <button

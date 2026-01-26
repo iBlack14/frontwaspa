@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
+import { createClient } from '@/utils/supabase/api';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -9,11 +8,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Verificar sesión
-    const session = await getServerSession(req, res, authOptions);
-    if (!session || !session.id) {
+    // Inicializar cliente de Supabase para API
+    const supabase = createClient(req, res);
+
+    // Obtener el usuario autenticado directamente desde Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
       return res.status(401).json({ error: 'No autorizado' });
     }
+
+    const userId = user.id;
 
     const { name_service } = req.body;
 
@@ -23,7 +28,7 @@ export default async function handler(req, res) {
 
     // Llamar al backend para obtener métricas
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-    
+
     if (!backendUrl) {
       return res.status(500).json({ error: 'Backend URL not configured' });
     }
@@ -32,7 +37,7 @@ export default async function handler(req, res) {
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('api_key')
-      .eq('id', session.id)
+      .eq('id', userId)
       .single();
 
     if (!profile || !profile.api_key) {
@@ -47,7 +52,7 @@ export default async function handler(req, res) {
       { name_service },
       {
         timeout: 10000,
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${profile.api_key}`
         }

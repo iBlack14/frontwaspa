@@ -1,5 +1,5 @@
 'use client';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
@@ -30,8 +30,8 @@ interface Plan {
 }
 
 function SubscriptionContent() {
-  const { data: session, status } = useSession();
-  const typedSession = session as CustomSession | null;
+  const { session, status } = useAuth();
+  const typedSession = session as any;
   const router = useRouter();
 
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);

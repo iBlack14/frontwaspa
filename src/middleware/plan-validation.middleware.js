@@ -1,6 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../pages/api/auth/[...nextauth]';
+import { createClient } from '@/utils/supabase/api';
 
 /**
  * Límites por plan
@@ -59,10 +58,13 @@ const PLAN_LIMITS = {
  */
 export async function validatePlan(req, res, requiredTemplate, requiredFeature = null) {
   try {
-    // Obtener sesión del usuario
-    const session = await getServerSession(req, res, authOptions);
-    
-    if (!session || !session.id) {
+    // Inicializar cliente de Supabase para API
+    const supabase = createClient(req, res);
+
+    // Obtener el usuario autenticado directamente desde Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
       return {
         allowed: false,
         error: 'No autorizado',
@@ -70,11 +72,13 @@ export async function validatePlan(req, res, requiredTemplate, requiredFeature =
       };
     }
 
+    const userId = user.id;
+
     // Obtener perfil y plan del usuario (incluir api_key para validación)
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('status_plan, plan_type, api_key')
-      .eq('id', session.id)
+      .eq('id', userId)
       .single();
 
     if (profileError || !profile) {
@@ -137,12 +141,12 @@ export async function validatePlan(req, res, requiredTemplate, requiredFeature =
     // Verificar límites de mensajes diarios (solo si no es ilimitado)
     if (planLimits.maxMessagesPerDay > 0) {
       const today = new Date().toISOString().split('T')[0];
-      
+
       // Contar mensajes enviados hoy
       const { data: instances } = await supabaseAdmin
         .from('instances')
         .select('historycal_data')
-        .eq('user_id', session.id);
+        .eq('user_id', userId);
 
       let messagesToday = 0;
       instances?.forEach(instance => {
@@ -173,7 +177,7 @@ export async function validatePlan(req, res, requiredTemplate, requiredFeature =
       allowed: true,
       planType,
       limits: planLimits,
-      userId: session.id,
+      userId: userId,
     };
   } catch (error) {
     console.error('[PLAN-VALIDATION] Error:', error);
@@ -192,7 +196,7 @@ export async function validatePlan(req, res, requiredTemplate, requiredFeature =
 export function withPlanValidation(requiredTemplate, requiredFeature = null) {
   return async (req, res, next) => {
     const validation = await validatePlan(req, res, requiredTemplate, requiredFeature);
-    
+
     if (!validation.allowed) {
       return res.status(validation.statusCode || 403).json({
         error: validation.error,
@@ -206,7 +210,7 @@ export function withPlanValidation(requiredTemplate, requiredFeature = null) {
 
     // Agregar info del plan al request para uso posterior
     req.planInfo = validation;
-    
+
     if (next) {
       return next();
     }

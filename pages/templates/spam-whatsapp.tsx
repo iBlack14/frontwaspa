@@ -1,6 +1,6 @@
-import { SessionProvider, useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -29,7 +29,7 @@ interface Instance {
 }
 
 function SpamWhatsAppContent() {
-  const { data: session, status } = useSession();
+  const { session, status } = useAuth();
   const router = useRouter();
   const [instances, setInstances] = useState<Instance[]>([]);
   const [selectedInstance, setSelectedInstance] = useState('');
@@ -64,24 +64,24 @@ function SpamWhatsAppContent() {
     const pollInterval = setInterval(async () => {
       try {
         const res = await axios.get(`/api/templates/spam-control?spamId=${spamId}`);
-        const status = res.data.status;
+        const statusData = res.data.status;
 
-        if (status) {
-          setSpamStatus(status);
+        if (statusData) {
+          setSpamStatus(statusData);
           setProgress({
-            current: status.currentContact,
-            total: status.totalContacts,
+            current: statusData.currentContact,
+            total: statusData.totalContacts,
           });
 
-          if (status.stopped || status.completed) {
+          if (statusData.stopped || statusData.completed) {
             clearInterval(pollInterval);
             setIsLoading(false);
             setShowSummaryModal(true);
 
-            if (status.stopped) {
-              toast.warning(`Envío detenido. ${status.success.length} enviados, ${status.errors.length} errores`);
+            if (statusData.stopped) {
+              toast.warning(`Envío detenido. ${statusData.success.length} enviados, ${statusData.errors.length} errores`);
             } else {
-              toast.success(`¡Completado! ${status.success.length} enviados, ${status.errors.length} errores`);
+              toast.success(`¡Completado! ${statusData.success.length} enviados, ${statusData.errors.length} errores`);
             }
           }
         }
@@ -267,8 +267,6 @@ function SpamWhatsAppContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-transparent p-6 sm:p-8">
-
-
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-4 mb-2">

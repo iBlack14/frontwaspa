@@ -1,5 +1,5 @@
 'use client';
-import { SessionProvider, useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';

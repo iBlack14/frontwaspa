@@ -1,6 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
+import { createClient } from '@/utils/supabase/api';
 import axios from 'axios';
 
 // Store active IA conversations (in production, use Redis/database)
@@ -17,18 +16,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Verificar sesión
-    const session = await getServerSession(req, res, authOptions);
-    if (!session || !session.user || !session.user.email) {
-      // Note: session.id might be missing depending on mapping, usually session.user.id or sub
-      // Let's assume session structure is standard next-auth.
-      // If we used session.id previously, stick to it but ensure it exists.
-      // previous code used session.id.
+    // Inicializar cliente de Supabase para API
+    const supabase = createClient(req, res);
+
+    // Obtener el usuario autenticado directamente desde Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return res.status(401).json({ error: 'No autorizado - Inicia sesión con Supabase' });
     }
-    // Revert to strict check from original code to avoid breaking existing auth logic
-    if (!session || !session.id) {
-      return res.status(401).json({ error: 'No autorizado' });
-    }
+
+    const userId = user.id;
 
     const { instanceId, instanceIds, action } = req.method === 'POST' ? req.body : req.query;
 
@@ -42,7 +40,7 @@ export default async function handler(req, res) {
         .from('instances')
         .select('document_id, state, user_id')
         .eq('document_id', instanceId)
-        .eq('user_id', session.id)
+        .eq('user_id', userId)
         .single();
 
       if (!instance) {
@@ -59,7 +57,7 @@ export default async function handler(req, res) {
 
     // GET - Obtener estado de la conversación IA
     if (req.method === 'GET') {
-      const conversationKey = `${session.id}-${instanceId}`;
+      const conversationKey = `${userId}-${instanceId}`;
       const conversationData = activeConversations.get(conversationKey);
 
       if (!conversationData) {
@@ -86,7 +84,7 @@ export default async function handler(req, res) {
       const results = [];
       for (const id of instanceIds) {
         const resMock = { status: () => ({ json: () => { } }) }; // Simple mock for internal loops
-        const result = await startIAConversation(id, session.id, resMock, provider, apiKey, instanceIds, theme, unlimited, customLimit, messageDelay);
+        const result = await startIAConversation(id, userId, resMock, provider, apiKey, instanceIds, theme, unlimited, customLimit, messageDelay);
         results.push(result);
       }
 
@@ -98,7 +96,7 @@ export default async function handler(req, res) {
       });
 
     } else if (action === 'stop') {
-      return await stopIAConversation(instanceId, session.id, res);
+      return await stopIAConversation(instanceId, userId, res);
     } else {
       return res.status(400).json({ error: 'Acción inválida. Use "start" o "stop"' });
     }

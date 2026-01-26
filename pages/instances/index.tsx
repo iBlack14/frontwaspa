@@ -1,5 +1,5 @@
 'use client';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
@@ -46,11 +46,11 @@ interface WhatsAppSession {
 }
 
 function DashboardContent() {
-  const { data: session, status } = useSession();
-  const username = useSession().data?.username;
+  const { session, status } = useAuth();
+  const username = session?.username;
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
-  const typedSession = session as CustomSession | null;
+  const typedSession = session as any;
   const router = useRouter();
   const [sessions, setSessions] = useState<WhatsAppSession[]>([]);
   const [webhookInputs, setWebhookInputs] = useState<{ [key: string]: string }>({});

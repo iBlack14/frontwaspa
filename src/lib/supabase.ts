@@ -1,65 +1,35 @@
-import { createClient } from '@supabase/supabase-js'
+import { createBrowserClient, createServerClient, type CookieOptions } from '@supabase/ssr'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-// Check if realtime should be enabled (disable if not available in Easypanel)
-const isRealtimeEnabled = process.env.NEXT_PUBLIC_SUPABASE_REALTIME_ENABLED !== 'false'
-
-// Singleton pattern to prevent multiple GoTrueClient instances
-let supabaseInstance: ReturnType<typeof createClient> | null = null
-
-// Cliente para el navegador (client-side) - Singleton
+// Cliente universal que se adapta al entorno (ssr-safe)
 export const supabase = (() => {
   if (typeof window === 'undefined') {
-    // Server-side: create a new instance each time (SSR safe)
-    return createClient(supabaseUrl, supabaseAnonKey, {
+    // Entorno de Servidor: Intentamos obtener cookies si es posible, si no, cliente básico
+    // Nota: Para rutas de API o Server Components es mejor usar el helper de src/utils/supabase/server.ts
+    // Pero este fallback mantiene compatibilidad con el código actual.
+    return createBrowserClient(supabaseUrl, supabaseAnonKey, {
       realtime: {
-        // Force endpoint for server-side too (just in case)
         // @ts-ignore
         endpoint: 'wss://realtime.wasapi-supabase.ld4pxg.easypanel.host/realtime/v1',
         timeout: 20000
-      },
-      auth: {
-        persistSession: false, // Disable persistence on server
-        autoRefreshToken: false
       }
     })
   }
 
-  // Client-side: use singleton to prevent multiple instances
-  if (!supabaseInstance) {
-    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
-      // PROPER CONFIGURATION:
-      // Directly configure the RealtimeClient to use the correct WSS endpoint.
-      realtime: {
-        // @ts-ignore
-        endpoint: 'wss://realtime.wasapi-supabase.ld4pxg.easypanel.host/realtime/v1',
-        timeout: 10000,
-        headers: {
-          apikey: supabaseAnonKey
-        },
-        heartbeatIntervalMs: 5000, // Keep connection alive
+  // Entorno de Navegador
+  return createBrowserClient(supabaseUrl, supabaseAnonKey, {
+    realtime: {
+      // @ts-ignore
+      endpoint: 'wss://realtime.wasapi-supabase.ld4pxg.easypanel.host/realtime/v1',
+      timeout: 10000,
+      headers: {
+        apikey: supabaseAnonKey
       },
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true
-      }
-    })
-
-    // Log realtime status
-    if (typeof window !== 'undefined') {
-      console.log('🔌 Supabase Realtime: Custom Endpoint Configured (wss://realtime...)')
+      heartbeatIntervalMs: 5000,
     }
-
-    // Log status
-    if (typeof window !== 'undefined') {
-      console.log('🔌 Supabase Realtime: HYBRID MODE (Custom WS Endpoint + 1s Polling)')
-    }
-  }
-
-  return supabaseInstance
+  })
 })()
 
 // Tipos TypeScript para las tablas

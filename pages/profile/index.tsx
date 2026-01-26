@@ -1,5 +1,5 @@
 'use client';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
@@ -48,8 +48,8 @@ interface Proxy {
 }
 
 function ProfilePage() {
-  const { data: session, status } = useSession();
-  const typedSession = session as CustomSession | null;
+  const { session, status } = useAuth();
+  const typedSession = session as any;
   const router = useRouter();
 
   // Tab state

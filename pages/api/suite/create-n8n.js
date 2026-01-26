@@ -1,6 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
+import { createClient } from '@/utils/supabase/api';
 import axios from 'axios';
 
 export default async function handler(req, res) {
@@ -9,11 +8,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Verificar sesión
-    const session = await getServerSession(req, res, authOptions);
-    if (!session || !session.id) {
-      return res.status(401).json({ error: 'No autorizado' });
+    // Inicializar cliente de Supabase para API
+    const supabase = createClient(req, res);
+
+    // Obtener el usuario autenticado directamente desde Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return res.status(401).json({ error: 'No autorizado - Inicia sesión con Supabase' });
     }
+
+    const userId = user.id;
 
     const { service_name, service_url, product_name, plan } = req.body;
 
@@ -43,13 +48,13 @@ export default async function handler(req, res) {
     const { data: existing } = await supabaseAdmin
       .from('suites')
       .select('id')
-      .eq('user_id', session.id)
+      .eq('user_id', userId)
       .eq('name', service_name)
       .single();
 
     if (existing) {
-      return res.status(400).json({ 
-        error: 'Ya existe una instancia con ese nombre' 
+      return res.status(400).json({
+        error: 'Ya existe una instancia con ese nombre'
       });
     }
 
@@ -90,7 +95,7 @@ export default async function handler(req, res) {
       memory: selectedPlanConfig.memory,
       cpu: selectedPlanConfig.cpu,
       description: selectedPlanConfig.description,
-      created_by: session.email || session.user?.email,
+      created_by: user.email,
       created_at: new Date().toISOString(),
       status: 'pending',
       note: 'Instancia creada - En espera de aprovisionamiento'
@@ -100,7 +105,7 @@ export default async function handler(req, res) {
     const { data: newSuite, error: insertError } = await supabaseAdmin
       .from('suites')
       .insert({
-        user_id: session.id,
+        user_id: userId,
         name: service_name,
         url: generatedUrl,
         activo: false,
@@ -134,12 +139,12 @@ export default async function handler(req, res) {
         console.log('Backend URL:', backendUrl);
         console.log('Service Name:', service_name);
         console.log('Plan:', plan);
-        
+
         // ✅ Obtener API key del usuario
         const { data: profile } = await supabaseAdmin
           .from('profiles')
           .select('api_key')
-          .eq('id', session.id)
+          .eq('id', userId)
           .single();
 
         if (!profile || !profile.api_key) {
@@ -150,12 +155,12 @@ export default async function handler(req, res) {
             suite_id: newSuite.id
           });
         }
-        
+
         const dockerResponse = await axios.post(
           `${backendUrl}/api/suite/create-n8n`,
           {
             service_name: service_name,
-            user_id: session.id,
+            user_id: userId,
             memory: selectedPlanConfig.memory,
             cpu: selectedPlanConfig.cpu,
             plan: plan
@@ -200,11 +205,11 @@ export default async function handler(req, res) {
           backend_url: backendUrl,
           service_name: service_name
         });
-        
+
         // Determinar tipo de error
         let errorType = 'UNKNOWN';
         let userMessage = dockerError.message;
-        
+
         if (dockerError.code === 'ECONNREFUSED') {
           errorType = 'CONNECTION_REFUSED';
           userMessage = 'No se pudo conectar al servicio backend. Verifique que esté ejecutándose.';
@@ -218,7 +223,7 @@ export default async function handler(req, res) {
           errorType = 'BACKEND_ERROR';
           userMessage = dockerError.response?.data?.error || 'Error interno del sistema backend';
         }
-        
+
         // Actualizar con error pero no fallar la creación
         await supabaseAdmin
           .from('suites')

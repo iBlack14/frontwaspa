@@ -1,6 +1,6 @@
-import { SessionProvider, useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import axios from 'axios';
 import Sidebard from '../components/dashboard/index';
@@ -89,7 +89,7 @@ const templates = [
 ];
 
 function TemplatesContent() {
-  const { data: session, status } = useSession();
+  const { session, status } = useAuth();
   const router = useRouter();
   const [hasInstances, setHasInstances] = useState(false);
   const [isCheckingInstances, setIsCheckingInstances] = useState(true);
@@ -225,8 +225,8 @@ function TemplatesContent() {
                 <button
                   disabled={!hasInstances}
                   className={`w-full py-2.5 px-4 rounded-xl transition-all duration-300 font-medium ${hasInstances
-                      ? `bg-gradient-to-r from-${template.color}-500 to-${template.color}-600 text-white hover:shadow-lg hover:shadow-${template.color}-500/25 transform hover:-translate-y-0.5`
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                    ? `bg-gradient-to-r from-${template.color}-500 to-${template.color}-600 text-white hover:shadow-lg hover:shadow-${template.color}-500/25 transform hover:-translate-y-0.5`
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
                     }`}
                 >
                   {hasInstances ? 'Usar Plantilla' : 'Requiere Instancia'}

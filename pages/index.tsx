@@ -1,10 +1,10 @@
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 import LandingPage from './components/landing/LandingPage';
 
 export default function Home() {
-  const { data: session, status } = useSession();
+  const { session, status } = useAuth();
   const router = useRouter();
 
   useEffect(() => {

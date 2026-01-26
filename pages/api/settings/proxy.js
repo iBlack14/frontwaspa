@@ -1,21 +1,26 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
+import { createClient } from '@/utils/supabase/api';
 
 export default async function handler(req, res) {
   try {
-    // Verificar sesión
-    const session = await getServerSession(req, res, authOptions);
-    if (!session || !session.id) {
+    // Inicializar cliente de Supabase para API
+    const supabase = createClient(req, res);
+
+    // Obtener el usuario autenticado directamente desde Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
       return res.status(401).json({ error: 'No autorizado' });
     }
+
+    const userId = user.id;
 
     if (req.method === 'GET') {
       // Obtener configuración de proxy
       const { data, error } = await supabaseAdmin
         .from('profiles')
         .select('proxy_enabled, proxy_type, proxy_host, proxy_port, proxy_username, proxy_country, proxy_rotation, proxy_rotation_minutes')
-        .eq('id', session.id)
+        .eq('id', userId)
         .single();
 
       if (error) {
@@ -73,7 +78,7 @@ export default async function handler(req, res) {
       const { error } = await supabaseAdmin
         .from('profiles')
         .update(updateData)
-        .eq('id', session.id);
+        .eq('id', userId);
 
       if (error) {
         console.error('Error guardando config:', error);

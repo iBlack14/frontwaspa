@@ -3,6 +3,7 @@ import { Chat, Message } from '../../pages/messages/index';
 import axios from 'axios';
 import ImageViewer from './ImageViewer';
 import { CheckIcon, PaperAirplaneIcon, FaceSmileIcon, PaperClipIcon, MicrophoneIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { Lock, Eye, EyeOff, Camera, Video, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 
@@ -676,20 +677,18 @@ function MessageBubble({
             onClick={handleViewOnceClick}
             disabled={!isMediaAvailable}
             className={`flex items-center gap-3 rounded-xl p-3 w-full transition group text-left border relative overflow-hidden ${hasBeenOpened
-                ? 'bg-slate-50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-700'
-                : 'bg-white dark:bg-slate-700 border-indigo-100 dark:border-slate-600 shadow-sm hover:shadow-md'
+              ? 'bg-slate-50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-700'
+              : 'bg-white dark:bg-slate-700 border-indigo-100 dark:border-slate-600 shadow-sm hover:shadow-md'
               } ${!isMediaAvailable ? 'opacity-75 cursor-not-allowed' : ''}`}
           >
             <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${hasBeenOpened
-                ? 'border-slate-300 text-slate-400'
-                : 'border-indigo-500 text-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+              ? 'border-slate-300 text-slate-400'
+              : 'border-indigo-500 text-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
               }`}>
               {hasBeenOpened ? (
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+                <CheckCircle2 size={20} />
               ) : (
-                <span className="font-bold text-sm">1</span>
+                isVideo ? <Video size={20} /> : <Camera size={20} />
               )}
             </div>
 
@@ -701,16 +700,13 @@ function MessageBubble({
               <p className="text-xs text-slate-400 dark:text-slate-500">
                 {hasBeenOpened
                   ? `Visto ${lastOpened ? new Date(lastOpened).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}`
-                  : (isMediaAvailable ? (isVideo ? 'Video (Ver una vez)' : 'Foto (Ver una vez)') : 'No disponible')}
+                  : (isMediaAvailable ? (isVideo ? 'Video' : 'Foto') + ' (Ver una vez)' : 'Cargando contenido...')}
               </p>
             </div>
 
             {!hasBeenOpened && isMediaAvailable && (
               <div className="text-indigo-400 group-hover:text-indigo-600 transition">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
+                <Lock size={18} />
               </div>
             )}
           </button>

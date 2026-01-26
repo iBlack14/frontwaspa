@@ -1,6 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
+import { createClient } from '@/utils/supabase/api';
 import axios from 'axios';
 
 export default async function handler(req, res) {
@@ -9,11 +8,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Verificar sesión
-    const session = await getServerSession(req, res, authOptions);
-    if (!session || !session.id) {
+    // Inicializar cliente de Supabase para API
+    const supabase = createClient(req, res);
+
+    // Obtener el usuario autenticado directamente desde Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
       return res.status(401).json({ error: 'No autorizado' });
     }
+
+    const userId = user.id;
 
     const { name_service } = req.body;
 
@@ -25,7 +30,7 @@ export default async function handler(req, res) {
     const { data: suite, error } = await supabaseAdmin
       .from('suites')
       .select('*')
-      .eq('user_id', session.id)
+      .eq('user_id', userId)
       .eq('name', name_service)
       .single();
 
@@ -64,7 +69,7 @@ export default async function handler(req, res) {
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('api_key')
-      .eq('id', session.id)
+      .eq('id', userId)
       .single();
 
     if (!profile || !profile.api_key) {

@@ -1,24 +1,27 @@
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { createClient } from '@/utils/supabase/api';
 
 export default async function handler(req, res) {
   console.log('[ASSIGN] 🚀 Iniciando asignación de template...');
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método no permitido' });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // 1. Verificar Sesión
-    console.log('[ASSIGN] 🔐 Verificando sesión...');
-    const session = await getServerSession(req, res, authOptions);
+    // Inicializar cliente de Supabase para API
+    const supabase = createClient(req, res);
 
-    if (!session || !session.id) {
-      console.error('[ASSIGN] ❌ Sesión inválida:', { sessionExists: !!session, hasId: !!session?.id });
+    // Obtener el usuario autenticado directamente desde Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      console.error('[ASSIGN] ❌ No autorizado');
       return res.status(401).json({ error: 'No autorizado' });
     }
-    console.log('[ASSIGN] ✅ Sesión válida para usuario:', session.id);
+
+    const userId = user.id;
+    console.log('[ASSIGN] ✅ Sesión válida para usuario:', userId);
 
     // 2. Parsear Body
     const { instanceId, templateType } = req.body;
@@ -41,7 +44,7 @@ export default async function handler(req, res) {
       .from('instances')
       .select('document_id, user_id, active_template')
       .eq('document_id', instanceId)
-      .eq('user_id', session.id)
+      .eq('user_id', userId)
       .single();
 
     if (instanceError) {

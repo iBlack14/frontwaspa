@@ -1,6 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
+import { createClient } from '@/utils/supabase/api';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST' && req.method !== 'GET') {
@@ -8,18 +7,23 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Obtener sesión del usuario
-    const session = await getServerSession(req, res, authOptions);
+    // Inicializar cliente de Supabase para API
+    const supabase = createClient(req, res);
 
-    if (!session || !session.id) {
-      return res.status(401).json({ error: 'No autorizado - Inicia sesión' });
+    // Obtener el usuario autenticado directamente desde Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return res.status(401).json({ error: 'No autorizado - Inicia sesión con Supabase' });
     }
+
+    const userId = user.id;
 
     // Obtener perfil del usuario desde Supabase
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('*')
-      .eq('id', session.id)
+      .eq('id', userId)
       .single();
 
     if (profileError) {
@@ -27,18 +31,10 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Error al obtener perfil' });
     }
 
-    // Obtener datos de autenticación del usuario
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.admin.getUserById(session.id);
-
-    if (authError || !user) {
-      console.error('Error fetching user:', authError);
-      return res.status(500).json({ error: 'Error al obtener usuario' });
-    }
-
     // Retornar datos del usuario y perfil
     return res.status(200).json({
-      documentId: session.id,
-      email: user.email || session.email,
+      documentId: userId,
+      email: user.email,
       username: profile?.username || user.user_metadata?.username || user.email?.split('@')[0] || 'Usuario',
       key: profile?.api_key || '',
       openai_api_key: profile?.openai_api_key || '',

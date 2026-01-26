@@ -1,19 +1,24 @@
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
-import { 
-  stopSpam, 
-  getSpamStatus, 
+import { createClient } from '@/utils/supabase/api';
+import {
+  stopSpam,
+  getSpamStatus,
   getUserSpams,
-  cleanupSpam 
+  cleanupSpam
 } from '../../../src/lib/spam-control';
 
 export default async function handler(req, res) {
   try {
-    // Verificar sesión
-    const session = await getServerSession(req, res, authOptions);
-    if (!session || !session.id) {
+    // Inicializar cliente de Supabase para API
+    const supabase = createClient(req, res);
+
+    // Obtener el usuario autenticado directamente desde Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
       return res.status(401).json({ error: 'No autorizado' });
     }
+
+    const userId = user.id;
 
     const { method } = req;
 
@@ -25,16 +30,16 @@ export default async function handler(req, res) {
         // Obtener estado de un envío específico
         console.log('[SPAM-CONTROL] Buscando spam:', spamId);
         const status = await getSpamStatus(spamId);
-        
+
         console.log('[SPAM-CONTROL] Estado encontrado:', status ? 'Sí' : 'No');
-        
+
         if (!status) {
           console.warn('[SPAM-CONTROL] ⚠️ Envío no encontrado en memoria:', spamId);
           return res.status(404).json({ error: 'Envío no encontrado' });
         }
 
         // Verificar que pertenece al usuario
-        if (status.userId !== session.id) {
+        if (status.userId !== userId) {
           return res.status(403).json({ error: 'No autorizado' });
         }
 
@@ -48,7 +53,7 @@ export default async function handler(req, res) {
         return res.json({ status });
       } else {
         // Obtener todos los envíos del usuario
-        const userSpams = getUserSpams(session.id);
+        const userSpams = getUserSpams(userId);
         return res.json({ spams: userSpams });
       }
     }
@@ -62,21 +67,21 @@ export default async function handler(req, res) {
       }
 
       const status = await getSpamStatus(spamId);
-      
+
       if (!status) {
         return res.status(404).json({ error: 'Envío no encontrado' });
       }
 
       // Verificar que pertenece al usuario
-      if (status.userId !== session.id) {
+      if (status.userId !== userId) {
         return res.status(403).json({ error: 'No autorizado' });
       }
 
       if (action === 'stop') {
         await stopSpam(spamId);
         const updatedStatus = await getSpamStatus(spamId);
-        return res.json({ 
-          success: true, 
+        return res.json({
+          success: true,
           message: 'Envío detenido',
           status: updatedStatus
         });
@@ -84,8 +89,8 @@ export default async function handler(req, res) {
 
       if (action === 'cleanup') {
         cleanupSpam(spamId);
-        return res.json({ 
-          success: true, 
+        return res.json({
+          success: true,
           message: 'Envío limpiado'
         });
       }
@@ -102,8 +107,8 @@ export default async function handler(req, res) {
       }
 
       const status = await getSpamStatus(spamId);
-      
-      if (status && status.userId !== session.id) {
+
+      if (status && status.userId !== userId) {
         return res.status(403).json({ error: 'No autorizado' });
       }
 
