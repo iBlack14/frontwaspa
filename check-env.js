@@ -5,6 +5,9 @@
  * Ejecutar con: node check-env.js
  */
 
+// Cargar variables de entorno desde .env
+require('dotenv').config();
+
 const requiredVars = [
   'NEXT_PUBLIC_SUPABASE_URL',
   'NEXT_PUBLIC_SUPABASE_ANON_KEY',

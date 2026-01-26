@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import axios from 'axios';
 import { toast } from 'sonner';
-import Sidebard from '../components/dashboard/index';
+import Sidebard from '../../components/dashboard/index';
 import {
   ArrowLeftIcon,
   PaperAirplaneIcon,

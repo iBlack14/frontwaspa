@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/router';
 import axios from 'axios';
 import { toast } from 'sonner';
-import Sidebar from '../components/dashboard/index';
+import Sidebar from '../../components/dashboard/index';
 import ChatList from '../../components/messages/ChatList';
 import ChatWindow from '../../components/messages/ChatWindow';
 

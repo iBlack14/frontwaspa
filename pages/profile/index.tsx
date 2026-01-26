@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
-import Sidebar from '../components/dashboard/index';
+import Sidebar from '../../components/dashboard/index';
 import {
   EyeIcon,
   EyeSlashIcon,

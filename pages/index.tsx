@@ -1,7 +1,8 @@
+'use client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
-import LandingPage from './components/landing/LandingPage';
+import LandingPage from '../components/landing/LandingPage';
 
 export default function Home() {
   const { session, status } = useAuth();

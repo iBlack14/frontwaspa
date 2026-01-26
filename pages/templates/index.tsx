@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import axios from 'axios';
-import Sidebard from '../components/dashboard/index';
+import Sidebard from '../../components/dashboard/index';
 import {
   SparklesIcon,
   RocketLaunchIcon,

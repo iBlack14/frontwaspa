@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
-import Sidebard from '../components/dashboard/index';
+import Sidebard from '../../components/dashboard/index';
 import { CheckCircleIcon, XCircleIcon, SparklesIcon, StarIcon, ShieldCheckIcon, BoltIcon } from '@heroicons/react/24/outline';
 import { toast } from 'sonner';
 

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import axios from 'axios';
-import Sidebar from '../components/dashboard/index';
+import Sidebar from '../../components/dashboard/index';
 import { toast } from 'sonner';
 
 interface ApiKeyData {

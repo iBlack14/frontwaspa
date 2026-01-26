@@ -1,13 +1,14 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { ChevronRightIcon, HomeIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 import SidebarComponent from './SidebarComponent';
 
 export default function Breadcrumb() {
-    const pathname = usePathname();
+    const router = useRouter();
+    const pathname = router.asPath;
     if (!pathname) return null;
 
     const pathParts = pathname.split('/').filter(Boolean);

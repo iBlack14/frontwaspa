@@ -5,7 +5,7 @@ import Head from 'next/head';
 import Image from 'next/image';
 import { toast } from 'sonner';
 import axios from 'axios';
-import Sidebard from '../components/dashboard/index';
+import Sidebard from '../../components/dashboard/index';
 import {
   CubeIcon,
   PlusIcon,

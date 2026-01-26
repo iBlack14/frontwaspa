@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Head from 'next/head';
-import Sidebard from '../components/dashboard/index';
+import Sidebard from '../../components/dashboard/index';
 import { toast } from 'sonner';
 import {
     ChatBubbleLeftRightIcon,

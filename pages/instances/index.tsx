@@ -3,8 +3,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
-import Sidebar from '../components/dashboard/index';
-import Helpme from '../components/instances/helpme';
+import Sidebar from '../../components/dashboard/index';
+import Helpme from '../../components/instances/helpme';
 import Image from 'next/image';
 import {
   PauseIcon,

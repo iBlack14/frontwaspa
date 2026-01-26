@@ -1,7 +1,8 @@
+'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { CheckCircleIcon } from '@heroicons/react/24/outline';
-import IzipayModal from '../../../components/payment/IzipayModal';
+import IzipayModal from '../payment/IzipayModal';
 
 export default function PricingSection() {
   const router = useRouter();
