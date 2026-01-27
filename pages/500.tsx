@@ -1,8 +1,6 @@
-import { useRouter } from 'next/router';
+import Link from 'next/link';
 
 export default function Custom500() {
-  const router = useRouter();
-
   return (
     <div style={{
       display: 'flex',
@@ -16,26 +14,17 @@ export default function Custom500() {
       <h1 style={{ fontSize: '4rem', marginBottom: '1rem' }}>500</h1>
       <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Error del servidor</h2>
       <p style={{ marginBottom: '2rem' }}>Algo salió mal en el servidor.</p>
-      <button
-        onClick={() => router.push('/')}
-        style={{
-          padding: '10px 20px',
-          fontSize: '1rem',
-          cursor: 'pointer',
-          backgroundColor: '#0070f3',
-          color: 'white',
-          border: 'none',
-          borderRadius: '5px'
-        }}
-      >
+      <Link href="/" style={{
+        padding: '10px 20px',
+        fontSize: '1rem',
+        backgroundColor: '#0070f3',
+        color: 'white',
+        textDecoration: 'none',
+        borderRadius: '5px',
+        display: 'inline-block'
+      }}>
         Volver al inicio
-      </button>
+      </Link>
     </div>
   );
-}
-
-export async function getServerSideProps() {
-  return {
-    props: {},
-  };
 }
