@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
   // Configuración de WebSockets
   webpack: (config, { isServer }) => {
     // Configuración para el cliente

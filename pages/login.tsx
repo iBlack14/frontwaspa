@@ -1,4 +1,3 @@
-'use client';
 import Image from 'next/image';
 import { EyeIcon, UserIcon } from '@heroicons/react/24/solid';
 import { useEffect, useState } from 'react';

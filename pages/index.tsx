@@ -1,4 +1,3 @@
-'use client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
