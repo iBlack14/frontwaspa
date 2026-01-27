@@ -1,4 +1,3 @@
-'use client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import axios from 'axios';
@@ -516,4 +515,10 @@ export default function Dashboard() {
       <DashboardContent />
     </Sidebar>
   );
+}
+
+
+// Force SSR to avoid static generation errors
+export async function getServerSideProps() {
+  return { props: {} };
 }

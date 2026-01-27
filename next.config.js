@@ -1,7 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Deshabilitar generación estática para páginas con hooks
+  // Configuración para evitar errores de SSR con hooks
+  experimental: {
+    // Deshabilitar optimizaciones que causan problemas con hooks
+  },
+  // Deshabilitar generación estática
   output: 'standalone',
   // Deshabilitar optimización de imágenes en build
   images: {

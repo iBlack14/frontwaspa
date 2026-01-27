@@ -1,4 +1,3 @@
-'use client';
 import React, { useState } from 'react';
 import Head from 'next/head';
 import Sidebard from '../../components/dashboard/index';
@@ -243,4 +242,10 @@ export default function Apps() {
             <AppsContent />
         </Sidebard>
     );
+}
+
+
+// Force SSR to avoid static generation errors
+export async function getServerSideProps() {
+  return { props: {} };
 }

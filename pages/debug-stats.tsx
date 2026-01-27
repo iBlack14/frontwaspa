@@ -1,4 +1,3 @@
-'use client';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import axios from 'axios';
@@ -180,4 +179,10 @@ export default function DebugStats() {
       </div>
     </div>
   );
+}
+
+
+// Force SSR to avoid static generation errors
+export async function getServerSideProps() {
+  return { props: {} };
 }

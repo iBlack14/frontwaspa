@@ -1,4 +1,3 @@
-'use client';
 import { useState, FormEvent } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -114,4 +113,10 @@ export default function ResetPassword() {
       </div>
     </div>
   );
+}
+
+
+// Force SSR to avoid static generation errors
+export async function getServerSideProps() {
+  return { props: {} };
 }

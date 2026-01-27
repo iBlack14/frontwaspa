@@ -1,4 +1,3 @@
-'use client';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -473,4 +472,10 @@ export default function ManageTemplates() {
       <ManageTemplatesContent />
     </Sidebard>
   );
+}
+
+
+// Force SSR to avoid static generation errors
+export async function getServerSideProps() {
+  return { props: {} };
 }

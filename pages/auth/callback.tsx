@@ -1,4 +1,3 @@
-'use client';
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { createClient } from '@/utils/supabase/client';
@@ -36,4 +35,10 @@ export default function AuthCallback() {
             </div>
         </div>
     );
+}
+
+
+// Force SSR to avoid static generation errors
+export async function getServerSideProps() {
+  return { props: {} };
 }

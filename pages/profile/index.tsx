@@ -1,4 +1,3 @@
-'use client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -549,4 +548,10 @@ export default function Profile() {
       <ProfilePage />
     </Sidebar>
   );
+}
+
+
+// Force SSR to avoid static generation errors
+export async function getServerSideProps() {
+  return { props: {} };
 }

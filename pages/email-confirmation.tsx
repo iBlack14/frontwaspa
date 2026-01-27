@@ -1,4 +1,3 @@
-'use client';
 import Image from 'next/image';
 import Link from 'next/link';
 import wazone from '../public/logo/wallpaper-wazone.webp';
@@ -53,4 +52,10 @@ export default function EmailConfirmation() {
       </div>
     </div>
   );
+}
+
+
+// Force SSR to avoid static generation errors
+export async function getServerSideProps() {
+  return { props: {} };
 }
