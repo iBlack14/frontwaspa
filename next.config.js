@@ -7,6 +7,10 @@ const nextConfig = {
   },
   // Deshabilitar generación estática
   output: 'standalone',
+  // Deshabilitar generación estática de páginas de error
+  generateBuildId: async () => {
+    return 'build-' + Date.now()
+  },
   // Deshabilitar optimización de imágenes en build
   images: {
     unoptimized: true,
