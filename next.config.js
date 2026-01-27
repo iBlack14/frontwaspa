@@ -1,6 +1,23 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Deshabilitar generación estática para páginas con hooks
+  output: 'standalone',
+  // Deshabilitar optimización de imágenes en build
+  images: {
+    unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+    ],
+    formats: ['image/avif', 'image/webp'],
+  },
   // Configuración de WebSockets
   webpack: (config, { isServer }) => {
     // Configuración para el cliente
@@ -39,20 +56,6 @@ const nextConfig = {
         ],
       },
     ];
-  },
-  // Configuración de imágenes (actualizado para Next.js 14+)
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**',
-      },
-      {
-        protocol: 'http',
-        hostname: 'localhost',
-      },
-    ],
-    formats: ['image/avif', 'image/webp'],
   },
 };
 
