@@ -16,11 +16,24 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Inicializar cliente de Supabase para API
-    const supabase = createClient(req, res);
+    // Obtener el usuario autenticado
+    let user;
+    let authError;
 
-    // Obtener el usuario autenticado directamente desde Supabase
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // 1. Intentar con header 'token' (enviado por instancias/index.tsx)
+    const token = req.headers['token'];
+
+    if (token) {
+      const { data, error } = await supabaseAdmin.auth.getUser(token);
+      user = data?.user;
+      authError = error;
+    } else {
+      // 2. Fallback a cookies (navegador)
+      const supabase = createClient(req, res);
+      const { data, error } = await supabase.auth.getUser();
+      user = data?.user;
+      authError = error;
+    }
 
     if (authError || !user) {
       return res.status(401).json({ error: 'No autorizado - Inicia sesión con Supabase' });

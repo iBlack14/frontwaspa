@@ -65,6 +65,23 @@ function DashboardContent() {
   const [availableProxies, setAvailableProxies] = useState<any[]>([]);
   const [selectedProxy, setSelectedProxy] = useState<string>('');
   const [proxyInstanceId, setProxyInstanceId] = useState<string | null>(null);
+  const [apiKey, setApiKey] = useState<string>('');
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (typedSession?.jwt) {
+        try {
+          const response = await axios.post('/api/user/get', {
+            jwt: typedSession.jwt,
+          });
+          setApiKey(response.data.key || '');
+        } catch (error) {
+          console.error('Error fetching user key:', error);
+        }
+      }
+    };
+    fetchUserData();
+  }, [typedSession]);
 
   const fetcher = async (url: string, token: string) => {
     const res = await fetch(url, {
@@ -145,7 +162,11 @@ function DashboardContent() {
   const createNewInstance = async () => {
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      const response = await axios.get(`${backendUrl}/api/proxies`);
+      const response = await axios.get(`${backendUrl}/api/proxies`, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`
+        }
+      });
       setAvailableProxies(response.data.proxies || []);
       setSelectedProxy('');
       setProxyInstanceId(null);
