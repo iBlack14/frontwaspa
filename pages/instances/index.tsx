@@ -83,11 +83,9 @@ function DashboardContent() {
     fetchUserData();
   }, [typedSession]);
 
-  const fetcher = async (url: string, token: string) => {
+  const fetcher = async (url: string) => {
     const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      credentials: 'include', // Include cookies for Supabase auth
     });
     if (!res.ok) {
       throw new Error(`Error API: ${res.status}`);
@@ -113,8 +111,8 @@ function DashboardContent() {
   const refreshInterval = hasInitializingSessions ? 1000 : 5000;
 
   const { data: fetchedSessions, error, isLoading: loadingSessions, mutate } = useSWR(
-    typedSession?.id ? `/api/instances?token=${typedSession.jwt}` : null,
-    (url) => fetcher(url, ''),
+    typedSession?.id ? `/api/instances` : null,
+    fetcher,
     {
       refreshInterval,
       revalidateOnFocus: true,

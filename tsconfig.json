@@ -35,6 +35,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
+    "types/**/*.d.ts",
     "pages/api/instances.js",
     "pages/api/user/update.js",
     "pages/api/user/get.js"
