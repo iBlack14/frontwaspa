@@ -813,9 +813,9 @@ function MessageBubble({
   return (
     <div className={`flex ${message.from_me ? 'justify-end' : 'justify-start'} mb-4 group px-2`}>
       <div
-        className={`max-w-[70%] rounded-lg px-2 py-1 shadow-sm relative ${message.from_me
-          ? 'bg-[#d9fdd3] dark:bg-[#005c4b] rounded-tr-none'
-          : 'bg-white dark:bg-[#202c33] rounded-tl-none'
+        className={`max-w-[70%] rounded-2xl px-4 py-3 shadow-sm relative transition-all duration-200 ${message.from_me
+          ? 'bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/40 dark:to-purple-900/40 border border-indigo-100 dark:border-indigo-800 rounded-tr-sm'
+          : 'bg-white dark:bg-[#1e293b] border border-slate-100 dark:border-slate-800 rounded-tl-sm'
           }`}
       >
         {!message.from_me && message.sender_name && (
@@ -826,18 +826,21 @@ function MessageBubble({
 
         {renderMessageContent()}
 
-        <div className="flex items-center justify-end gap-1 -mt-1 select-none float-right relative top-1 ml-2">
-          <span className="text-[11px] text-gray-500 dark:text-gray-400">
+        <div className="flex items-center justify-end gap-1 mt-1 select-none">
+          <span className={`text-[10px] font-medium ${message.from_me
+            ? 'text-indigo-400/80'
+            : 'text-slate-400'
+            }`}>
             {formatTime(message.timestamp)}
           </span>
           {message.from_me && (
-            <span className="ml-0.5">
+            <span className="ml-1">
               {message.is_read ? (
-                <svg viewBox="0 0 16 15" width="16" height="11" className="inline text-[#53bdeb]">
+                <svg viewBox="0 0 16 15" width="14" height="13" className="inline text-indigo-500">
                   <path fill="currentColor" d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L8.666 9.879a.32.32 0 0 1-.484.033l-.358-.325a.319.319 0 0 0-.484.032l-.378.483a.418.418 0 0 0 .036.541l1.32 1.266c.143.14.361.125.484-.033l6.272-8.048a.366.366 0 0 0-.064-.512zm-4.1 0l-.478-.372a.365.365 0 0 0-.51.063L4.566 9.879a.32.32 0 0 1-.484.033L1.891 7.769a.366.366 0 0 0-.515.006l-.423.433a.364.364 0 0 0 .006.514l3.258 3.185c.143.14.361.125.484-.033l6.272-8.048a.365.365 0 0 0-.063-.51z" />
                 </svg>
               ) : (
-                <svg viewBox="0 0 16 15" width="16" height="11" className="inline text-gray-500">
+                <svg viewBox="0 0 16 15" width="14" height="13" className="inline text-slate-400">
                   <path fill="currentColor" d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L8.666 9.879a.32.32 0 0 1-.484.033l-.358-.325a.319.319 0 0 0-.484.032l-.378.483a.418.418 0 0 0 .036.541l1.32 1.266c.143.14.361.125.484-.033l6.272-8.048a.366.366 0 0 0-.064-.512z" />
                 </svg>
               )}
