@@ -9,23 +9,29 @@ import fondo_transparent from '../public/logo/wazilrest_white.png';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/utils/supabase/client';
 import { Toaster, toast } from 'sonner';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 
 export default function Login() {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [rememberMe, setRememberMe] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
   const { status } = useAuth();
   const supabase = createClient();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsLoading(true);
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+
+    setIsLoading(false);
 
     if (error) {
       toast.error(error.message || 'Credenciales incorrectas');
@@ -62,13 +68,9 @@ export default function Login() {
     }
   }, [status, router]);
 
-  const togglePasswordVisibility = () => {
-    setShowPassword((prev) => !prev);
-  };
-
   return (
     <div
-      className="min-h-screen bg-slate-950 flex items-center justify-center bg-cover bg-center relative shadow-inner shadow-black"
+      className="min-h-screen bg-brand-dark-950 flex items-center justify-center bg-cover bg-center relative shadow-inner shadow-black"
       style={{
         backgroundImage: `url(${fondo.src})`,
       }}
@@ -76,7 +78,10 @@ export default function Login() {
       <Toaster richColors position="top-right" expand={true} closeButton />
       <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black opacity-70"></div>
 
-      <div className="bg-opacity-90 shadow-2xl shadow-black w-full max-w-5xl flex flex-col lg:flex-row animate-fadeIn">
+      <div className="bg-opacity-90 shadow-2xl shadow-black w-full max-w-5xl flex flex-col lg:flex-row animate-fadeIn relative z-10">
+        {/* ────────────────────────────────────────────────────────
+         📷 IMAGEN DE FONDO (Solo desktop)
+        ──────────────────────────────────────────────────────── */}
         <div className="hidden lg:flex lg:w-3/5 w-full items-center justify-center">
           <Image
             src={wazone}
@@ -87,109 +92,130 @@ export default function Login() {
           />
         </div>
 
-        <div className="lg:w-2/5 w-full p-8 backdrop-blur-xl bg-slate-100/5 rounded-b-3xl lg:rounded-bl-none lg:rounded-tr-3xl border-l border-white/10">
+        {/* ────────────────────────────────────────────────────────
+         📝 FORMULARIO DE LOGIN
+        ──────────────────────────────────────────────────────── */}
+        <div className="lg:w-2/5 w-full p-8 backdrop-blur-xl bg-brand-surface-light rounded-b-3xl lg:rounded-bl-none lg:rounded-tr-3xl border-l border-white/10">
+          {/* Logo */}
           <Image
             src={fondo_transparent}
-            alt="Background Logo"
+            alt="Logo"
             height={250}
             width={250}
             quality={100}
             priority
             className="mx-auto"
           />
-          <h1 className="text-3xl font-bold text-center text-slate-100 mb-2 tracking-tight">Bienvenido</h1>
-          <p className="text-center text-slate-300 text-sm mb-4">Inicia sesión en tu cuenta</p>
 
+          {/* Título */}
+          <h1 className="text-3xl font-bold text-center text-slate-100 mb-2 tracking-tight">
+            Bienvenido
+          </h1>
+          <p className="text-center text-slate-300 text-sm mb-6">
+            Inicia sesión en tu cuenta
+          </p>
+
+          {/* Formulario */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-lg font-semibold text-slate-100 mb-2">
-                Email
-              </label>
-              <div className="relative group">
-                <input
-                  type="text"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 placeholder-zinc-400 bg-white/10 text-lg text-slate-100 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent placeholder-opacity-70 backdrop-blur-sm transition-all duration-300 hover:bg-white/15"
-                  placeholder="tu@email.com"
-                />
-                <span className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
-                  <UserIcon className="h-5 w-5 text-slate-300 opacity-60 group-focus-within:text-green-400 group-focus-within:opacity-100 transition-all" />
-                </span>
-              </div>
-            </div>
-            <div>
-              <label htmlFor="password" className="block text-lg font-semibold text-slate-100 mb-2">
-                Contraseña
-              </label>
-              <div className="relative group">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 placeholder-zinc-400 bg-white/10 text-lg text-slate-100 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent placeholder-opacity-70 backdrop-blur-sm transition-all duration-300 hover:bg-white/15"
-                  placeholder="••••••••"
-                />
-                <span
-                  className="absolute inset-y-0 right-4 flex items-center cursor-pointer group"
-                  onClick={togglePasswordVisibility}
-                >
-                  <EyeIcon className="h-5 w-5 text-slate-300 opacity-60 hover:text-green-400 hover:opacity-100 transition-all" />
-                </span>
-              </div>
-            </div>
+            {/* Email Input */}
+            <Input
+              id="email"
+              type="email"
+              label="Email"
+              placeholder="tu@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              leftIcon={<UserIcon className="h-5 w-5" />}
+              required
+            />
+
+            {/* Password Input */}
+            <Input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              label="Contraseña"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              rightIcon={<EyeIcon className="h-5 w-5" />}
+              onRightIconClick={() => setShowPassword((prev) => !prev)}
+              required
+            />
+
+            {/* Remember me y Forgot password */}
             <div className="flex justify-between items-center">
               <label className="flex items-center text-sm text-slate-200 cursor-pointer group">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="mr-2 h-4 w-4 text-green-400 focus:ring-green-400 border-white/30 rounded cursor-pointer"
+                  className="mr-2 h-4 w-4 text-brand-primary-400 focus:ring-brand-primary-400 border-white/30 rounded cursor-pointer"
                 />
-                <span className="group-hover:text-white transition-colors">Recordarme</span>
+                <span className="group-hover:text-white transition-colors">
+                  Recordarme
+                </span>
               </label>
-              <Link href="/forgot-password" className="text-sm text-slate-200 hover:text-green-400 transition-colors font-medium">
+              <Link
+                href="/forgot-password"
+                className="text-sm text-slate-200 hover:text-brand-primary-400 transition-colors font-medium"
+              >
                 ¿Olvidaste tu contraseña?
               </Link>
             </div>
-            <button
+
+            {/* Botón de submit */}
+            <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-green-500/30 hover:shadow-green-500/50 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
+              variant="primary"
+              size="lg"
+              fullWidth
+              isLoading={isLoading}
             >
               Iniciar Sesión
-            </button>
+            </Button>
           </form>
 
+          {/* ────────────────────────────────────────────────────────
+           🔗 SEPARADOR
+          ──────────────────────────────────────────────────────── */}
           <div className="flex items-center justify-center mt-6">
             <div className="w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
             <span className="mx-4 text-slate-300 text-sm font-medium">o</span>
             <div className="w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
           </div>
 
+          {/* ────────────────────────────────────────────────────────
+           🔐 LOGIN CON GOOGLE
+          ──────────────────────────────────────────────────────── */}
           <div className="flex justify-center">
-            <button
+            <Button
+              variant="secondary"
+              size="md"
               onClick={handleGoogleSignIn}
-              className="mt-4 flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 backdrop-blur-sm"
+              leftIcon={
+                <div className="p-1 bg-white rounded-full flex items-center justify-center">
+                  <Image
+                    src="/img/google.webp"
+                    alt="Google Logo"
+                    width={24}
+                    height={24}
+                  />
+                </div>
+              }
             >
-              <div className="p-1 bg-white rounded-full flex items-center justify-center mr-3">
-                <Image
-                  src="/img/google.webp"
-                  alt="Google Logo"
-                  width={24}
-                  height={24}
-                />
-              </div>
-              <span>Continuar con Google</span>
-            </button>
+              Continuar con Google
+            </Button>
           </div>
 
+          {/* ────────────────────────────────────────────────────────
+           📝 REGISTRO
+          ──────────────────────────────────────────────────────── */}
           <p className="text-center text-sm text-slate-300 mt-6">
             ¿No tienes una cuenta?{' '}
-            <Link href="/register" className="text-green-400 hover:text-green-300 font-bold hover:underline transition-colors">
+            <Link
+              href="/register"
+              className="text-brand-primary-400 hover:text-brand-primary-300 font-bold hover:underline transition-colors"
+            >
               Regístrate aquí
             </Link>
           </p>
@@ -198,7 +224,6 @@ export default function Login() {
     </div>
   );
 }
-
 
 // Force SSR to avoid static generation errors
 export async function getServerSideProps() {
