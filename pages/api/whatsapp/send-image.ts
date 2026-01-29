@@ -6,7 +6,7 @@
  */
 
 import { NextApiRequest, NextApiResponse } from 'next';
-import formidable from 'formidable';
+import formidable, { Fields, Files } from 'formidable';
 import fs from 'fs';
 import path from 'path';
 
@@ -45,7 +45,7 @@ export default async function handler(
             fs.mkdirSync(tempDir, { recursive: true });
         }
 
-        const [fields, files] = await new Promise<[formidable.Fields, formidable.Files]>(
+        const [fields, files] = await new Promise<[Fields, Files]>(
             (resolve, reject) => {
                 form.parse(req, (err, fields, files) => {
                     if (err) reject(err);
