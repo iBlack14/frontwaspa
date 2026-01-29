@@ -161,6 +161,15 @@ function DashboardContent() {
 
   const createNewInstance = async () => {
     try {
+      // Si no hay API Key, no intentar cargar proxies para evitar error 401 en backend
+      if (!apiKey) {
+        setAvailableProxies([]);
+        setSelectedProxy('');
+        setProxyInstanceId(null);
+        setShowProxyModal(true);
+        return;
+      }
+
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const response = await axios.get(`${backendUrl}/api/proxies`, {
         headers: {

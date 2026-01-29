@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start -H 0.0.0.0",
+    "start": "node server.js",
     "lint": "next lint",
     "check-env": "node check-env.js",
     "prebuild": "node check-env.js"
