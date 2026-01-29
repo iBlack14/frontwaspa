@@ -330,7 +330,20 @@ function ChatItem({ chat, isSelected, onClick, isStatus }: { chat: Chat; isSelec
       if (type === 'contact') return '👤 Contacto';
     }
 
-    return text || '📎 Archivo multimedia';
+    // Si tenemos un tipo, devolver la etiqueta correspondiente
+    if (type) {
+      if (type === 'view_once_image' || text?.includes('Ver una vez')) return '🔐 Foto (Ver una vez)';
+      if (type === 'view_once_video') return '🔐 Video (Ver una vez)';
+      if (type === 'image') return '📷 Foto';
+      if (type === 'video') return '🎥 Video';
+      if (type === 'audio' || type === 'voice' || type === 'ptt') return '🎤 Nota de voz';
+      if (type === 'sticker') return '🎨 Sticker';
+      if (type === 'document') return '📄 Documento';
+      if (type === 'location') return '📍 Ubicación';
+      if (type === 'contact') return '👤 Contacto';
+    }
+
+    return text && text !== '[Media]' ? text : '📎 Archivo multimedia';
   };
 
   return (
