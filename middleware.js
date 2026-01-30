@@ -31,10 +31,22 @@ export async function middleware(request) {
     }
   )
 
+  const path = request.nextUrl.pathname;
+
+  // 1. IGNORAR ARCHIVOS ESTÁTICOS Y DE NEXT.JS
+  // Esto previene que el middleware bloquee la carga de la app en Builder/V0
+  if (
+    path.startsWith('/_next') ||
+    path.startsWith('/static') ||
+    path.startsWith('/api') ||
+    path.includes('.') // Archivos con extensión (ej: favicon.ico, logo.png)
+  ) {
+    return response;
+  }
+
   const { data: { user } } = await supabase.auth.getUser()
 
   const isAuth = !!user;
-  const path = request.nextUrl.pathname;
 
   const publicRoutes = [
     '/',
