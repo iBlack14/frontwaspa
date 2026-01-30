@@ -10,9 +10,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "node server.js",
-    "lint": "next lint",
-    "check-env": "node check-env.js",
-    "prebuild": "node check-env.js"
+    "lint": "next lint"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
