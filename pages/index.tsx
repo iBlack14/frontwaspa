@@ -14,17 +14,8 @@ export default function Home() {
     }
   }, [status, router]);
 
-  // Mostrar landing page si no está autenticado
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-zinc-900 dark:to-zinc-800">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando...</p>
-        </div>
-      </div>
-    );
-  }
+  // No bloqueamos con 'loading' porque puede causar parpadeos o problemas en iframes
+  // LandingPage se mostrará por defecto y si se confirma la sesión, el useEffect redirige.
 
   return <LandingPage />;
 }

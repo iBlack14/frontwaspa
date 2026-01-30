@@ -32,9 +32,8 @@ export default function Login() {
       toast.error(error.message || 'Credenciales incorrectas');
     } else {
       toast.success('¡Login exitoso! Redirigiendo...');
-      setTimeout(() => {
-        router.push('/home');
-      }, 1000);
+      // Redirección inmediata, dejemos que el middleware o router actúen
+      router.push('/home');
     }
   };
 
@@ -58,15 +57,16 @@ export default function Login() {
   };
 
   useEffect(() => {
+    // Solo redirigir si estamos 100% seguros y no es un parpadeo
     if (status === 'authenticated') {
-      router.push('/home');
+      router.replace('/home'); // Usar replace para no ensuciar el historial
     }
   }, [status, router]);
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center relative overflow-hidden px-4">
       <Toaster richColors position="top-right" expand={true} closeButton />
-      
+
       {/* Background Grid */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px]"></div>
