@@ -22,7 +22,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     if (!session?.user) return;
 
     // URL del backend WebSocket
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.connect.blxkstudio.com';
 
     logger.websocket(`Connecting to ${backendUrl}`);
 

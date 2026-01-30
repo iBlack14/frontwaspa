@@ -6,7 +6,7 @@ import { supabaseAdmin } from './supabase-admin';
  * Obtiene automáticamente la API key del usuario y la envía
  */
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.connect.blxkstudio.com';
 
 /**
  * Hacer request al backend con API key del usuario
@@ -22,7 +22,7 @@ export async function backendRequest(userId, endpoint, data = null, method = 'PO
     console.log('[BACKEND-API] 📋 Method:', method);
     console.log('[BACKEND-API] 📋 Data:', data);
     console.log('[BACKEND-API] 📋 Backend URL:', BACKEND_URL);
-    
+
     // 1. Obtener API key del usuario desde Supabase
     const { data: profile, error } = await supabaseAdmin
       .from('profiles')
@@ -57,7 +57,7 @@ export async function backendRequest(userId, endpoint, data = null, method = 'PO
     console.log('[BACKEND-API] 📤 Enviando request a:', config.url);
     const response = await axios(config);
     console.log('[BACKEND-API] ✅ Respuesta recibida:', response.status);
-    
+
     return response.data;
 
   } catch (error) {
