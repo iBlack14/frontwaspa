@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import { SparklesIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import BLXKLogo from './BLXKLogo';
 
 export default function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -12,12 +13,7 @@ export default function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex items-center gap-2 group cursor-pointer">
-            <div className="p-2 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-lg group-hover:shadow-lg group-hover:shadow-emerald-500/50 transition">
-              <SparklesIcon className="h-6 w-6 text-black" />
-            </div>
-            <span className="text-xl font-bold text-white">BLXK</span>
-          </div>
+          <BLXKLogo variant="compact" />
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-8">
