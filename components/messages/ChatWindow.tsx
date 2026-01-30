@@ -524,44 +524,73 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
           )}
         </div>
 
-        {/* Pasted Image Preview */}
+        {/* Pasted Image Preview Overlay (WhatsApp Web Style) */}
         {pastedImagePreview && (
-          <div className="absolute bottom-full mb-3 left-0 right-0 px-4">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-4">
-              <div className="flex items-start gap-4">
-                <div className="relative flex-shrink-0">
-                  <img
-                    src={pastedImagePreview}
-                    alt="Preview"
-                    className="w-24 h-24 object-cover rounded-xl shadow-lg"
+          <div className="absolute inset-x-0 inset-y-0 z-50 bg-[#eef2f5] dark:bg-[#111b21] flex flex-col animate-in fade-in duration-200">
+            {/* Top Bar */}
+            <div className="h-16 px-4 flex items-center justify-between bg-transparent relative z-10 w-full">
+              <button
+                onClick={cancelPastedImage}
+                className="p-2 text-[#54656f] dark:text-[#aebac1] hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+              <div className="flex gap-4 text-[#54656f] dark:text-[#aebac1]">
+                {/* Herramientas de edición (visual only for now) */}
+                <button className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-full" title="Recortar y rotar">
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M7.41 18.59l-1.42 1.42 2 2 1.42-1.42zM16 4h4v4h-2V6h-2zM4 16h2v2h2v-2H6v-2H4zm2-8H4v2h2V8V8zm2-4H6v2h2V4V4zm12.59-1.41L19.17 4 19.17 4H8v2h9.17l-1.41 1.41zM11.17 14L8 10.83V20h9.17l-3.17-3.17L19 11.83 17.59 10.42z" /></svg>
+                </button>
+                <button className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-full" title="Añadir texto">
+                  <span className="font-bold text-lg leading-none">T</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Image Center & Background */}
+            <div className="flex-1 flex items-center justify-center p-8 bg-transparent relative overflow-hidden">
+              {/* Sombra y contenedor de imagen */}
+              <div className="relative shadow-2xl rounded-lg overflow-hidden max-h-full max-w-full" style={{ maxHeight: 'calc(100vh - 160px)' }}>
+                <img
+                  src={pastedImagePreview}
+                  alt="Preview"
+                  className="max-w-full max-h-full object-contain"
+                  style={{ minWidth: '300px' }}
+                />
+              </div>
+            </div>
+
+            {/* Bottom Input Section */}
+            <div className="bg-transparent p-4 flex justify-center w-full mb-6">
+              <div className="max-w-3xl w-full flex items-center gap-2">
+                <div className="flex-1 bg-white dark:bg-[#202c33] flex items-center rounded-2xl px-4 py-2 shadow-sm border border-transparent focus-within:border-indigo-500/50 transition-all">
+                  <button
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    className="p-1 mr-2 text-[#8696a0] dark:text-[#8696a0] hover:text-[#54656f] dark:hover:text-[#aebac1]"
+                  >
+                    <FaceSmileIcon className="w-6 h-6" />
+                  </button>
+                  <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Añade un comentario..."
+                    className="flex-1 bg-transparent border-none focus:outline-none text-[15px] text-[#111b21] dark:text-[#d1d7db] placeholder-[#8696a0] h-9"
+                    autoFocus
+                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendPastedImage()}
                   />
-                  <div className="absolute -top-2 -right-2 bg-indigo-500 text-white text-xs px-2 py-1 rounded-full shadow-lg">
-                    📸
-                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 mb-1">
-                    Imagen lista para enviar
-                  </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-                    {pastedImage?.name || 'Imagen pegada'} • {(pastedImage?.size || 0 / 1024).toFixed(0)} KB
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={sendPastedImage}
-                      disabled={sending}
-                      className="flex-1 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm font-medium rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
-                    >
-                      ✓ Enviar
-                    </button>
-                    <button
-                      onClick={cancelPastedImage}
-                      className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-all"
-                    >
-                      ✕ Cancelar
-                    </button>
-                  </div>
-                </div>
+
+                <button
+                  onClick={sendPastedImage}
+                  disabled={sending}
+                  className="p-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full shadow-lg transition-transform hover:scale-105 active:scale-95 flex items-center justify-center w-12 h-12"
+                >
+                  {sending ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <PaperAirplaneIcon className="w-5 h-5 transform rotate-90 translate-x-0.5" />
+                  )}
+                </button>
               </div>
             </div>
           </div>
