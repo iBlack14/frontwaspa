@@ -10,7 +10,8 @@ import {
   ArchiveBoxIcon,
   MagnifyingGlassIcon,
   PaperAirplaneIcon,
-  FaceSmileIcon
+  FaceSmileIcon,
+  PlayCircleIcon
 } from '@heroicons/react/24/outline';
 
 const MockMessage = ({ own, text, time }: { own?: boolean, text: string, time: string }) => (
@@ -50,71 +51,77 @@ const MockChatIem = ({ name, msg, time, active, badge }: { name: string, msg: st
 export default function HeroSection() {
   const router = useRouter();
   return (
-    <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-800">
-      {/* Decorative Elements */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/4 -right-1/4 w-1/2 h-1/2 bg-emerald-400/10 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/2 -left-1/4 w-1/2 h-1/2 bg-blue-400/10 rounded-full blur-3xl"></div>
+    <section className="relative pt-20 pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden bg-black">
+      {/* Animated Grid Background */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+        <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-emerald-600/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-1/3 h-1/3 bg-cyan-600/20 rounded-full blur-3xl"></div>
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="text-center mb-16">
-          <div className="inline-flex items-center px-4 py-2 bg-white/50 dark:bg-white/5 backdrop-blur-sm border border-emerald-100 dark:border-emerald-900/30 rounded-full mb-8 shadow-sm">
-            <SparklesIcon className="h-5 w-5 text-emerald-600 dark:text-emerald-400 mr-2" />
-            <span className="text-sm font-medium text-emerald-800 dark:text-emerald-300">
+          {/* Badge */}
+          <div className="inline-flex items-center px-4 py-2 bg-white/5 dark:bg-white/5 backdrop-blur-sm border border-white/10 rounded-full mb-8 shadow-sm hover:bg-white/10 transition">
+            <SparklesIcon className="h-4 w-4 text-emerald-400 mr-2" />
+            <span className="text-sm font-medium text-white">
               La Suite #1 para WhatsApp Empresarial
             </span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white mb-8 tracking-tight">
-            Vende más con <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">
-              Inteligencia Artificial
+          {/* Main Heading */}
+          <h1 className="text-6xl md:text-8xl font-bold text-white mb-8 tracking-tight">
+            Vende más con<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500">
+              IA Inteligente
             </span>
           </h1>
 
-          <p className="text-xl text-gray-600 dark:text-zinc-400 mb-10 max-w-3xl mx-auto leading-relaxed">
-            Centraliza tus conversaciones, activa chatbots inteligentes y potencia tu equipo de ventas
-            con una plataforma todo en uno diseñada para escalar.
+          {/* Subheading */}
+          <p className="text-xl text-gray-400 mb-12 max-w-3xl mx-auto leading-relaxed">
+            Centraliza conversaciones, activa chatbots inteligentes y potencia tu equipo de ventas con una plataforma diseñada para escalar negocios.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
             <button
               onClick={() => router.push('/login')}
-              className="bg-emerald-600 text-white px-8 py-4 rounded-xl hover:bg-emerald-700 transition shadow-lg shadow-emerald-200/50 dark:shadow-none font-medium text-lg flex items-center group w-full sm:w-auto justify-center"
+              className="bg-white text-black px-8 py-4 rounded-full hover:bg-gray-100 transition font-semibold text-lg flex items-center group w-full sm:w-auto justify-center shadow-lg hover:shadow-2xl"
             >
-              Probar Gratis Ahora
+              Probar Gratis
               <ArrowRightIcon className="ml-2 h-5 w-5 group-hover:translate-x-1 transition" />
             </button>
             <a
               href="#features"
-              className="px-8 py-4 rounded-xl text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 transition font-medium text-lg border border-gray-200 dark:border-zinc-700 w-full sm:w-auto flex justify-center"
+              className="px-8 py-4 rounded-full text-white hover:bg-white/10 transition font-semibold text-lg border border-white/20 w-full sm:w-auto flex justify-center items-center group"
             >
-              Cómo funciona
+              <PlayCircleIcon className="h-5 w-5 mr-2 text-emerald-400" />
+              Ver Demo
             </a>
           </div>
 
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm font-medium text-gray-500 dark:text-zinc-500">
+          {/* Trust Indicators */}
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm font-medium text-gray-400 pb-8 border-b border-white/10">
             <div className="flex items-center">
-              <CheckCircleIcon className="h-5 w-5 text-emerald-500 mr-2" />
+              <CheckCircleIcon className="h-4 w-4 text-emerald-400 mr-2" />
               Setup en 2 minutos
             </div>
             <div className="flex items-center">
-              <CheckCircleIcon className="h-5 w-5 text-emerald-500 mr-2" />
-              No requiere tarjeta
+              <CheckCircleIcon className="h-4 w-4 text-emerald-400 mr-2" />
+              Sin tarjeta requerida
             </div>
             <div className="flex items-center">
-              <CheckCircleIcon className="h-5 w-5 text-emerald-500 mr-2" />
+              <CheckCircleIcon className="h-4 w-4 text-emerald-400 mr-2" />
               Soporte 24/7
             </div>
           </div>
         </div>
 
         {/* Mock Dashboard UI */}
-        <div className="relative mx-auto max-w-6xl">
-          <div className="absolute inset-0 bg-gradient-to-t from-emerald-50 dark:from-zinc-900 to-transparent z-[-1] -bottom-20"></div>
+        <div className="relative mx-auto max-w-6xl mt-12">
+          <div className="absolute inset-0 bg-gradient-to-t from-emerald-500/20 to-transparent z-[-1] -bottom-20 rounded-3xl blur-3xl"></div>
 
-          <div className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-zinc-700 ring-1 ring-black/5">
+          <div className="relative bg-gradient-to-b from-white/10 to-white/5 dark:from-white/10 dark:to-white/5 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/20 ring-1 ring-white/10">
             {/* Window Controls */}
             <div className="h-10 bg-gray-50 dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700 flex items-center px-4 gap-2">
               <div className="w-3 h-3 rounded-full bg-red-400"></div>

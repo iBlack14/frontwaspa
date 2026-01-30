@@ -8,28 +8,31 @@ export default function Navigation() {
   const router = useRouter();
 
   return (
-    <nav className="fixed top-0 w-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-lg z-50 border-b border-gray-200 dark:border-zinc-800">
+    <nav className="fixed top-0 w-full bg-black/50 backdrop-blur-xl z-50 border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center">
-            <SparklesIcon className="h-8 w-8 text-emerald-600" />
-            <span className="ml-2 text-xl font-bold text-gray-900 dark:text-white">BLXK Connect</span>
+          {/* Logo */}
+          <div className="flex items-center gap-2 group cursor-pointer">
+            <div className="p-2 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-lg group-hover:shadow-lg group-hover:shadow-emerald-500/50 transition">
+              <SparklesIcon className="h-6 w-6 text-black" />
+            </div>
+            <span className="text-xl font-bold text-white">BLXK</span>
           </div>
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-8">
-            <a href="#features" className="text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition">
+            <a href="#features" className="text-gray-400 hover:text-white transition text-sm font-medium">
               Características
             </a>
-            <a href="#pricing" className="text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition">
+            <a href="#pricing" className="text-gray-400 hover:text-white transition text-sm font-medium">
               Precios
             </a>
-            <a href="#testimonials" className="text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition">
+            <a href="#testimonials" className="text-gray-400 hover:text-white transition text-sm font-medium">
               Testimonios
             </a>
             <button
               onClick={() => router.push('/login')}
-              className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 transition font-medium"
+              className="bg-white text-black px-6 py-2 rounded-full hover:bg-gray-100 transition font-semibold text-sm"
             >
               Iniciar Sesión
             </button>
@@ -38,7 +41,7 @@ export default function Navigation() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden text-gray-600 dark:text-gray-300"
+            className="md:hidden text-white"
           >
             {mobileMenuOpen ? <XMarkIcon className="h-6 w-6" /> : <Bars3Icon className="h-6 w-6" />}
           </button>
@@ -47,20 +50,20 @@ export default function Navigation() {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-800">
+        <div className="md:hidden bg-black/80 backdrop-blur-xl border-t border-white/10">
           <div className="px-4 py-4 space-y-3">
-            <a href="#features" className="block text-gray-600 dark:text-gray-300 hover:text-emerald-600 transition">
+            <a href="#features" className="block text-gray-400 hover:text-white transition">
               Características
             </a>
-            <a href="#pricing" className="block text-gray-600 dark:text-gray-300 hover:text-emerald-600 transition">
+            <a href="#pricing" className="block text-gray-400 hover:text-white transition">
               Precios
             </a>
-            <a href="#testimonials" className="block text-gray-600 dark:text-gray-300 hover:text-emerald-600 transition">
+            <a href="#testimonials" className="block text-gray-400 hover:text-white transition">
               Testimonios
             </a>
             <button
               onClick={() => router.push('/login')}
-              className="w-full bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 transition font-medium"
+              className="w-full bg-white text-black px-6 py-2 rounded-full hover:bg-gray-100 transition font-semibold"
             >
               Iniciar Sesión
             </button>
