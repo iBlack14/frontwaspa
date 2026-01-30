@@ -44,7 +44,11 @@ export async function middleware(request) {
     return response;
   }
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user }, error } = await supabase.auth.getUser()
+
+  if (error) {
+    console.log('Middleware Auth Error:', error);
+  }
 
   const isAuth = !!user;
 
