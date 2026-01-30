@@ -12,19 +12,19 @@ const MessageNotifier = () => {
 
     // Función para inicializar Socket.io
     const initializeSocket = async () => {
-      try {
-        // Inicializar el servidor Socket.io
-        await fetch('/api/socket');
-        console.log('[WEBSOCKET] Servidor Socket.io inicializado');
-      } catch (error) {
-        console.error('[WEBSOCKET] Error al inicializar servidor:', error);
-      }
-
       // Inicializar conexión con el servidor Socket.io
-      const socketInstance = io(process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000', {
+      // Usar variable de entorno o fallback seguro (no localhost en producción)
+      const socketUrl = process.env.NEXT_PUBLIC_WS_URL ||
+        process.env.NEXT_PUBLIC_BACKEND_URL ||
+        (typeof window !== 'undefined' ? window.location.origin : '');
+
+      if (!socketUrl) return;
+
+      const socketInstance = io(socketUrl, {
         reconnection: true,
-        reconnectionAttempts: 5,
+        reconnectionAttempts: 10,
         reconnectionDelay: 1000,
+        transports: ['websocket', 'polling'], // Forzar transporte para mejor compatibilidad
       });
 
       // Manejar eventos de conexión
