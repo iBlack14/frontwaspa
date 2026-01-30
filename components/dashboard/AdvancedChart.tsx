@@ -6,6 +6,7 @@
  */
 
 import React, { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import {
   ChartBarIcon,
@@ -14,6 +15,17 @@ import {
   EyeIcon,
   AdjustmentsHorizontalIcon
 } from '@heroicons/react/24/outline';
+
+// Importar el componente de gráfico de forma dinámica (solo cliente)
+const ChartComponent = dynamic(() => import('@/src/components/ChartComponent'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex flex-col items-center justify-center h-full">
+      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500 mb-2"></div>
+      <p className="text-xs text-slate-500">Cargando visualización...</p>
+    </div>
+  )
+});
 
 interface AdvancedChartProps {
   data: any;
@@ -40,10 +52,10 @@ export const AdvancedChart: React.FC<AdvancedChartProps> = ({
     if (historyData.length < 2) return 0;
     const recent = historyData.slice(-7);
     const previous = historyData.slice(-14, -7);
-    
+
     const recentTotal = recent.reduce((sum, day) => sum + day.message_sent + day.message_received, 0);
     const previousTotal = previous.reduce((sum, day) => sum + day.message_sent + day.message_received, 0);
-    
+
     if (previousTotal === 0) return 0;
     return Math.round(((recentTotal - previousTotal) / previousTotal) * 100);
   };
@@ -51,7 +63,7 @@ export const AdvancedChart: React.FC<AdvancedChartProps> = ({
   const growthRate = calculateGrowthRate();
 
   // Calculate peak activity
-  const peakActivity = historyData.length > 0 
+  const peakActivity = historyData.length > 0
     ? Math.max(...historyData.map(d => d.message_sent + d.message_received))
     : 0;
 
@@ -85,11 +97,10 @@ export const AdvancedChart: React.FC<AdvancedChartProps> = ({
               <button
                 key={range}
                 onClick={() => setTimeRange(range)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                  timeRange === range
-                    ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                }`}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${timeRange === range
+                  ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                  }`}
               >
                 {range === '7d' ? '7 días' : range === '30d' ? '30 días' : '90 días'}
               </button>
@@ -100,21 +111,19 @@ export const AdvancedChart: React.FC<AdvancedChartProps> = ({
           <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
             <button
               onClick={() => setViewMode('line')}
-              className={`p-2 rounded-lg transition-all ${
-                viewMode === 'line'
-                  ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-600'
-              }`}
+              className={`p-2 rounded-lg transition-all ${viewMode === 'line'
+                ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-sm'
+                : 'text-slate-400 hover:text-slate-600'
+                }`}
             >
               <ArrowTrendingUpIcon className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode('bar')}
-              className={`p-2 rounded-lg transition-all ${
-                viewMode === 'bar'
-                  ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-600'
-              }`}
+              className={`p-2 rounded-lg transition-all ${viewMode === 'bar'
+                ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-sm'
+                : 'text-slate-400 hover:text-slate-600'
+                }`}
             >
               <ChartBarIcon className="w-4 h-4" />
             </button>
@@ -178,7 +187,7 @@ export const AdvancedChart: React.FC<AdvancedChartProps> = ({
             {metrics.totalSent.toLocaleString()}
           </span>
         </div>
-        
+
         <div className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/30 px-4 py-2 rounded-xl border border-purple-100 dark:border-purple-800">
           <div className="w-3 h-3 rounded-full bg-purple-500"></div>
           <span className="text-sm font-semibold text-purple-700 dark:text-purple-300">API</span>
@@ -186,7 +195,7 @@ export const AdvancedChart: React.FC<AdvancedChartProps> = ({
             {metrics.totalApiSent.toLocaleString()}
           </span>
         </div>
-        
+
         <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/30 px-4 py-2 rounded-xl border border-emerald-100 dark:border-emerald-800">
           <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
           <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Recibidos</span>
@@ -200,18 +209,7 @@ export const AdvancedChart: React.FC<AdvancedChartProps> = ({
       <div className="h-[400px] w-full relative">
         {historyData.length > 0 ? (
           <div className="h-full w-full">
-            {/* Aquí iría el componente Chart real */}
-            <div className="h-full w-full bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 rounded-2xl flex items-center justify-center">
-              <div className="text-center">
-                <ChartBarIcon className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
-                  Gráfico cargando...
-                </p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                  Modo: {viewMode} | Período: {timeRange}
-                </p>
-              </div>
-            </div>
+            <ChartComponent data={data} options={options} />
           </div>
         ) : (
           <div className="h-full w-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 rounded-2xl border border-dashed border-slate-200 dark:border-slate-600">
