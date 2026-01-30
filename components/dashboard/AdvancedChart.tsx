@@ -179,27 +179,27 @@ export const AdvancedChart: React.FC<AdvancedChartProps> = ({
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap items-center justify-center gap-6 mb-6">
-        <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/30 px-4 py-2 rounded-xl border border-indigo-100 dark:border-indigo-800">
-          <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
-          <span className="text-sm font-semibold text-indigo-700 dark:text-indigo-300">Enviados</span>
-          <span className="text-xs text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-800 px-2 py-0.5 rounded-full">
+      <div className="flex flex-wrap items-center justify-center gap-8 mb-6">
+        <div className="flex items-center gap-2 group cursor-default">
+          <div className="w-2.5 h-2.5 rounded-full bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.5)]"></div>
+          <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Enviados</span>
+          <span className="text-sm font-bold text-slate-800 dark:text-white ml-1">
             {metrics.totalSent.toLocaleString()}
           </span>
         </div>
 
-        <div className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/30 px-4 py-2 rounded-xl border border-purple-100 dark:border-purple-800">
-          <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-          <span className="text-sm font-semibold text-purple-700 dark:text-purple-300">API</span>
-          <span className="text-xs text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-800 px-2 py-0.5 rounded-full">
+        <div className="flex items-center gap-2 group cursor-default">
+          <div className="w-2.5 h-2.5 rounded-full bg-purple-400 shadow-[0_0_8px_rgba(192,132,252,0.5)]"></div>
+          <span className="text-sm font-medium text-slate-600 dark:text-slate-300">API</span>
+          <span className="text-sm font-bold text-slate-800 dark:text-white ml-1">
             {metrics.totalApiSent.toLocaleString()}
           </span>
         </div>
 
-        <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/30 px-4 py-2 rounded-xl border border-emerald-100 dark:border-emerald-800">
-          <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-          <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Recibidos</span>
-          <span className="text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-800 px-2 py-0.5 rounded-full">
+        <div className="flex items-center gap-2 group cursor-default">
+          <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]"></div>
+          <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Recibidos</span>
+          <span className="text-sm font-bold text-slate-800 dark:text-white ml-1">
             {metrics.totalReceived.toLocaleString()}
           </span>
         </div>
