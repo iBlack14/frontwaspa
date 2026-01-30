@@ -1,53 +1,91 @@
-import Image from 'next/image';
 import Link from 'next/link';
-import wazone from '../public/logo/wallpaper-wazone.webp';
-import fondo from '../public/img/fondo.webp';
-import fondo_transparent from '../public/logo/wazilrest_white.png';
+import BLXKLogo from '@/components/landing/BLXKLogo';
 import { Toaster } from 'sonner';
+import { CheckCircleIcon } from '@heroicons/react/24/solid';
 
 export default function EmailConfirmation() {
   return (
-    <div
-      className="min-h-screen bg-slate-950 flex items-center justify-center bg-cover bg-center relative shadow-inner shadow-black"
-      style={{
-        backgroundImage: `url(${fondo.src})`,
-      }}
-    >
+    <div className="min-h-screen bg-black flex items-center justify-center relative overflow-hidden px-4">
       <Toaster richColors position="top-right" expand={true} closeButton />
-      <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black opacity-70"></div>
+      
+      {/* Background Grid */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl"></div>
+      </div>
 
-      <div className="bg-opacity-90 shadow-2xl shadow-black w-full max-w-5xl flex flex-col lg:flex-row animate-fadeIn">
-        <div className="hidden lg:flex lg:w-3/5 w-full items-center justify-center">
-          <Image
-            src={wazone}
-            alt="Background Logo"
-            quality={100}
-            priority
-            className="object-cover h-full w-full lg:rounded-tl-3xl lg:rounded-bl-3xl"
-          />
-        </div>
-        <div className="lg:w-2/5 w-full p-8 backdrop-blur-xl bg-slate-100/5 rounded-b-3xl lg:rounded-bl-none lg:rounded-tr-3xl border-l border-white/10 flex flex-col items-center justify-center">
-          <Image
-            src={fondo_transparent}
-            alt="Background Logo"
-            height={250}
-            width={250}
-            quality={100}
-            priority
-            className="mx-auto"
-          />
-          <h1 className="text-3xl font-bold text-center text-slate-100 mb-2 tracking-tight">
-            ¡Cuenta Validada!
+      <div className="relative z-10 w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="inline-flex justify-center mb-8">
+            <BLXKLogo variant="compact" />
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">
+            ¡Bienvenido!
           </h1>
-          <p className="text-sm text-center text-slate-300 mb-8">
-            Su correo ha sido validado correctamente. Ahora puede acceder al sistema.
+          <p className="text-lg text-gray-400">
+            Tu email ha sido verificado
           </p>
+        </div>
+
+        {/* Confirmation Card */}
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 mb-6">
+          {/* Success Icon */}
+          <div className="flex justify-center mb-8">
+            <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center animate-pulse">
+              <CheckCircleIcon className="w-12 h-12 text-white" />
+            </div>
+          </div>
+
+          {/* Message */}
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-white mb-3">
+              Cuenta Verificada
+            </h2>
+            <p className="text-gray-400 leading-relaxed">
+              Tu correo electrónico ha sido validado correctamente. Ya puedes acceder a toda la potencia de BLXK Connect.
+            </p>
+          </div>
+
+          {/* Features Checklist */}
+          <div className="space-y-3 mb-8 pb-8 border-b border-white/10">
+            <div className="flex items-center gap-3 text-sm text-gray-300">
+              <div className="w-5 h-5 bg-emerald-500/20 border border-emerald-500/50 rounded flex items-center justify-center">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+              </div>
+              <span>Acceso completo a la plataforma</span>
+            </div>
+            <div className="flex items-center gap-3 text-sm text-gray-300">
+              <div className="w-5 h-5 bg-emerald-500/20 border border-emerald-500/50 rounded flex items-center justify-center">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+              </div>
+              <span>Gestor de mensajes y contactos</span>
+            </div>
+            <div className="flex items-center gap-3 text-sm text-gray-300">
+              <div className="w-5 h-5 bg-emerald-500/20 border border-emerald-500/50 rounded flex items-center justify-center">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+              </div>
+              <span>Soporte técnico prioritario</span>
+            </div>
+          </div>
+
+          {/* Login Button */}
           <Link
             href="/login"
-            className="w-full max-w-md bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-green-500/30 hover:shadow-green-500/50 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] text-center"
+            className="block w-full py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-emerald-500/50 transition-all text-center"
           >
             Iniciar Sesión
           </Link>
+        </div>
+
+        {/* Footer Links */}
+        <div className="mt-8 pt-6 border-t border-white/10 flex justify-center gap-4 text-xs text-gray-500">
+          <a href="#" className="hover:text-gray-400 transition">Privacidad</a>
+          <span>•</span>
+          <a href="#" className="hover:text-gray-400 transition">Términos</a>
+          <span>•</span>
+          <a href="#" className="hover:text-gray-400 transition">Soporte</a>
         </div>
       </div>
     </div>
