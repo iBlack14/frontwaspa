@@ -192,35 +192,44 @@ function DashboardContent() {
       {
         label: 'Enviados',
         data: (historyData || []).map((data) => data.message_sent),
-        borderColor: '#6366f1', // Indigo 500
-        backgroundColor: 'rgba(99, 102, 241, 0.1)',
-        borderWidth: 2,
+        borderColor: '#818cf8', // Indigo 400
+        backgroundColor: 'rgba(129, 140, 248, 0.05)',
+        borderWidth: 3,
         tension: 0.4,
         fill: true,
         pointRadius: 0,
         pointHoverRadius: 6,
+        pointBackgroundColor: '#818cf8',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
       },
       {
         label: 'API',
         data: (historyData || []).map((data) => data.api_message_sent),
-        borderColor: '#a855f7', // Purple 500
-        backgroundColor: 'rgba(168, 85, 247, 0.1)',
-        borderWidth: 2,
+        borderColor: '#c084fc', // Purple 400
+        backgroundColor: 'rgba(192, 132, 252, 0.05)',
+        borderWidth: 3,
         tension: 0.4,
         fill: true,
         pointRadius: 0,
         pointHoverRadius: 6,
+        pointBackgroundColor: '#c084fc',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
       },
       {
         label: 'Recibidos',
         data: (historyData || []).map((data) => data.message_received),
-        borderColor: '#10b981', // Emerald 500
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-        borderWidth: 2,
+        borderColor: '#34d399', // Emerald 400
+        backgroundColor: 'rgba(52, 211, 153, 0.05)',
+        borderWidth: 3,
         tension: 0.4,
         fill: true,
         pointRadius: 0,
         pointHoverRadius: 6,
+        pointBackgroundColor: '#34d399',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
       },
     ],
   };
@@ -237,28 +246,44 @@ function DashboardContent() {
         display: false,
       },
       tooltip: {
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        titleColor: '#1e293b',
-        bodyColor: '#475569',
-        borderColor: '#e2e8f0',
+        backgroundColor: 'rgba(15, 23, 42, 0.8)', // Slate 900 con opacidad
+        titleColor: '#fff',
+        bodyColor: '#cbd5e1',
+        borderColor: 'rgba(255, 255, 255, 0.1)',
         borderWidth: 1,
-        padding: 10,
-        boxPadding: 4,
+        padding: 12,
+        boxPadding: 6,
         usePointStyle: true,
-        titleFont: { size: 13, weight: 'bold' },
-        bodyFont: { size: 12 },
+        cornerRadius: 12,
+        titleFont: { size: 14, weight: 'bold' },
+        bodyFont: { size: 13 },
+        displayColors: true,
       },
     },
     scales: {
       x: {
         grid: { display: false },
-        ticks: { color: '#94a3b8', font: { size: 11 } },
+        ticks: {
+          color: '#64748b',
+          font: { size: 11 },
+          maxRotation: 0,
+          autoSkip: true,
+          maxTicksLimit: 7
+        },
         border: { display: false },
       },
       y: {
         beginAtZero: true,
-        grid: { color: '#f1f5f9' },
-        ticks: { color: '#94a3b8', font: { size: 11 }, maxTicksLimit: 5 },
+        grid: {
+          color: 'rgba(226, 232, 240, 0.05)', // Cuadrícula casi invisible
+          drawTicks: false,
+        },
+        ticks: {
+          color: '#64748b',
+          font: { size: 11 },
+          maxTicksLimit: 5,
+          padding: 10
+        },
         border: { display: false },
       },
     },
@@ -272,141 +297,141 @@ function DashboardContent() {
     <div className="relative p-6 space-y-8 bg-slate-50 dark:bg-transparent min-h-screen">
       {/* Animated Background */}
       <AnimatedBackground />
-      
+
       {/* Content with relative positioning */}
       <div className="relative z-10">
 
 
-      {loading ? (
-        <div className="flex items-center justify-center h-[400px]">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-        </div>
-      ) : instances.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-[400px] bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
-          <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-full mb-4">
-            <ServerIcon className="w-10 h-10 text-indigo-500" strokeWidth={1.5} />
+        {loading ? (
+          <div className="flex items-center justify-center h-[400px]">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
           </div>
-          <h3 className="text-lg font-semibold text-slate-800 dark:text-white">No hay instancias</h3>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Crea una nueva instancia para comenzar</p>
-        </div>
-      ) : (
-        <>
-          {/* Header & Instance Selector */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">Dashboard</h1>
-              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Bienvenido de nuevo, {userName}</p>
+        ) : instances.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-[400px] bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+            <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-full mb-4">
+              <ServerIcon className="w-10 h-10 text-indigo-500" strokeWidth={1.5} />
             </div>
+            <h3 className="text-lg font-semibold text-slate-800 dark:text-white">No hay instancias</h3>
+            <p className="text-slate-500 dark:text-slate-400 mt-1">Crea una nueva instancia para comenzar</p>
+          </div>
+        ) : (
+          <>
+            {/* Header & Instance Selector */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+              <div>
+                <h1 className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">Dashboard</h1>
+                <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Bienvenido de nuevo, {userName}</p>
+              </div>
 
-            {/* Delicate Instance Dropdown */}
-            <div className="relative z-50" ref={dropdownRef}>
-              <button
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center gap-3 bg-white dark:bg-[#1e293b] px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all duration-200 min-w-[240px]"
-              >
-                {selectedInstance?.profilePicUrl ? (
-                  <img src={selectedInstance.profilePicUrl} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-xs">
-                    {selectedInstance?.name?.[0] || 'I'}
+              {/* Delicate Instance Dropdown */}
+              <div className="relative z-50" ref={dropdownRef}>
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex items-center gap-3 bg-white dark:bg-[#1e293b] px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all duration-200 min-w-[240px]"
+                >
+                  {selectedInstance?.profilePicUrl ? (
+                    <img src={selectedInstance.profilePicUrl} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-xs">
+                      {selectedInstance?.name?.[0] || 'I'}
+                    </div>
+                  )}
+                  <div className="flex-1 text-left">
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate max-w-[120px]">
+                      {selectedInstance?.name || 'Instancia'}
+                    </p>
+                    <p className="text-xs text-slate-400 flex items-center gap-1">
+                      <span className={`w-1.5 h-1.5 rounded-full ${selectedInstance?.state === 'Connected' ? 'bg-emerald-400' : 'bg-red-400'}`}></span>
+                      {selectedInstance?.state}
+                    </p>
+                  </div>
+                  <ChevronDownIcon className={`w-4 h-4 text-slate-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-[#1e293b] rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden py-2">
+                    {instances.map((inst) => (
+                      <div
+                        key={inst.documentId}
+                        onClick={() => handleInstanceSelect(inst.documentId)}
+                        className={`px-4 py-3 flex items-center gap-3 cursor-pointer transition-colors ${inst.documentId === selectedInstanceId
+                          ? 'bg-indigo-50 dark:bg-indigo-900/20 border-l-2 border-indigo-500'
+                          : 'hover:bg-slate-50 dark:hover:bg-slate-800 border-l-2 border-transparent'
+                          }`}
+                      >
+                        <div className={`w-2 h-2 rounded-full ${inst.state === 'Connected' ? 'bg-emerald-400' : 'bg-red-400'}`}></div>
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-200 flex-1 truncate">
+                          {inst.name || inst.documentId}
+                        </span>
+                        {inst.documentId === selectedInstanceId && <CheckCircleIcon className="w-4 h-4 text-indigo-500" />}
+                      </div>
+                    ))}
                   </div>
                 )}
-                <div className="flex-1 text-left">
-                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate max-w-[120px]">
-                    {selectedInstance?.name || 'Instancia'}
-                  </p>
-                  <p className="text-xs text-slate-400 flex items-center gap-1">
-                    <span className={`w-1.5 h-1.5 rounded-full ${selectedInstance?.state === 'Connected' ? 'bg-emerald-400' : 'bg-red-400'}`}></span>
-                    {selectedInstance?.state}
-                  </p>
-                </div>
-                <ChevronDownIcon className={`w-4 h-4 text-slate-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-[#1e293b] rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden py-2">
-                  {instances.map((inst) => (
-                    <div
-                      key={inst.documentId}
-                      onClick={() => handleInstanceSelect(inst.documentId)}
-                      className={`px-4 py-3 flex items-center gap-3 cursor-pointer transition-colors ${inst.documentId === selectedInstanceId
-                        ? 'bg-indigo-50 dark:bg-indigo-900/20 border-l-2 border-indigo-500'
-                        : 'hover:bg-slate-50 dark:hover:bg-slate-800 border-l-2 border-transparent'
-                        }`}
-                    >
-                      <div className={`w-2 h-2 rounded-full ${inst.state === 'Connected' ? 'bg-emerald-400' : 'bg-red-400'}`}></div>
-                      <span className="text-sm font-medium text-slate-700 dark:text-slate-200 flex-1 truncate">
-                        {inst.name || inst.documentId}
-                      </span>
-                      {inst.documentId === selectedInstanceId && <CheckCircleIcon className="w-4 h-4 text-indigo-500" />}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Enhanced Stats Cards */}
-          <StatsCards 
-            metrics={metrics}
-            activeInstances={activeInstances}
-            totalInstances={totalInstances}
-            historyData={historyData}
-          />
-
-          {/* Enhanced Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-            {/* Enhanced History Chart */}
-            <div className="lg:col-span-2">
-              <AdvancedChart 
-                data={chartData}
-                options={chartOptions}
-                historyData={historyData}
-                metrics={metrics}
-              />
+              </div>
             </div>
 
-            {/* Enhanced System Stats */}
-            <div className="space-y-6">
-              {/* Real-Time Metrics */}
-              <RealTimeMetrics 
-                systemInfo={systemInfo}
-                cacheStats={cacheStats}
-                activeInstances={activeInstances}
-                totalInstances={totalInstances}
-              />
+            {/* Enhanced Stats Cards */}
+            <StatsCards
+              metrics={metrics}
+              activeInstances={activeInstances}
+              totalInstances={totalInstances}
+              historyData={historyData}
+            />
 
-              {/* Quick Stats Mini Cards */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white dark:bg-[#1e293b] rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl">
-                      <CheckCircleIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                    </div>
-                    <div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Tasa de Éxito</div>
-                      <div className="text-lg font-bold text-slate-800 dark:text-white">98.5%</div>
+            {/* Enhanced Main Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+              {/* Enhanced History Chart */}
+              <div className="lg:col-span-2">
+                <AdvancedChart
+                  data={chartData}
+                  options={chartOptions}
+                  historyData={historyData}
+                  metrics={metrics}
+                />
+              </div>
+
+              {/* Enhanced System Stats */}
+              <div className="space-y-6">
+                {/* Real-Time Metrics */}
+                <RealTimeMetrics
+                  systemInfo={systemInfo}
+                  cacheStats={cacheStats}
+                  activeInstances={activeInstances}
+                  totalInstances={totalInstances}
+                />
+
+                {/* Quick Stats Mini Cards */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white dark:bg-[#1e293b] rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl">
+                        <CheckCircleIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Tasa de Éxito</div>
+                        <div className="text-lg font-bold text-slate-800 dark:text-white">98.5%</div>
+                      </div>
                     </div>
                   </div>
-                </div>
-                
-                <div className="bg-white dark:bg-[#1e293b] rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
-                      <ClockIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Tiempo Respuesta</div>
-                      <div className="text-lg font-bold text-slate-800 dark:text-white">1.2s</div>
+
+                  <div className="bg-white dark:bg-[#1e293b] rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                        <ClockIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Tiempo Respuesta</div>
+                        <div className="text-lg font-bold text-slate-800 dark:text-white">1.2s</div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </>
-      )}
+          </>
+        )}
       </div>
     </div>
   );

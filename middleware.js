@@ -34,27 +34,32 @@ export async function middleware(request) {
   const { data: { user } } = await supabase.auth.getUser()
 
   const isAuth = !!user;
-  const isLoginPage = request.nextUrl.pathname === '/login';
-  const isRoot = request.nextUrl.pathname === '/';
-  const isAuthCallback = request.nextUrl.pathname === '/auth/callback';
+  const path = request.nextUrl.pathname;
+
+  const publicRoutes = [
+    '/',
+    '/login',
+    '/register',
+    '/forgot-password',
+    '/reset-password',
+    '/email-confirmation',
+    '/auth/callback'
+  ];
+
+  const isPublicRoute = publicRoutes.includes(path);
 
   // Allow auth callback to proceed without redirection
-  if (isAuthCallback) {
+  if (path === '/auth/callback') {
     return response;
   }
 
   // Si está autenticado y va a raíz o login → redirige a /home
-  if (isAuth && (isRoot || isLoginPage)) {
+  if (isAuth && (path === '/' || path === '/login')) {
     return NextResponse.redirect(new URL('/home', request.url));
   }
 
-  // Si NO está autenticado y va a raíz o login → permite ver landing o login
-  if (!isAuth && (isRoot || isLoginPage)) {
-    return response;
-  }
-
-  // Si NO está autenticado y va a cualquier otra ruta protegida → redirige a raíz (landing)
-  if (!isAuth) {
+  // Si NO está autenticado y la ruta NO es pública → redirige a raíz (landing)
+  if (!isAuth && !isPublicRoute) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 

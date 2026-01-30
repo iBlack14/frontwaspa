@@ -1,21 +1,16 @@
 import Image from 'next/image';
-import { EyeIcon, UserIcon } from '@heroicons/react/24/solid';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/solid';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import wazone from '../public/logo/wallpaper-wazone.webp';
-import fondo from '../public/img/fondo.webp';
-import fondo_transparent from '../public/logo/wazilrest_white.png';
+import BLXKLogo from '@/components/landing/BLXKLogo';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/utils/supabase/client';
 import { Toaster, toast } from 'sonner';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 
 export default function Login() {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
-  const [rememberMe, setRememberMe] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
@@ -69,156 +64,140 @@ export default function Login() {
   }, [status, router]);
 
   return (
-    <div
-      className="min-h-screen bg-brand-dark-950 flex items-center justify-center bg-cover bg-center relative shadow-inner shadow-black"
-      style={{
-        backgroundImage: `url(${fondo.src})`,
-      }}
-    >
+    <div className="min-h-screen bg-black flex items-center justify-center relative overflow-hidden px-4">
       <Toaster richColors position="top-right" expand={true} closeButton />
-      <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black opacity-70"></div>
+      
+      {/* Background Grid */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl"></div>
+      </div>
 
-      <div className="bg-opacity-90 shadow-2xl shadow-black w-full max-w-5xl flex flex-col lg:flex-row animate-fadeIn relative z-10">
-        {/* ────────────────────────────────────────────────────────
-         📷 IMAGEN DE FONDO (Solo desktop)
-        ──────────────────────────────────────────────────────── */}
-        <div className="hidden lg:flex lg:w-3/5 w-full items-center justify-center">
-          <Image
-            src={wazone}
-            alt="Background Logo"
-            quality={100}
-            priority
-            className="object-cover h-full w-full lg:rounded-tl-3xl lg:rounded-bl-3xl"
-          />
-        </div>
-
-        {/* ────────────────────────────────────────────────────────
-         📝 FORMULARIO DE LOGIN
-        ──────────────────────────────────────────────────────── */}
-        <div className="lg:w-2/5 w-full p-8 backdrop-blur-xl bg-brand-surface-light rounded-b-3xl lg:rounded-bl-none lg:rounded-tr-3xl border-l border-white/10">
-          {/* Logo */}
-          <Image
-            src={fondo_transparent}
-            alt="Logo"
-            height={250}
-            width={250}
-            quality={100}
-            priority
-            className="mx-auto"
-          />
-
-          {/* Título */}
-          <h1 className="text-3xl font-bold text-center text-slate-100 mb-2 tracking-tight">
+      <div className="relative z-10 w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="inline-flex justify-center mb-8">
+            <BLXKLogo variant="compact" />
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">
             Bienvenido
           </h1>
-          <p className="text-center text-slate-300 text-sm mb-6">
+          <p className="text-lg text-gray-400">
             Inicia sesión en tu cuenta
           </p>
+        </div>
 
-          {/* Formulario */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Login Card */}
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 mb-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email Input */}
-            <Input
-              id="email"
-              type="email"
-              label="Email"
-              placeholder="tu@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              leftIcon={<UserIcon className="h-5 w-5" />}
-              required
-            />
+            <div>
+              <label htmlFor="email" className="block text-sm font-semibold text-white mb-2">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                placeholder="tu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 transition-all"
+              />
+            </div>
 
             {/* Password Input */}
-            <Input
-              id="password"
-              type={showPassword ? 'text' : 'password'}
-              label="Contraseña"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              rightIcon={<EyeIcon className="h-5 w-5" />}
-              onRightIconClick={() => setShowPassword((prev) => !prev)}
-              required
-            />
-
-            {/* Remember me y Forgot password */}
-            <div className="flex justify-between items-center">
-              <label className="flex items-center text-sm text-slate-200 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="mr-2 h-4 w-4 text-brand-primary-400 focus:ring-brand-primary-400 border-white/30 rounded cursor-pointer"
-                />
-                <span className="group-hover:text-white transition-colors">
-                  Recordarme
-                </span>
+            <div>
+              <label htmlFor="password" className="block text-sm font-semibold text-white mb-2">
+                Contraseña
               </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 transition-all pr-12"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-400 transition"
+                >
+                  {showPassword ? (
+                    <EyeSlashIcon className="h-5 w-5" />
+                  ) : (
+                    <EyeIcon className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Forgot Password Link */}
+            <div className="text-right">
               <Link
                 href="/forgot-password"
-                className="text-sm text-slate-200 hover:text-brand-primary-400 transition-colors font-medium"
+                className="text-sm text-gray-400 hover:text-emerald-400 transition font-medium"
               >
                 ¿Olvidaste tu contraseña?
               </Link>
             </div>
 
-            {/* Botón de submit */}
-            <Button
+            {/* Login Button */}
+            <button
               type="submit"
-              variant="primary"
-              size="lg"
-              fullWidth
-              isLoading={isLoading}
+              disabled={isLoading}
+              className="w-full py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-emerald-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Iniciar Sesión
-            </Button>
+              {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+            </button>
           </form>
 
-          {/* ────────────────────────────────────────────────────────
-           🔗 SEPARADOR
-          ──────────────────────────────────────────────────────── */}
-          <div className="flex items-center justify-center mt-6">
-            <div className="w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
-            <span className="mx-4 text-slate-300 text-sm font-medium">o</span>
-            <div className="w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+          {/* Divider */}
+          <div className="flex items-center gap-4 my-6">
+            <div className="flex-1 h-px bg-white/10"></div>
+            <span className="text-sm text-gray-500">o</span>
+            <div className="flex-1 h-px bg-white/10"></div>
           </div>
 
-          {/* ────────────────────────────────────────────────────────
-           🔐 LOGIN CON GOOGLE
-          ──────────────────────────────────────────────────────── */}
-          <div className="flex justify-center">
-            <Button
-              variant="secondary"
-              size="md"
-              onClick={handleGoogleSignIn}
-              leftIcon={
-                <div className="p-1 bg-white rounded-full flex items-center justify-center">
-                  <Image
-                    src="/img/google.webp"
-                    alt="Google Logo"
-                    width={24}
-                    height={24}
-                  />
-                </div>
-              }
-            >
-              Continuar con Google
-            </Button>
-          </div>
+          {/* Google Login */}
+          <button
+            onClick={handleGoogleSignIn}
+            className="w-full py-3 bg-white/10 border border-white/20 text-white font-semibold rounded-xl hover:bg-white/15 transition-all flex items-center justify-center gap-3"
+          >
+            <Image
+              src="/img/google.webp"
+              alt="Google"
+              width={20}
+              height={20}
+            />
+            Continuar con Google
+          </button>
+        </div>
 
-          {/* ────────────────────────────────────────────────────────
-           📝 REGISTRO
-          ──────────────────────────────────────────────────────── */}
-          <p className="text-center text-sm text-slate-300 mt-6">
-            ¿No tienes una cuenta?{' '}
+        {/* Sign Up Link */}
+        <div className="text-center">
+          <p className="text-gray-400 text-sm">
+            ¿No tienes cuenta?{' '}
             <Link
               href="/register"
-              className="text-brand-primary-400 hover:text-brand-primary-300 font-bold hover:underline transition-colors"
+              className="text-emerald-400 hover:text-emerald-300 font-semibold transition"
             >
               Regístrate aquí
             </Link>
           </p>
+        </div>
+
+        {/* Footer Links */}
+        <div className="mt-8 pt-6 border-t border-white/10 flex justify-center gap-4 text-xs text-gray-500">
+          <a href="#" className="hover:text-gray-400 transition">Privacidad</a>
+          <span>•</span>
+          <a href="#" className="hover:text-gray-400 transition">Términos</a>
+          <span>•</span>
+          <a href="#" className="hover:text-gray-400 transition">Soporte</a>
         </div>
       </div>
     </div>
