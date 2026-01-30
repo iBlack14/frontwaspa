@@ -370,7 +370,7 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
   return (
-    <div className="h-full flex flex-col bg-[#f1f5f9] dark:bg-[#0f172a]" onMouseUp={() => isRecording && stopRecordingAndSend()}>
+    <div className="h-full flex flex-col bg-[#f1f5f9] dark:bg-[#0f172a] relative" onMouseUp={() => isRecording && stopRecordingAndSend()}>
       {/* Header - Pastel Glassmorphism */}
       <div className="bg-white/80 backdrop-blur-md dark:bg-[#1e293b]/90 px-6 py-3 flex items-center justify-between shadow-sm border-b border-slate-200 dark:border-slate-800 z-10">
         <div className="flex items-center gap-4">
@@ -547,14 +547,15 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
             </div>
 
             {/* Image Center & Background */}
-            <div className="flex-1 flex items-center justify-center p-8 bg-transparent relative overflow-hidden">
+            {/* Image Center & Background */}
+            <div className="flex-1 flex items-center justify-center p-8 bg-transparent relative overflow-hidden min-h-0">
               {/* Sombra y contenedor de imagen */}
-              <div className="relative shadow-2xl rounded-lg overflow-hidden max-h-full max-w-full" style={{ maxHeight: 'calc(100vh - 160px)' }}>
+              <div className="relative shadow-2xl rounded-lg overflow-hidden flex items-center justify-center max-h-full w-auto">
                 <img
                   src={pastedImagePreview}
                   alt="Preview"
-                  className="max-w-full max-h-full object-contain"
-                  style={{ minWidth: '300px' }}
+                  className="max-w-full max-h-full object-contain block"
+                  style={{ minWidth: '200px' }}
                 />
               </div>
             </div>
