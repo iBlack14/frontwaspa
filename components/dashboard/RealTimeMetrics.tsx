@@ -119,12 +119,12 @@ export const RealTimeMetrics: React.FC<RealTimeMetricsProps> = ({
   const connectionRatio = totalInstances > 0 ? 
     Math.round((activeInstances / totalInstances) * 100) : 0;
 
-  const metrics = [
+  const metrics: MetricItemProps[] = [
     {
       label: 'Memoria del Sistema',
       value: memoryUsage,
       unit: '%',
-      status: memoryUsage > 80 ? 'warning' : memoryUsage > 90 ? 'error' : 'good',
+      status: memoryUsage > 90 ? 'error' : memoryUsage > 80 ? 'warning' : 'good',
       icon: CpuChipIcon,
       trend: Math.random() > 0.5 ? Math.floor(Math.random() * 5) : -Math.floor(Math.random() * 3)
     },

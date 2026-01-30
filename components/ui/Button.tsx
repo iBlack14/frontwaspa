@@ -8,7 +8,7 @@
 import React from 'react';
 import { motion, HTMLMotionProps } from 'framer-motion';
 
-interface ButtonProps extends HTMLMotionProps<'button'> {
+interface ButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onDrag' | 'onDragStart' | 'onDragEnd' | 'onAnimationStart' | 'style'> {
     /** Variante visual del botón */
     variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
     /** Tamaño del botón */
@@ -21,8 +21,10 @@ interface ButtonProps extends HTMLMotionProps<'button'> {
     rightIcon?: React.ReactNode;
     /** Ancho completo */
     fullWidth?: boolean;
-    /** Contenido del botón */
-    children: React.ReactNode;
+    /** Propiedades de animación opcionales */
+    motionProps?: any;
+    /** Soporte para style de motion */
+    style?: any;
 }
 
 /**
@@ -43,6 +45,7 @@ export const Button: React.FC<ButtonProps> = ({
     children,
     className = '',
     disabled,
+    motionProps,
     ...props
 }) => {
     // ────────────────────────────────────────────────────────
