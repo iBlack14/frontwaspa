@@ -71,7 +71,7 @@ export default async function handler(
         // ────────────────────────────────────────────────────────
         // 📤 PASO 3: Enviar al backend de WhatsApp
         // ────────────────────────────────────────────────────────
-        const backendUrl = process.env.BACKEND_URL || 'http://localhost:4000';
+        const backendUrl = process.env.BACKEND_URL || 'https://api.connect.blxkstudio.com';
 
         // Leer el archivo
         const fileBuffer = fs.readFileSync(imageFile.filepath);

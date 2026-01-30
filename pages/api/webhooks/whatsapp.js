@@ -151,7 +151,7 @@ export default async function handler(req, res) {
                   // Pequeño delay para simular "escribiendo"
                   await new Promise(r => setTimeout(r, 1500)); // 1.5s delay
 
-                  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3000'; // Fallback
+                  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.connect.blxkstudio.com'; // Fallback
 
                   // Enviar mensaje usando la API interna
                   // Necesitamos la key del usuario. La tomamos de la instancia que ya consultamos arriba (instance.user_id)

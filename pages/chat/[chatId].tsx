@@ -84,7 +84,7 @@ export default function ChatPage() {
   const loadMessages = async () => {
     try {
       setLoading(true);
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.connect.blxkstudio.com';
       const response = await fetch(
         `${backendUrl}/api/messages/${instanceId}/${chatId}?limit=100`
       );
@@ -104,7 +104,7 @@ export default function ChatPage() {
 
   const loadContactInfo = async () => {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.connect.blxkstudio.com';
       const response = await fetch(
         `${backendUrl}/api/contacts/detail/${instanceId}/${chatId}`
       );
@@ -127,7 +127,7 @@ export default function ChatPage() {
     setSending(true);
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.connect.blxkstudio.com';
       const response = await fetch(`${backendUrl}/api/messages/send`, {
         method: 'POST',
         headers: {
