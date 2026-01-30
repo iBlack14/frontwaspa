@@ -1,13 +1,11 @@
 import Image from 'next/image';
-import { EyeIcon, UserIcon } from '@heroicons/react/24/solid';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/solid';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import wazone from '../public/logo/wallpaper-wazone.webp';
-import fondo from '../public/img/fondo.webp';
-import fondo_transparent from '../public/logo/wazilrest_white.png';
+import BLXKLogo from '@/components/landing/BLXKLogo';
 import { Toaster, toast } from 'sonner';
 
 export default function Register() {
@@ -17,6 +15,7 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
   const { status } = useAuth();
   const supabase = createClient();
@@ -24,14 +23,14 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Basic client-side validation
     if (password !== confirmPassword) {
       toast.error('Las contraseñas no coinciden');
       return;
     }
 
+    setIsLoading(true);
+
     try {
-      // Registrar usuario usando nuestra API (sin confirmación de email)
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -42,16 +41,18 @@ export default function Register() {
 
       if (!response.ok) {
         toast.error(data.error || 'Error al registrar');
+        setIsLoading(false);
         return;
       }
 
-      toast.success('Registro exitoso! Puedes iniciar sesión ahora.');
+      toast.success('Registro exitoso! Redirigiendo...');
       setTimeout(() => {
         router.push('/login');
-      }, 2000);
+      }, 1500);
 
     } catch (error) {
       toast.error('Error en el servidor');
+      setIsLoading(false);
     }
   };
 
@@ -74,14 +75,6 @@ export default function Register() {
     }
   };
 
-  const togglePasswordVisibility = () => {
-    setShowPassword((prev) => !prev);
-  };
-
-  const toggleConfirmPasswordVisibility = () => {
-    setShowConfirmPassword((prev) => !prev);
-  };
-
   useEffect(() => {
     if (status === 'authenticated') {
       router.push('/home');
@@ -89,159 +82,187 @@ export default function Register() {
   }, [status]);
 
   return (
-    <div
-      className="min-h-screen bg-slate-950 flex items-center justify-center bg-cover bg-center relative shadow-inner shadow-black"
-      style={{
-        backgroundImage: `url(${fondo.src})`,
-      }}
-    >
+    <div className="min-h-screen bg-black flex items-center justify-center relative overflow-hidden px-4">
       <Toaster richColors position="top-right" expand={true} closeButton />
-      <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black opacity-70"></div>
+      
+      {/* Background Grid */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl"></div>
+      </div>
 
-      <div className="bg-opacity-90 shadow-2xl shadow-black w-full max-w-6xl flex flex-col lg:flex-row animate-fadeIn">
-        <div className="hidden lg:flex lg:w-3/5 w-full items-center justify-center">
-          <Image
-            src={wazone}
-            alt="Background Logo"
-            quality={100}
-            priority
-            className="object-cover h-full w-full lg:rounded-tl-3xl lg:rounded-bl-3xl"
-          />
+      <div className="relative z-10 w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="inline-flex justify-center mb-8">
+            <BLXKLogo variant="compact" />
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">
+            Crear Cuenta
+          </h1>
+          <p className="text-lg text-gray-400">
+            Únete a BLXK Connect hoy
+          </p>
         </div>
 
-        <div className="lg:w-2/5 w-full p-8 backdrop-blur-xl bg-slate-100/5 rounded-b-3xl lg:rounded-bl-none lg:rounded-tr-3xl border-l border-white/10">
-          <Image
-            src={fondo_transparent}
-            alt="Background Logo"
-            height={250}
-            width={250}
-            quality={100}
-            priority
-            className="mx-auto"
-          />
-          <h1 className="text-3xl font-bold text-center text-slate-100 mb-2 tracking-tight">Crear Cuenta</h1>
-          <p className="text-center text-slate-300 text-sm mb-4">Regístrate para comenzar</p>
-
+        {/* Register Card */}
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 mb-6">
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Username */}
             <div>
-              <label htmlFor="username" className="block text-lg font-semibold text-slate-100 mb-2">
+              <label htmlFor="username" className="block text-sm font-semibold text-white mb-2">
                 Nombre de Usuario
               </label>
-              <div className="relative group">
-                <input
-                  type="text"
-                  id="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 placeholder-zinc-400 bg-white/10 text-lg text-slate-100 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent placeholder-opacity-70 backdrop-blur-sm transition-all duration-300 hover:bg-white/15"
-                  placeholder="tu_usuario"
-                />
-                <span className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
-                  <UserIcon className="h-5 w-5 text-slate-300 opacity-60 group-focus-within:text-green-400 group-focus-within:opacity-100 transition-all" />
-                </span>
-              </div>
+              <input
+                id="username"
+                type="text"
+                placeholder="tu_usuario"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 transition-all"
+              />
             </div>
+
+            {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-lg font-semibold text-slate-100 mb-2">
+              <label htmlFor="email" className="block text-sm font-semibold text-white mb-2">
                 Email
               </label>
-              <div className="relative group">
-                <input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 placeholder-zinc-400 bg-white/10 text-lg text-slate-100 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent placeholder-opacity-70 backdrop-blur-sm transition-all duration-300 hover:bg-white/15"
-                  placeholder="tu@email.com"
-                />
-                <span className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
-                  <UserIcon className="h-5 w-5 text-slate-300 opacity-60 group-focus-within:text-green-400 group-focus-within:opacity-100 transition-all" />
-                </span>
-              </div>
+              <input
+                id="email"
+                type="email"
+                placeholder="tu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 transition-all"
+              />
             </div>
+
+            {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-lg font-semibold text-slate-100 mb-2">
+              <label htmlFor="password" className="block text-sm font-semibold text-white mb-2">
                 Contraseña
               </label>
-              <div className="relative group">
+              <div className="relative">
                 <input
-                  type={showPassword ? 'text' : 'password'}
                   id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full px-4 py-3 placeholder-zinc-400 bg-white/10 text-lg text-slate-100 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent placeholder-opacity-70 backdrop-blur-sm transition-all duration-300 hover:bg-white/15"
-                  placeholder="••••••••"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 transition-all pr-12"
                 />
-                <span
-                  className="absolute inset-y-0 right-4 flex items-center cursor-pointer group"
-                  onClick={togglePasswordVisibility}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-400 transition"
                 >
-                  <EyeIcon className="h-5 w-5 text-slate-300 opacity-60 hover:text-green-400 hover:opacity-100 transition-all" />
-                </span>
+                  {showPassword ? (
+                    <EyeSlashIcon className="h-5 w-5" />
+                  ) : (
+                    <EyeIcon className="h-5 w-5" />
+                  )}
+                </button>
               </div>
             </div>
+
+            {/* Confirm Password */}
             <div>
-              <label htmlFor="confirmPassword" className="block text-lg font-semibold text-slate-100 mb-2">
+              <label htmlFor="confirmPassword" className="block text-sm font-semibold text-white mb-2">
                 Confirmar Contraseña
               </label>
-              <div className="relative group">
+              <div className="relative">
                 <input
-                  type={showConfirmPassword ? 'text' : 'password'}
                   id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  className="w-full px-4 py-3 placeholder-zinc-400 bg-white/10 text-lg text-slate-100 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent placeholder-opacity-70 backdrop-blur-sm transition-all duration-300 hover:bg-white/15"
-                  placeholder="••••••••"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 transition-all pr-12"
                 />
-                <span
-                  className="absolute inset-y-0 right-4 flex items-center cursor-pointer group"
-                  onClick={toggleConfirmPasswordVisibility}
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-400 transition"
                 >
-                  <EyeIcon className="h-5 w-5 text-slate-300 opacity-60 hover:text-green-400 hover:opacity-100 transition-all" />
-                </span>
+                  {showConfirmPassword ? (
+                    <EyeSlashIcon className="h-5 w-5" />
+                  ) : (
+                    <EyeIcon className="h-5 w-5" />
+                  )}
+                </button>
               </div>
             </div>
+
+            {/* Terms */}
+            <p className="text-xs text-gray-500">
+              Al crear una cuenta, aceptas nuestros{' '}
+              <a href="#" className="text-emerald-400 hover:text-emerald-300">
+                Términos de Servicio
+              </a>
+              {' '}y{' '}
+              <a href="#" className="text-emerald-400 hover:text-emerald-300">
+                Política de Privacidad
+              </a>
+            </p>
+
+            {/* Register Button */}
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-green-500/30 hover:shadow-green-500/50 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
+              disabled={isLoading}
+              className="w-full py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-emerald-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Crear Cuenta
+              {isLoading ? 'Creando cuenta...' : 'Crear Cuenta'}
             </button>
           </form>
 
-          <div className="flex items-center justify-center mt-6">
-            <div className="w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
-            <span className="mx-4 text-slate-300 text-sm font-medium">o</span>
-            <div className="w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+          {/* Divider */}
+          <div className="flex items-center gap-4 my-6">
+            <div className="flex-1 h-px bg-white/10"></div>
+            <span className="text-sm text-gray-500">o</span>
+            <div className="flex-1 h-px bg-white/10"></div>
           </div>
 
-          <div className="flex justify-center">
-            <button
-              onClick={handleGoogleSignIn}
-              className="mt-4 flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 backdrop-blur-sm"
+          {/* Google Login */}
+          <button
+            onClick={handleGoogleSignIn}
+            className="w-full py-3 bg-white/10 border border-white/20 text-white font-semibold rounded-xl hover:bg-white/15 transition-all flex items-center justify-center gap-3"
+          >
+            <Image
+              src="/img/google.webp"
+              alt="Google"
+              width={20}
+              height={20}
+            />
+            Continuar con Google
+          </button>
+        </div>
+
+        {/* Sign In Link */}
+        <div className="text-center">
+          <p className="text-gray-400 text-sm">
+            ¿Ya tienes cuenta?{' '}
+            <Link
+              href="/login"
+              className="text-emerald-400 hover:text-emerald-300 font-semibold transition"
             >
-              <div className="p-1 bg-white rounded-full flex items-center justify-center mr-3">
-                <Image
-                  src="/img/google.webp"
-                  alt="Google Logo"
-                  width={24}
-                  height={24}
-                />
-              </div>
-              <span>Continuar con Google</span>
-            </button>
-          </div>
-
-          <p className="text-center text-sm text-slate-300 mt-6">
-            ¿Ya tienes una cuenta?{' '}
-            <Link href="/login" className="text-green-400 hover:text-green-300 font-bold hover:underline transition-colors">
-              Inicia sesión aquí
+              Inicia sesión
             </Link>
           </p>
+        </div>
+
+        {/* Footer Links */}
+        <div className="mt-8 pt-6 border-t border-white/10 flex justify-center gap-4 text-xs text-gray-500">
+          <a href="#" className="hover:text-gray-400 transition">Privacidad</a>
+          <span>•</span>
+          <a href="#" className="hover:text-gray-400 transition">Términos</a>
+          <span>•</span>
+          <a href="#" className="hover:text-gray-400 transition">Soporte</a>
         </div>
       </div>
     </div>

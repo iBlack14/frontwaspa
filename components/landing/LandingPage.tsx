@@ -9,7 +9,7 @@ import Navigation from './Navigation';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-900">
+    <div className="min-h-screen bg-black dark:bg-black">
       <Navigation />
       <HeroSection />
       <FeaturesSection />
