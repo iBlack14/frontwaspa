@@ -32,8 +32,6 @@ export default function Login() {
       toast.error(error.message || 'Credenciales incorrectas');
     } else {
       toast.success('¡Login exitoso! Redirigiendo...');
-      // Usar window.location.href asegura que las cookies se envíen correctamente al servidor (middleware)
-      window.location.href = '/home';
     }
   };
 
