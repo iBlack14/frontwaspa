@@ -211,14 +211,14 @@ function SidebarLayout({ children }: { children: React.ReactNode }) {
         <div className="h-20 flex items-center justify-between px-6 border-b border-slate-100 dark:border-slate-800/50">
           {!isCollapsed && (
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
                 <span className="text-white font-bold text-lg">C</span>
               </div>
               <span className="font-bold text-lg text-slate-800 dark:text-white tracking-tight">Connect BLXK</span>
             </div>
           )}
           {isCollapsed && !isMobile && (
-            <div className="mx-auto h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <div className="mx-auto h-9 w-9 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
               <span className="text-white font-bold text-lg">C</span>
             </div>
           )}

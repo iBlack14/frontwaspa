@@ -152,11 +152,11 @@ export const RealTimeMetrics: React.FC<RealTimeMetricsProps> = ({
   ];
 
   return (
-    <div className="relative bg-gradient-to-br from-slate-800 via-slate-900 to-black rounded-3xl p-6 border border-slate-700 shadow-2xl overflow-hidden">
+    <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-8 border border-slate-700/50 shadow-2xl overflow-hidden">
       {/* Background Effects */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-transparent"></div>
-      <div className="absolute -top-4 -right-4 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"></div>
-      <div className="absolute -bottom-4 -left-4 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-blue-500/5 to-transparent"></div>
+      <div className="absolute -top-6 -right-6 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl"></div>
+      <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"></div>
       
       <div className="relative z-10">
         {/* Header */}

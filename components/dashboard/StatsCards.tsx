@@ -46,12 +46,14 @@ const StatCard: React.FC<StatCardProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay }}
-      className={`group relative ${gradient} p-6 rounded-3xl border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 overflow-hidden`}
+      whileHover={{ y: -8 }}
+      className={`group relative ${gradient} p-8 rounded-3xl border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-500 overflow-hidden`}
     >
       {/* Background Effects */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-      <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-all duration-500"></div>
-      
+      <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+      <div className="absolute -top-6 -right-6 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500"></div>
+      <div className="absolute -bottom-2 -left-2 w-20 h-20 bg-black/10 rounded-full blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+
       <div className="relative z-10">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -144,7 +146,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
         period: 'mes anterior'
       },
       icon: ChatBubbleLeftRightIcon,
-      gradient: 'bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600',
+      gradient: 'bg-gradient-to-br from-blue-500 via-cyan-500 to-blue-600',
       delay: 0
     },
     {
@@ -156,7 +158,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
         period: 'mes anterior'
       },
       icon: SparklesIcon,
-      gradient: 'bg-gradient-to-br from-purple-500 via-purple-600 to-pink-600',
+      gradient: 'bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600',
       delay: 0.1
     },
     {
@@ -168,7 +170,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
         period: 'mes anterior'
       },
       icon: ArrowTrendingUpIcon,
-      gradient: 'bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600',
+      gradient: 'bg-gradient-to-br from-green-500 via-emerald-500 to-teal-600',
       delay: 0.2
     },
     {
@@ -180,7 +182,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
         period: 'mes anterior'
       },
       icon: UserGroupIcon,
-      gradient: 'bg-gradient-to-br from-orange-500 via-orange-600 to-red-600',
+      gradient: 'bg-gradient-to-br from-rose-500 via-pink-500 to-rose-600',
       delay: 0.3
     }
   ];

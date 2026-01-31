@@ -317,7 +317,7 @@ function ProfilePage() {
   if (status === 'loading') {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-transparent">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
@@ -334,19 +334,19 @@ function ProfilePage() {
       <div className="flex space-x-2 mb-8 bg-slate-100 dark:bg-slate-800/50 p-1.5 rounded-2xl w-fit">
         <button
           onClick={() => setActiveTab('general')}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium text-sm transition-all duration-300 ${activeTab === 'general' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium text-sm transition-all duration-300 ${activeTab === 'general' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-cyan-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
         >
           <UserIcon className="w-5 h-5" /> Información General
         </button>
         <button
           onClick={() => setActiveTab('proxies')}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium text-sm transition-all duration-300 ${activeTab === 'proxies' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium text-sm transition-all duration-300 ${activeTab === 'proxies' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-cyan-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
         >
           <ServerIcon className="w-5 h-5" /> Gestión de Proxies
         </button>
         <button
           onClick={() => setActiveTab('ai')}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium text-sm transition-all duration-300 ${activeTab === 'ai' ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium text-sm transition-all duration-300 ${activeTab === 'ai' ? 'bg-white dark:bg-slate-700 text-amber-600 dark:text-amber-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
         >
           <SparklesIcon className="w-5 h-5" /> Configuración de IA
         </button>
@@ -357,7 +357,7 @@ function ProfilePage() {
         {activeTab === 'general' && (
           <div className="bg-white dark:bg-[#1e293b] rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 p-8 max-w-2xl">
             <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
-              <ShieldCheckIcon className="w-6 h-6 text-indigo-500" /> Credenciales de Acceso
+              <ShieldCheckIcon className="w-6 h-6 text-cyan-500" /> Credenciales de Acceso
             </h2>
             <div className="space-y-6">
               <div>
@@ -384,7 +384,7 @@ function ProfilePage() {
                 </div>
               </div>
               <div className="pt-4">
-                <button onClick={handleSaveGeneral} className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3.5 rounded-xl font-bold hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5">Guardar Cambios</button>
+                <button onClick={handleSaveGeneral} className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-3.5 rounded-xl font-bold hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5">Guardar Cambios</button>
               </div>
             </div>
           </div>
@@ -393,10 +393,10 @@ function ProfilePage() {
         {activeTab === 'ai' && (
           <div className="bg-white dark:bg-[#1e293b] rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 p-8 max-w-2xl">
             <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
-              <SparklesIcon className="w-6 h-6 text-purple-500" /> Configuración de Inteligencia Artificial
+              <SparklesIcon className="w-6 h-6 text-amber-500" /> Configuración de Inteligencia Artificial
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-8">
-              Configura tus propias API Keys para habilitar las funciones de IA como el <span className="text-purple-500 font-semibold">Calentamiento con IA</span>.
+              Configura tus propias API Keys para habilitar las funciones de IA como el <span className="text-amber-500 font-semibold">Calentamiento con IA</span>.
             </p>
             <div className="space-y-8">
               <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800">
@@ -404,7 +404,7 @@ function ProfilePage() {
                   <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center"><span className="text-xl">🧠</span></div>
                   <div>
                     <h3 className="font-bold text-slate-800 dark:text-white">OpenAI (ChatGPT)</h3>
-                    <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-500 hover:underline">Obtener API Key &rarr;</a>
+                    <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-xs text-cyan-500 hover:underline">Obtener API Key &rarr;</a>
                   </div>
                 </div>
                 <div className="relative">
@@ -420,7 +420,7 @@ function ProfilePage() {
                   <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center"><span className="text-xl">💎</span></div>
                   <div>
                     <h3 className="font-bold text-slate-800 dark:text-white">Google Gemini</h3>
-                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-500 hover:underline">Obtener API Key &rarr;</a>
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-xs text-cyan-500 hover:underline">Obtener API Key &rarr;</a>
                   </div>
                 </div>
                 <div className="relative">
@@ -432,7 +432,7 @@ function ProfilePage() {
                 </div>
               </div>
               <div className="pt-4">
-                <button onClick={handleSaveGeneral} className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3.5 rounded-xl font-bold hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5">Guardar Configuración IA</button>
+                <button onClick={handleSaveGeneral} className="w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white py-3.5 rounded-xl font-bold hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5">Guardar Configuración IA</button>
               </div>
             </div>
           </div>
@@ -440,28 +440,28 @@ function ProfilePage() {
 
         {activeTab === 'proxies' && (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-indigo-50 dark:bg-indigo-900/10 p-6 rounded-3xl border border-indigo-100 dark:border-indigo-800/30">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-cyan-50 dark:bg-cyan-900/10 p-6 rounded-3xl border border-cyan-100 dark:border-cyan-800/30">
               <div>
                 <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                  <GlobeAltIcon className="w-6 h-6 text-indigo-500" /> Tus Proxies
+                  <GlobeAltIcon className="w-6 h-6 text-cyan-500" /> Tus Proxies
                 </h2>
                 <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Configura proxies para rotar IPs y evitar bloqueos en tus instancias.</p>
               </div>
-              <button onClick={() => openProxyModal()} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl transition-all shadow-lg font-medium">
+              <button onClick={() => openProxyModal()} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl transition-all shadow-lg font-medium">
                 <PlusIcon className="w-5 h-5" /> Agregar Proxy
               </button>
             </div>
 
             {loadingProxies ? (
               <div className="flex flex-col items-center justify-center py-20">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mb-4"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
                 <p className="text-slate-500 dark:text-slate-400">Cargando proxies...</p>
               </div>
             ) : proxies.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-[#1e293b] rounded-3xl border border-dashed border-slate-200">
                 <ServerIcon className="w-8 h-8 text-slate-400 mb-4" />
                 <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">No hay proxies configurados</h3>
-                <button onClick={() => openProxyModal()} className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">Configurar ahora &rarr;</button>
+                <button onClick={() => openProxyModal()} className="text-blue-600 dark:text-cyan-400 font-medium hover:underline">Configurar ahora &rarr;</button>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -479,7 +479,7 @@ function ProfilePage() {
                       <div className="flex justify-between"><span>Puerto</span><span className="font-mono">{proxy.port}</span></div>
                     </div>
                     <div className="flex gap-2">
-                      <button onClick={() => openAssignModal(proxy)} className="flex-1 bg-indigo-50 text-indigo-600 py-2 rounded-xl text-sm font-medium">Asignar</button>
+                      <button onClick={() => openAssignModal(proxy)} className="flex-1 bg-cyan-50 text-cyan-600 py-2 rounded-xl text-sm font-medium">Asignar</button>
                       <button onClick={() => handleHealthCheck(proxy.id)} className="p-2 bg-slate-50 rounded-xl"><ArrowPathIcon className="w-4 h-4" /></button>
                       <button onClick={() => openProxyModal(proxy)} className="p-2 bg-slate-50 rounded-xl"><PencilIcon className="w-4 h-4" /></button>
                       <button onClick={() => handleDeleteProxy(proxy.id)} className="p-2 bg-red-50 text-red-600 rounded-xl"><TrashIcon className="w-4 h-4" /></button>

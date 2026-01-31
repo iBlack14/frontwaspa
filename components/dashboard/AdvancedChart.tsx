@@ -76,7 +76,7 @@ export const AdvancedChart: React.FC<AdvancedChartProps> = ({
       {/* Enhanced Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-4">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg">
+          <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl shadow-lg">
             <ChartBarIcon className="w-7 h-7 text-white" />
           </div>
           <div>
