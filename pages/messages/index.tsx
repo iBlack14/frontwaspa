@@ -114,54 +114,14 @@ function MessagesContent() {
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const response = await axios.get(`${backendUrl}/api/messages/chats/${instanceId}`);
-      const rawChats: Chat[] = response.data.chats || [];
+      let rawChats: Chat[] = response.data.chats || [];
 
-      // Helper para normalizar ID
-      const normalizeId = (id: string) => {
-        if (!id) return '';
-        return id.replace(/@s\.whatsapp\.net/g, '').replace(/@g\.us/g, '').split(':')[0];
-      };
-
-      const uniqueChatsMap = new Map<string, Chat>();
-
-      rawChats.forEach((chat) => {
-        const cleanId = normalizeId(chat.chat_id);
-        const existing = uniqueChatsMap.get(cleanId);
-
-        if (!existing) {
-          uniqueChatsMap.set(cleanId, chat);
-        } else {
-          const useNew = new Date(chat.last_message_at || 0).getTime() > new Date(existing.last_message_at || 0).getTime();
-
-          const isInvalidName = (name?: string) => {
-            if (!name) return true;
-            const n = name.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            const sessionName = (session as any)?.user?.name || 'User';
-            const uName = sessionName.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            const isSelfName = uName && n.includes(uName);
-            return n === '.' || n === cleanId || isSelfName;
-          };
-
-          let finalChat = useNew ? chat : existing;
-
-          if (isInvalidName(finalChat.chat_name)) {
-            const otherChat = useNew ? existing : chat;
-            if (!isInvalidName(otherChat.chat_name)) {
-              finalChat = { ...finalChat, chat_name: otherChat.chat_name };
-            } else {
-              finalChat = { ...finalChat, chat_name: cleanId };
-            }
-          }
-
-          uniqueChatsMap.set(cleanId, finalChat);
-        }
-      });
-
-      const sortedChats = Array.from(uniqueChatsMap.values()).sort((a, b) => {
+      // Ordenar por fecha (más reciente primero)
+      rawChats.sort((a, b) => {
         return new Date(b.last_message_at || 0).getTime() - new Date(a.last_message_at || 0).getTime();
       });
 
-      setChats(sortedChats);
+      setChats(rawChats);
     } catch (error) {
       console.error('Error fetching chats:', error);
     }

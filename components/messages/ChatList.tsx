@@ -392,21 +392,35 @@ function ChatItem({ chat, isSelected, onClick, isStatus }: { chat: Chat; isSelec
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex justify-between items-start mb-0.5">
-            <h3 className={`font-semibold text-[15px] truncate transition-colors ${isSelected ? 'text-indigo-900 dark:text-indigo-100' : 'text-slate-800 dark:text-slate-200'}`}>
-              {chat.chat_name || chat.chat_id}
+          <div className="flex justify-between items-baseline mb-1">
+            <h3 className={`font-medium text-[15px] truncate max-w-[70%] ${
+              isSelected
+                ? 'text-indigo-900 dark:text-indigo-100'
+                : 'text-slate-800 dark:text-slate-200 group-hover:text-indigo-700 dark:group-hover:text-indigo-300'
+            }`}>
+              {chat.chat_name || chat.chat_id.split('@')[0]}
             </h3>
-            <span className={`text-xs ml-2 flex-shrink-0 font-medium ${chat.unread_count > 0 ? 'text-indigo-500' : 'text-slate-400 dark:text-slate-500'}`}>
+            <span className={`text-[11px] flex-shrink-0 ${
+              chat.unread_count > 0
+                ? 'text-indigo-500 font-semibold'
+                : 'text-slate-400 dark:text-slate-500'
+            }`}>
               {formatTime(chat.last_message_at)}
             </span>
           </div>
+          
           <div className="flex justify-between items-center">
-            <p className={`text-sm truncate flex-1 font-medium ${isSelected ? 'text-indigo-600/80 dark:text-indigo-300/80' : chat.unread_count > 0 ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>
+            <p className={`text-[13px] truncate max-w-[85%] flex items-center ${
+              isSelected
+                ? 'text-indigo-700/80 dark:text-indigo-300/80'
+                : 'text-slate-500 dark:text-slate-400'
+            }`}>
               {getPreviewText()}
             </p>
+            
             {chat.unread_count > 0 && (
-              <span className="ml-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center shadow-sm shadow-indigo-200 dark:shadow-none">
-                {chat.unread_count > 99 ? '99+' : chat.unread_count}
+              <span className="flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 bg-indigo-500 text-white text-[10px] font-bold rounded-full shadow-sm shadow-indigo-200 dark:shadow-none animate-in zoom-in duration-200">
+                {chat.unread_count}
               </span>
             )}
           </div>

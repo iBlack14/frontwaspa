@@ -16,7 +16,7 @@
     "@heroicons/react": "^2.2.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.93.0",
-    "@whiskeysockets/baileys": "^6.17.16",
+    "baileys": "^6.7.13",
     "autoprefixer": "^10.4.16",
     "axios": "^1.8.4",
     "chart.js": "^4.4.9",
