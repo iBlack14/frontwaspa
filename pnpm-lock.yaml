@@ -17,15 +17,15 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.93.0
         version: 2.93.3
-      '@whiskeysockets/baileys':
-        specifier: ^6.17.16
-        version: 6.17.16(eslint@9.39.2(jiti@1.21.7))(qrcode-terminal@0.12.0)(sharp@0.32.6)(typescript@5.9.3)
       autoprefixer:
         specifier: ^10.4.16
         version: 10.4.23(postcss@8.5.6)
       axios:
         specifier: ^1.8.4
         version: 1.13.4
+      baileys:
+        specifier: ^6.7.13
+        version: 6.17.16(eslint@9.39.2(jiti@1.21.7))(qrcode-terminal@0.12.0)(sharp@0.32.6)(typescript@5.9.3)
       chart.js:
         specifier: ^4.4.9
         version: 4.5.1
@@ -591,24 +591,6 @@ packages:
   '@wasm-audio-decoders/opus-ml@0.0.2':
     resolution: {integrity: sha512-58rWEqDGg+CKCyEeKm2KoxxSwTWtHh/NLTW9ObR4K8CGF6VwuuGudEI1CtniS/oSRmL1nJq/eh8MKARiluw4DQ==}
 
-  '@whiskeysockets/baileys@6.17.16':
-    resolution: {integrity: sha512-cZoUaKpO4fsDUNiCtyZfbjkW0Bjl/IudzHLCvpqfqtq5TACQzNynYsYdKPJz1I8Cu/SSEvmewk0RorIs0zDWyw==}
-    deprecated: The new official package name for the Baileys package is "baileys". Please use that package name going forward. This version may stop receiving updates in the future.
-    peerDependencies:
-      jimp: ^0.16.1
-      link-preview-js: ^3.0.0
-      qrcode-terminal: ^0.12.0
-      sharp: ^0.32.6
-    peerDependenciesMeta:
-      jimp:
-        optional: true
-      link-preview-js:
-        optional: true
-      qrcode-terminal:
-        optional: true
-      sharp:
-        optional: true
-
   '@whiskeysockets/eslint-config@https://codeload.github.com/whiskeysockets/eslint-config/tar.gz/299e8389baf62f9aa3034de18ff0d62cc0a5e838':
     resolution: {tarball: https://codeload.github.com/whiskeysockets/eslint-config/tar.gz/299e8389baf62f9aa3034de18ff0d62cc0a5e838}
     version: 1.0.0
@@ -716,6 +698,24 @@ packages:
       react-native-b4a: '*'
     peerDependenciesMeta:
       react-native-b4a:
+        optional: true
+
+  baileys@6.17.16:
+    resolution: {integrity: sha512-5dLjZ6+yRR4K7u56xKGCOsLPu5o7PrfLpAW0wV3WELpQQ6m33xwFK+Jd6hu+xDSVfMr7SqP2Dn0jqj+zH8ymdw==}
+    deprecated: This package has been deprecated (wrong version)
+    peerDependencies:
+      jimp: ^0.16.1
+      link-preview-js: ^3.0.0
+      qrcode-terminal: ^0.12.0
+      sharp: ^0.32.6
+    peerDependenciesMeta:
+      jimp:
+        optional: true
+      link-preview-js:
+        optional: true
+      qrcode-terminal:
+        optional: true
+      sharp:
         optional: true
 
   balanced-match@1.0.2:
@@ -2978,35 +2978,6 @@ snapshots:
     dependencies:
       '@wasm-audio-decoders/common': 9.0.7
 
-  '@whiskeysockets/baileys@6.17.16(eslint@9.39.2(jiti@1.21.7))(qrcode-terminal@0.12.0)(sharp@0.32.6)(typescript@5.9.3)':
-    dependencies:
-      '@adiwajshing/keyed-db': 0.2.4
-      '@cacheable/node-cache': 1.7.6
-      '@hapi/boom': 9.1.4
-      '@whiskeysockets/eslint-config': https://codeload.github.com/whiskeysockets/eslint-config/tar.gz/299e8389baf62f9aa3034de18ff0d62cc0a5e838(eslint@9.39.2(jiti@1.21.7))(typescript@5.9.3)
-      async-lock: 1.4.1
-      audio-decode: 2.2.3
-      axios: 1.13.4
-      cache-manager: 5.7.6
-      libphonenumber-js: 1.12.36
-      libsignal: '@whiskeysockets/libsignal-node@https://codeload.github.com/WhiskeySockets/libsignal-node/tar.gz/1c30d7d7e76a3b0aa120b04dc6a26f5a12dccf67'
-      lodash: 4.17.23
-      music-metadata: 7.14.0
-      pino: 9.14.0
-      protobufjs: 7.5.4
-      uuid: 10.0.0
-      ws: 8.19.0
-    optionalDependencies:
-      qrcode-terminal: 0.12.0
-      sharp: 0.32.6
-    transitivePeerDependencies:
-      - bufferutil
-      - debug
-      - eslint
-      - supports-color
-      - typescript
-      - utf-8-validate
-
   '@whiskeysockets/eslint-config@https://codeload.github.com/whiskeysockets/eslint-config/tar.gz/299e8389baf62f9aa3034de18ff0d62cc0a5e838(eslint@9.39.2(jiti@1.21.7))(typescript@5.9.3)':
     dependencies:
       '@typescript-eslint/eslint-plugin': 8.54.0(@typescript-eslint/parser@8.54.0(eslint@9.39.2(jiti@1.21.7))(typescript@5.9.3))(eslint@9.39.2(jiti@1.21.7))(typescript@5.9.3)
@@ -3117,6 +3088,35 @@ snapshots:
       - debug
 
   b4a@1.7.3: {}
+
+  baileys@6.17.16(eslint@9.39.2(jiti@1.21.7))(qrcode-terminal@0.12.0)(sharp@0.32.6)(typescript@5.9.3):
+    dependencies:
+      '@adiwajshing/keyed-db': 0.2.4
+      '@cacheable/node-cache': 1.7.6
+      '@hapi/boom': 9.1.4
+      '@whiskeysockets/eslint-config': https://codeload.github.com/whiskeysockets/eslint-config/tar.gz/299e8389baf62f9aa3034de18ff0d62cc0a5e838(eslint@9.39.2(jiti@1.21.7))(typescript@5.9.3)
+      async-lock: 1.4.1
+      audio-decode: 2.2.3
+      axios: 1.13.4
+      cache-manager: 5.7.6
+      libphonenumber-js: 1.12.36
+      libsignal: '@whiskeysockets/libsignal-node@https://codeload.github.com/WhiskeySockets/libsignal-node/tar.gz/1c30d7d7e76a3b0aa120b04dc6a26f5a12dccf67'
+      lodash: 4.17.23
+      music-metadata: 7.14.0
+      pino: 9.14.0
+      protobufjs: 7.5.4
+      uuid: 10.0.0
+      ws: 8.19.0
+    optionalDependencies:
+      qrcode-terminal: 0.12.0
+      sharp: 0.32.6
+    transitivePeerDependencies:
+      - bufferutil
+      - debug
+      - eslint
+      - supports-color
+      - typescript
+      - utf-8-validate
 
   balanced-match@1.0.2: {}
 
