@@ -269,92 +269,117 @@ function DashboardContent() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-transparent">
+    <div className="min-h-screen bg-gradient-to-b from-white/50 to-slate-50/50 dark:from-slate-900/20 dark:to-slate-950/30">
 
 
-      <div className="p-6 sm:p-8 max-w-7xl mx-auto flex items-start gap-6">
+      <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-7xl mx-auto flex items-start gap-6">
         <div className="flex-1 w-full">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-800 dark:text-white tracking-tight">Mis Instancias</h1>
-              <p className="text-slate-500 dark:text-slate-400 mt-1">Gestiona tus conexiones de WhatsApp</p>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-1.5 h-8 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></div>
+                <h1 className="text-4xl font-bold text-slate-800 dark:text-white tracking-tight">Mis Instancias</h1>
+              </div>
+              <p className="text-slate-600 dark:text-slate-400 mt-2 font-medium">Gestiona y controla tus conexiones de WhatsApp en tiempo real</p>
             </div>
             <button
               onClick={createNewInstance}
-              className="group flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-5 py-2.5 rounded-xl hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-300 transform hover:-translate-y-0.5"
+              className="group flex items-center gap-2.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white px-6 py-3 rounded-xl hover:shadow-xl hover:shadow-indigo-500/30 dark:hover:shadow-indigo-900/30 transition-all duration-300 transform hover:-translate-y-0.5 font-semibold whitespace-nowrap border border-indigo-500/20 dark:border-indigo-800/30"
             >
               <PlusIcon className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
-              <span className="font-medium">Nueva Instancia</span>
+              <span>Nueva Instancia</span>
             </button>
           </div>
 
           {/* Content */}
           {loadingSessions ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {[1, 2].map((i) => (
-                <div key={i} className="bg-white dark:bg-[#1e293b] rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm animate-pulse">
-                  <div className="flex gap-4">
-                    <div className="w-16 h-16 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
-                    <div className="flex-1 space-y-2">
-                      <div className="h-5 bg-slate-200 dark:bg-slate-700 rounded w-1/3"></div>
-                      <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/4"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-white dark:bg-slate-800/60 rounded-3xl p-6 border border-slate-200/50 dark:border-slate-700/50 shadow-sm animate-pulse">
+                  <div className="flex gap-4 mb-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 rounded-2xl"></div>
+                    <div className="flex-1 space-y-3">
+                      <div className="h-5 bg-slate-300 dark:bg-slate-700 rounded-lg w-2/3"></div>
+                      <div className="h-4 bg-slate-200 dark:bg-slate-600 rounded-lg w-1/3"></div>
                     </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-slate-200 dark:bg-slate-600 rounded-lg w-full"></div>
+                    <div className="h-4 bg-slate-200 dark:bg-slate-600 rounded-lg w-4/5"></div>
                   </div>
                 </div>
               ))}
             </div>
           ) : sessions.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {sessions.map((session) => (
                 <div
                   key={session.documentId}
-                  className="group bg-white dark:bg-[#1e293b] rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 hover:-translate-y-1"
+                  className="group bg-gradient-to-br from-white to-slate-50 dark:from-slate-800/80 dark:to-slate-900/50 rounded-3xl p-6 border border-slate-200/50 dark:border-slate-700/50 shadow-sm hover:shadow-xl hover:shadow-indigo-500/20 dark:hover:shadow-indigo-900/20 transition-all duration-300 hover:-translate-y-1 backdrop-blur-sm"
                 >
-                  <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-start justify-between mb-6 pb-4 border-b border-slate-100/50 dark:border-slate-700/30">
                     <div className="flex items-center gap-4">
-                      <div className="relative">
+                      <div className="relative group/avatar">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 rounded-3xl opacity-0 group-hover/avatar:opacity-20 blur transition duration-300"></div>
                         {session.profilePicUrl ? (
                           <img
                             src={session.profilePicUrl}
                             alt="Profile"
-                            className="w-16 h-16 rounded-2xl object-cover border-2 border-slate-100 dark:border-slate-700 shadow-sm"
+                            className="relative w-16 h-16 rounded-3xl object-cover border-2 border-white dark:border-slate-800 shadow-md"
                             onError={(e) => (e.currentTarget.src = '/logo/profile.png')}
                           />
                         ) : (
-                          <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center border-2 border-indigo-100 dark:border-indigo-800/30">
-                            <span className="text-2xl font-bold text-indigo-500">{session.name?.[0] || 'W'}</span>
+                          <div className="relative w-16 h-16 rounded-3xl bg-gradient-to-br from-indigo-200 to-purple-200 dark:from-indigo-800 dark:to-purple-800 flex items-center justify-center border-2 border-white dark:border-slate-800 shadow-md">
+                            <span className="text-2xl font-bold text-indigo-700 dark:text-indigo-200">{session.name?.[0] || 'W'}</span>
                           </div>
                         )}
-                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white dark:border-[#1e293b] ${session.state === 'Connected' ? 'bg-emerald-500' : 'bg-red-500'
+                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2.5 border-white dark:border-slate-800 shadow-md ${session.state === 'Connected' ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'
                           }`}></div>
                       </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-slate-800 dark:text-white">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-white truncate max-w-xs">
                           {session.name || 'WhatsApp Instance'}
                         </h3>
-                        <p className="text-sm text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                        <p className="text-sm text-slate-500 dark:text-slate-400 font-mono mt-1 font-medium">
                           {session.phoneNumber || 'Sin número'}
                         </p>
-                        <div className="flex items-center gap-2 mt-2 group/id cursor-pointer w-fit" onClick={() => {
+                        <div className="flex items-center gap-2 mt-3 group/id cursor-pointer w-fit" onClick={() => {
                           navigator.clipboard.writeText(session.documentId);
                           toast.success('ID copiado al portapapeles');
                         }}>
-                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ID</span>
-                            <p className="text-xs text-slate-600 dark:text-slate-300 font-mono">
-                              {session.documentId.substring(0, 8)}...{session.documentId.substring(session.documentId.length - 4)}
+                          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800/60 dark:to-slate-800/30 border border-slate-200/50 dark:border-slate-700/50 hover:border-indigo-300/50 dark:hover:border-indigo-700/50 transition-all duration-300 shadow-sm">
+                            <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">ID</span>
+                            <p className="text-xs text-slate-600 dark:text-slate-300 font-mono font-semibold">
+                              {session.documentId.substring(0, 8)}...
                             </p>
-                            <ClipboardDocumentIcon className="w-3 h-3 text-slate-400 group-hover/id:text-indigo-500 transition-colors" />
+                            <ClipboardDocumentIcon className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover/id:text-indigo-600 dark:group-hover/id:text-indigo-400 transition-colors" />
                           </div>
                         </div>
-                        <span className={`inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-lg text-xs font-medium ${session.state === 'Connected'
-                          ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'
-                          : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
-                          }`}>
-                          {session.state === 'Connected' ? <SignalIcon className="w-3 h-3" /> : <SignalSlashIcon className="w-3 h-3" />}
-                          {session.state}
-                        </span>
+                        <div className="flex items-center gap-2 mt-3">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 ${session.state === 'Connected'
+                            ? 'bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-700 dark:from-emerald-900/30 dark:to-emerald-900/20 dark:text-emerald-300 shadow-sm'
+                            : 'bg-gradient-to-r from-red-100 to-red-50 text-red-700 dark:from-red-900/30 dark:to-red-900/20 dark:text-red-300 shadow-sm'
+                            }`}>
+                            {session.state === 'Connected' ? (
+                              <>
+                                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                                Conectado
+                              </>
+                            ) : (
+                              <>
+                                <SignalSlashIcon className="w-4 h-4" />
+                                {session.state}
+                              </>
+                            )}
+                          </span>
+                          {session.is_active && session.state === 'Connected' && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 shadow-sm">
+                              <BoltIcon className="w-3.5 h-3.5" />
+                              Activo
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -363,9 +388,9 @@ function DashboardContent() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => toggleInstanceActive(session.documentId, session.is_active)}
-                          className={`p-2 rounded-xl transition-colors ${session.is_active
-                            ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-400'
-                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400'
+                          className={`p-2.5 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md ${session.is_active
+                            ? 'bg-gradient-to-br from-indigo-100 to-indigo-50 text-indigo-700 dark:from-indigo-900/40 dark:to-indigo-900/20 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/30 hover:border-indigo-300/50'
+                            : 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border border-slate-200/50 dark:border-slate-700/30 hover:bg-slate-200 dark:hover:bg-slate-700'
                             }`}
                           title={session.is_active ? 'Pausar' : 'Activar'}
                         >
@@ -373,14 +398,14 @@ function DashboardContent() {
                         </button>
                         <button
                           onClick={() => ConfigInstance(session.documentId)}
-                          className="p-2 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-400 transition-colors"
+                          className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border border-slate-200/50 dark:border-slate-700/30 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-300 shadow-sm hover:shadow-md"
                           title="Configurar"
                         >
                           <Cog6ToothIcon className="w-5 h-5" />
                         </button>
                         <button
                           onClick={() => DisconnectInstance(session.documentId)}
-                          className="p-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 transition-colors"
+                          className="p-2.5 rounded-xl bg-gradient-to-br from-red-100 to-red-50 dark:from-red-900/40 dark:to-red-900/20 text-red-700 dark:text-red-300 border border-red-200/50 dark:border-red-800/30 hover:border-red-300/50 transition-all duration-300 shadow-sm hover:shadow-md"
                           title="Desconectar"
                         >
                           <PowerIcon className="w-5 h-5" />
@@ -390,19 +415,22 @@ function DashboardContent() {
                   </div>
 
                   {/* Webhook Section */}
-                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 mb-4">
-                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block">Webhook URL</label>
+                  <div className="bg-gradient-to-r from-slate-100/50 to-slate-50/50 dark:from-slate-800/30 dark:to-slate-800/20 rounded-2xl p-4 mb-4 border border-slate-200/30 dark:border-slate-700/30 shadow-sm">
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-2.5 block flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
+                      Webhook URL
+                    </label>
                     <div className="flex gap-2">
                       <input
                         type="text"
                         value={webhookInputs[session.documentId] || ''}
                         onChange={(e) => setWebhookInputs({ ...webhookInputs, [session.documentId]: e.target.value })}
                         placeholder="https://tu-api.com/webhook"
-                        className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                        className="flex-1 bg-white dark:bg-slate-900/50 border border-slate-300/50 dark:border-slate-700/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50 transition-all duration-300"
                       />
                       <button
                         onClick={() => updateWebhook(session.documentId)}
-                        className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-4 py-2 rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
+                        className="bg-gradient-to-r from-indigo-600 to-indigo-700 dark:from-indigo-600 dark:to-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:from-indigo-700 hover:to-indigo-800 dark:hover:from-indigo-700 dark:hover:to-indigo-800 transition-all duration-300 shadow-md hover:shadow-lg active:scale-95"
                       >
                         Guardar
                       </button>
@@ -411,26 +439,28 @@ function DashboardContent() {
 
                   {/* QR Section */}
                   {(session.state === 'Disconnected' || session.state === 'Initializing') && (
-                    <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-6">
+                    <div className="mt-6 pt-6 border-t border-slate-200/30 dark:border-slate-700/30">
                       {session.qr ? (
-                        <div className="flex flex-col items-center">
-                          <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-4">
-                            <Image src={session.qr} alt="QR" width={200} height={200} className="w-48 h-48" />
+                        <div className="flex flex-col items-center animate-in fade-in duration-300">
+                          <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-lg border border-slate-200/50 dark:border-slate-700/50 mb-5 transform hover:scale-105 transition-transform duration-300">
+                            <Image src={session.qr} alt="QR" width={200} height={200} className="w-48 h-48 rounded-xl" />
                           </div>
-                          <p className="text-sm text-slate-500 flex items-center gap-2">
-                            <SparklesIcon className="w-4 h-4 text-indigo-500" />
+                          <p className="text-sm font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                            <SparklesIcon className="w-4 h-4 text-indigo-500 animate-pulse" />
                             Escanea con WhatsApp
                           </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">Código válido por 30 segundos</p>
                         </div>
                       ) : session.qr_loading ? (
                         <div className="flex flex-col items-center py-8">
-                          <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-                          <p className="text-sm text-slate-500">Generando código QR...</p>
+                          <div className="w-10 h-10 border-3 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mb-4"></div>
+                          <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Generando código QR...</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Esto puede tomar unos segundos</p>
                         </div>
                       ) : (
                         <button
                           onClick={() => fetchQrsForDisconnectedSessions(session.documentId)}
-                          className="w-full py-3 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-xl font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors flex items-center justify-center gap-2"
+                          className="w-full py-3.5 bg-gradient-to-r from-indigo-100 to-indigo-50 dark:from-indigo-900/40 dark:to-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-xl font-semibold hover:from-indigo-200 hover:to-indigo-100 dark:hover:from-indigo-900/50 dark:hover:to-indigo-900/40 transition-all duration-300 flex items-center justify-center gap-2.5 border border-indigo-200/50 dark:border-indigo-800/30 shadow-sm hover:shadow-md"
                         >
                           <QrCodeIcon className="w-5 h-5" />
                           Generar Código QR
@@ -442,11 +472,11 @@ function DashboardContent() {
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-100 dark:border-slate-800 border-dashed">
-              <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/20 rounded-full flex items-center justify-center mb-4">
-                <SparklesIcon className="w-8 h-8 text-indigo-500" />
+            <div className="flex flex-col items-center justify-center py-24 bg-gradient-to-br from-white to-slate-50/50 dark:from-slate-800/60 dark:to-slate-900/40 rounded-3xl border border-slate-200/50 dark:border-slate-700/50 border-dashed shadow-sm animate-in fade-in duration-500">
+              <div className="w-20 h-20 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/40 dark:to-purple-900/40 rounded-2xl flex items-center justify-center mb-6 shadow-md">
+                <SparklesIcon className="w-10 h-10 text-indigo-600 dark:text-indigo-400 animate-pulse" />
               </div>
-              <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Comienza ahora</h3>
+              <h3 className="text-2xl font-bold text-slate-800 dark:text-white mb-3">Comienza ahora</h3>
               <p className="text-slate-500 dark:text-slate-400 mb-6 text-center max-w-md">
                 No tienes ninguna instancia activa. Crea una nueva para empezar a enviar y recibir mensajes.
               </p>

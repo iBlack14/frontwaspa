@@ -116,26 +116,29 @@ export default function ChatList({ chats, selectedChat, onSelectChat, instanceId
   };
 
   return (
-    <div className="h-full bg-[#f8fafc] dark:bg-[#0f172a] flex flex-col border-r border-slate-200 dark:border-slate-800">
-      {/* Search - Pastel Design */}
-      <div className="flex-shrink-0 p-4 pb-2 bg-white/80 backdrop-blur-md dark:bg-[#1e293b]/80 sticky top-0 z-10">
-        <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-2.5 flex items-center transition-all focus-within:ring-2 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-900 focus-within:bg-white dark:focus-within:bg-slate-900 shadow-sm">
-          <MagnifyingGlassIcon className="w-5 h-5 text-slate-400 dark:text-slate-500 mr-3" />
-          <input
-            type="text"
-            placeholder="Buscar o iniciar un chat"
-            className="flex-1 bg-transparent text-sm text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 border-none focus:outline-none w-full"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+    <div className="h-full bg-gradient-to-b from-white/5 to-transparent dark:from-indigo-950/10 dark:to-transparent flex flex-col border-r border-slate-200 dark:border-slate-800">
+      {/* Search - Premium Design */}
+      <div className="flex-shrink-0 p-4 pb-3 bg-white/50 backdrop-blur-xl dark:bg-slate-900/30 sticky top-0 z-20 border-b border-slate-100/50 dark:border-slate-800/50">
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-indigo-500/5 to-purple-500/0 rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+          <div className="relative bg-white dark:bg-slate-800/60 rounded-2xl px-4 py-3 flex items-center transition-all border border-slate-200/50 dark:border-slate-700/50 group-focus-within:border-indigo-400/50 dark:group-focus-within:border-indigo-500/50 shadow-sm group-focus-within:shadow-lg group-focus-within:shadow-indigo-500/10">
+            <MagnifyingGlassIcon className="w-5 h-5 text-slate-400 dark:text-slate-500 mr-3 group-focus-within:text-indigo-500 transition-colors duration-300" />
+            <input
+              type="text"
+              placeholder="Buscar conversaciones..."
+              className="flex-1 bg-transparent text-sm text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 border-none focus:outline-none w-full"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex-shrink-0 px-4 pt-1 pb-4 bg-white/80 backdrop-blur-md dark:bg-[#1e293b]/80 border-b border-slate-100 dark:border-slate-800 flex gap-2 overflow-x-auto no-scrollbar">
+      {/* Filter Tabs - Modern Slider */}
+      <div className="flex-shrink-0 px-3 pt-3 pb-3 bg-white/30 dark:bg-slate-900/20 border-b border-slate-100/30 dark:border-slate-800/30 flex gap-2 overflow-x-auto no-scrollbar">
         {[
           { id: 'all', label: 'Todos' },
-          { id: 'chats', label: 'Chats' },
+          { id: 'chats', label: 'Directos' },
           { id: 'groups', label: 'Grupos' },
           { id: 'channels', label: 'Canales' },
           { id: 'status', label: 'Estados' }
@@ -143,9 +146,9 @@ export default function ChatList({ chats, selectedChat, onSelectChat, instanceId
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${activeTab === tab.id
-              ? 'bg-indigo-500 text-white shadow-md shadow-indigo-200 dark:shadow-none'
-              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+            className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 ${activeTab === tab.id
+              ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30 scale-105'
+              : 'bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:shadow-md'
               }`}
           >
             {tab.label}
@@ -349,78 +352,78 @@ function ChatItem({ chat, isSelected, onClick, isStatus }: { chat: Chat; isSelec
   return (
     <div
       onClick={onClick}
-      className={`group mx-2 mb-1 rounded-xl p-3 cursor-pointer transition-all duration-200 border border-transparent ${isSelected
-        ? 'bg-white dark:bg-[#1e293b] shadow-md border-indigo-50 dark:border-indigo-900/50 translate-x-1'
-        : 'hover:bg-white/60 dark:hover:bg-[#1e293b]/60 hover:shadow-sm'
+      className={`group mx-2 mb-2 rounded-2xl px-3 py-2.5 cursor-pointer transition-all duration-300 border ${isSelected
+        ? 'bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/40 dark:to-purple-950/40 border-indigo-200 dark:border-indigo-800/50 shadow-md shadow-indigo-200/50 dark:shadow-indigo-900/20 scale-102'
+        : 'border-transparent hover:bg-white/40 dark:hover:bg-slate-800/20 hover:border-indigo-200/30 dark:hover:border-indigo-800/30 hover:shadow-sm hover:shadow-indigo-200/20'
         }`}
     >
       <div className="flex items-center gap-3">
-        {/* Avatar - Pastel Ring */}
-        <div className="flex-shrink-0 relative">
-          <div className={`p-0.5 rounded-full ${isSelected ? 'bg-gradient-to-tr from-indigo-400 to-purple-400' : 'bg-transparent'}`}>
+        {/* Avatar - Premium Ring */}
+        <div className="flex-shrink-0 relative group/avatar">
+          <div className={`p-0.5 rounded-full transition-all duration-300 ${isSelected ? 'bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-400 shadow-lg shadow-indigo-500/50' : 'bg-gradient-to-tr from-indigo-400/20 to-purple-400/20 group-hover/avatar:from-indigo-400/40 group-hover/avatar:to-purple-400/40'}`}>
             {chat.profile_pic_url ? (
               <img
                 src={chat.profile_pic_url}
                 alt={chat.chat_name || 'Chat'}
-                className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-[#0f172a]"
+                className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-slate-900"
               />
             ) : (
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 border-white dark:border-[#0f172a] ${isStatus
-                ? 'bg-gradient-to-br from-pink-100 to-rose-200 dark:from-pink-900/30 dark:to-rose-900/30'
-                : 'bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800'}`}>
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900 transition-all duration-300 ${isStatus
+                ? 'bg-gradient-to-br from-pink-200 to-rose-300 dark:from-pink-900/50 dark:to-rose-900/50'
+                : 'bg-gradient-to-br from-indigo-200 to-purple-200 dark:from-indigo-800 dark:to-purple-800 group-hover/avatar:from-indigo-300 group-hover/avatar:to-purple-300'}`}>
 
                 {isStatus ? (
                   <div className="relative">
-                    <div className="absolute inset-0 bg-pink-400 rounded-full animate-ping opacity-20"></div>
-                    <SparklesIcon className="w-6 h-6 text-pink-500 dark:text-pink-400" />
+                    <div className="absolute inset-0 bg-pink-400 rounded-full animate-pulse opacity-30"></div>
+                    <SparklesIcon className="w-6 h-6 text-pink-600 dark:text-pink-300 relative z-10" />
                   </div>
                 ) : chat.chat_type === 'group' ? (
-                  <UserGroupIcon className="w-6 h-6 text-slate-500 dark:text-slate-400" />
+                  <UserGroupIcon className="w-6 h-6 text-indigo-700 dark:text-indigo-300" />
                 ) : (
-                  <UserIcon className="w-6 h-6 text-slate-500 dark:text-slate-400" />
+                  <UserIcon className="w-6 h-6 text-indigo-700 dark:text-indigo-300" />
                 )}
               </div>
             )}
           </div>
           {/* Online Status Indicator */}
           {!isStatus && (
-            <span className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-emerald-400 border-2 border-white dark:border-[#0f172a] rounded-full shadow-sm">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
+            <span className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full shadow-md shadow-emerald-500/50">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-pulse"></span>
             </span>
           )}
         </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex justify-between items-baseline mb-1">
-            <h3 className={`font-medium text-[15px] truncate max-w-[70%] ${
+          <div className="flex justify-between items-baseline mb-1.5 gap-2">
+            <h3 className={`font-semibold text-[15px] truncate transition-colors duration-300 ${
               isSelected
                 ? 'text-indigo-900 dark:text-indigo-100'
                 : 'text-slate-800 dark:text-slate-200 group-hover:text-indigo-700 dark:group-hover:text-indigo-300'
             }`}>
               {chat.chat_name || chat.chat_id.split('@')[0]}
             </h3>
-            <span className={`text-[11px] flex-shrink-0 ${
+            <span className={`text-[11px] flex-shrink-0 font-medium transition-colors duration-300 ${
               chat.unread_count > 0
-                ? 'text-indigo-500 font-semibold'
+                ? 'text-indigo-600 dark:text-indigo-400 font-bold'
                 : 'text-slate-400 dark:text-slate-500'
             }`}>
               {formatTime(chat.last_message_at)}
             </span>
           </div>
           
-          <div className="flex justify-between items-center">
-            <p className={`text-[13px] truncate max-w-[85%] flex items-center ${
+          <div className="flex justify-between items-center gap-2">
+            <p className={`text-[13px] truncate transition-colors duration-300 ${
               isSelected
-                ? 'text-indigo-700/80 dark:text-indigo-300/80'
-                : 'text-slate-500 dark:text-slate-400'
+                ? 'text-indigo-700/90 dark:text-indigo-300/90 font-medium'
+                : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300'
             }`}>
               {getPreviewText()}
             </p>
             
             {chat.unread_count > 0 && (
-              <span className="flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 bg-indigo-500 text-white text-[10px] font-bold rounded-full shadow-sm shadow-indigo-200 dark:shadow-none animate-in zoom-in duration-200">
-                {chat.unread_count}
+              <span className="flex items-center justify-center min-w-[1.5rem] h-5 px-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[10px] font-bold rounded-full shadow-lg shadow-indigo-500/40 animate-in zoom-in duration-300 flex-shrink-0">
+                {chat.unread_count > 99 ? '99+' : chat.unread_count}
               </span>
             )}
           </div>
