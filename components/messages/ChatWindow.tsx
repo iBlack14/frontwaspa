@@ -393,59 +393,59 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
   };
   return (
     <div className="h-full flex flex-col bg-gradient-to-b from-white/5 to-transparent dark:from-indigo-950/5 dark:to-transparent relative" onMouseUp={() => isRecording && stopRecordingAndSend()}>
-      {/* Header - Premium Glassmorphism */}
-      <div className="bg-white/40 backdrop-blur-xl dark:bg-slate-900/30 px-6 py-3.5 flex items-center justify-between shadow-sm border-b border-slate-200/50 dark:border-slate-800/50 z-10">
-        <div className="flex items-center gap-4">
-          <div className="relative group">
+      {/* Header - Premium Glassmorphism Responsive */}
+      <div className="bg-white/40 backdrop-blur-xl dark:bg-slate-900/30 px-3 sm:px-4 md:px-6 py-2.5 sm:py-3.5 flex items-center justify-between shadow-sm border-b border-slate-200/50 dark:border-slate-800/50 z-10 gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1">
+          <div className="relative group flex-shrink-0">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-400 rounded-full opacity-0 group-hover:opacity-20 blur transition duration-300"></div>
             {chat.profile_pic_url ? (
               <img
                 src={chat.profile_pic_url}
                 alt={chat.chat_name || 'Chat'}
-                className="relative w-11 h-11 rounded-full object-cover border-2 border-white dark:border-slate-800 shadow-md"
+                className="relative w-9 sm:w-10 md:w-11 h-9 sm:h-10 md:h-11 rounded-full object-cover border-2 border-white dark:border-slate-800 shadow-md"
               />
             ) : (
-              <div className="relative w-11 h-11 rounded-full bg-gradient-to-br from-indigo-200 to-purple-200 dark:from-indigo-800 dark:to-purple-800 flex items-center justify-center text-indigo-700 dark:text-indigo-200 font-bold text-lg border-2 border-white dark:border-slate-800 shadow-md">
+              <div className="relative w-9 sm:w-10 md:w-11 h-9 sm:h-10 md:h-11 rounded-full bg-gradient-to-br from-indigo-200 to-purple-200 dark:from-indigo-800 dark:to-purple-800 flex items-center justify-center text-indigo-700 dark:text-indigo-200 font-bold text-sm sm:text-base md:text-lg border-2 border-white dark:border-slate-800 shadow-md">
                 {chat.chat_name?.[0]?.toUpperCase() || '?'}
               </div>
             )}
-            <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full shadow-lg">
+            <span className="absolute bottom-0 right-0 w-3 sm:w-3.5 h-3 sm:h-3.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full shadow-lg">
               <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-pulse"></span>
             </span>
           </div>
-          <div>
-            <h2 className="font-bold text-slate-800 dark:text-slate-100 text-[16px] truncate max-w-[200px]">
+          <div className="min-w-0 flex-1">
+            <h2 className="font-bold text-slate-800 dark:text-slate-100 text-sm sm:text-base md:text-[16px] truncate">
               {chat.chat_name || chat.chat_id}
             </h2>
-            <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-              {chat.chat_type === 'group' ? 'Grupo activo' : 'En línea'}
+            <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1 truncate">
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse flex-shrink-0"></span>
+              <span className="truncate">{chat.chat_type === 'group' ? 'Grupo activo' : 'En línea'}</span>
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
           <button
             onClick={onRefresh}
-            className="p-2.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:text-slate-400 dark:hover:bg-indigo-900/30 rounded-xl transition-all duration-200 hover:shadow-md"
+            className="p-2 sm:p-2.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:text-slate-400 dark:hover:bg-indigo-900/30 rounded-lg sm:rounded-xl transition-all duration-200 hover:shadow-md"
             title="Actualizar"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 sm:w-5 h-4 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </button>
         </div>
       </div>
 
-      {/* Messages - Premium Background */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-gradient-to-br from-white/30 via-transparent to-white/20 dark:from-slate-900/10 dark:via-transparent dark:to-indigo-950/10">
+      {/* Messages - Premium Background Responsive */}
+      <div className="flex-1 overflow-y-auto p-2 sm:p-3 md:p-4 space-y-2 sm:space-y-3 custom-scrollbar bg-gradient-to-br from-white/30 via-transparent to-white/20 dark:from-slate-900/10 dark:via-transparent dark:to-indigo-950/10">
         {sortedMessages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center bg-white/60 dark:bg-slate-900/40 backdrop-blur-xl rounded-3xl p-8 shadow-lg border border-slate-100/50 dark:border-slate-800/50 max-w-sm animate-in fade-in zoom-in duration-500">
-              <div className="w-20 h-20 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/40 dark:to-purple-900/40 rounded-full flex items-center justify-center mx-auto mb-5 shadow-lg shadow-indigo-200/50 dark:shadow-indigo-900/20">
-                <PaperAirplaneIcon className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
+          <div className="flex items-center justify-center h-full px-4">
+            <div className="text-center bg-white/60 dark:bg-slate-900/40 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-lg border border-slate-100/50 dark:border-slate-800/50 max-w-sm animate-in fade-in zoom-in duration-500">
+              <div className="w-16 sm:w-20 h-16 sm:h-20 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/40 dark:to-purple-900/40 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-5 shadow-lg shadow-indigo-200/50 dark:shadow-indigo-900/20">
+                <PaperAirplaneIcon className="w-8 sm:w-10 h-8 sm:h-10 text-indigo-600 dark:text-indigo-400" />
               </div>
-              <h3 className="text-slate-800 dark:text-slate-200 font-semibold text-lg mb-2">Comienza la conversación</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              <h3 className="text-slate-800 dark:text-slate-200 font-semibold text-base sm:text-lg mb-2">Comienza la conversación</h3>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
                 Envía un mensaje para iniciar el chat con <span className="font-semibold text-indigo-600 dark:text-indigo-400">{chat.chat_name || 'este contacto'}</span>
               </p>
             </div>
@@ -465,30 +465,30 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input - Premium Floating Design */}
-      <div className="bg-white/40 backdrop-blur-xl dark:bg-slate-900/30 px-4 py-3.5 border-t border-slate-200/50 dark:border-slate-800/50 relative z-20">
-        <div className="max-w-4xl mx-auto flex items-end gap-2.5">
+      {/* Input - Premium Floating Design Responsive */}
+      <div className="bg-white/40 backdrop-blur-xl dark:bg-slate-900/30 px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-3.5 border-t border-slate-200/50 dark:border-slate-800/50 relative z-20">
+        <div className="max-w-4xl mx-auto flex items-end gap-1.5 sm:gap-2 md:gap-2.5">
           {showEmojiPicker && (
-            <div className="absolute bottom-24 left-4 z-50 shadow-2xl rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 animate-in fade-in zoom-in duration-200">
-              <EmojiPicker onEmojiClick={onEmojiClick} width={300} height={400} />
+            <div className="absolute bottom-20 sm:bottom-24 left-2 sm:left-4 z-50 shadow-2xl rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 animate-in fade-in zoom-in duration-200">
+              <EmojiPicker onEmojiClick={onEmojiClick} width={270} height={350} />
             </div>
           )}
 
           {!isRecording ? (
             <>
-              <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800/60 rounded-full p-1.5 border border-slate-200/50 dark:border-slate-700/50 shadow-sm">
+              <div className="hidden sm:flex items-center gap-1 sm:gap-1.5 bg-white dark:bg-slate-800/60 rounded-full p-1 sm:p-1.5 border border-slate-200/50 dark:border-slate-700/50 shadow-sm">
                 <button
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  className={`p-2 rounded-full transition-all duration-300 ${showEmojiPicker ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20'}`}
+                  className={`p-1.5 sm:p-2 rounded-full transition-all duration-300 ${showEmojiPicker ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20'}`}
                 >
-                  <FaceSmileIcon className="w-6 h-6" />
+                  <FaceSmileIcon className="w-5 sm:w-6 h-5 sm:h-6" />
                 </button>
-                <button className="p-2 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-full transition-all duration-300">
-                  <PaperClipIcon className="w-6 h-6" />
+                <button className="p-1.5 sm:p-2 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-full transition-all duration-300">
+                  <PaperClipIcon className="w-5 sm:w-6 h-5 sm:h-6" />
                 </button>
               </div>
 
-              <div className="flex-1 bg-white dark:bg-slate-800/60 rounded-2xl flex items-center px-5 py-3 border border-slate-200/50 dark:border-slate-700/50 focus-within:border-indigo-400/50 focus-within:ring-2 focus-within:ring-indigo-200/50 dark:focus-within:ring-indigo-900/30 transition-all duration-300 shadow-sm">
+              <div className="flex-1 bg-white dark:bg-slate-800/60 rounded-xl sm:rounded-2xl flex items-center px-3 sm:px-5 py-2 sm:py-3 border border-slate-200/50 dark:border-slate-700/50 focus-within:border-indigo-400/50 focus-within:ring-2 focus-within:ring-indigo-200/50 dark:focus-within:ring-indigo-900/30 transition-all duration-300 shadow-sm">
                 <input
                   type="text"
                   value={newMessage}
@@ -497,7 +497,7 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
                   onPaste={handlePaste}
                   placeholder="Escribe un mensaje..."
                   disabled={sending}
-                  className="flex-1 bg-transparent text-[15px] text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 border-none focus:outline-none"
+                  className="flex-1 bg-transparent text-sm sm:text-[15px] text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 border-none focus:outline-none"
                 />
               </div>
 
@@ -505,12 +505,12 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
                 <button
                   onClick={pastedImage ? sendPastedImage : handleSendMessage}
                   disabled={sending}
-                  className="p-3.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 text-white rounded-full shadow-lg shadow-indigo-500/40 hover:shadow-xl hover:shadow-indigo-500/60 hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center"
+                  className="p-2 sm:p-3.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 text-white rounded-full shadow-lg shadow-indigo-500/40 hover:shadow-xl hover:shadow-indigo-500/60 hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center flex-shrink-0"
                 >
                   {sending ? (
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="w-4 sm:w-5 h-4 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
-                    <PaperAirplaneIcon className="w-5 h-5 transform rotate-90" />
+                    <PaperAirplaneIcon className="w-4 sm:w-5 h-4 sm:h-5 transform rotate-90" />
                   )}
                 </button>
               ) : (
@@ -520,32 +520,32 @@ export default function ChatWindow({ chat, messages, onRefresh, onSendMessage }:
                   onTouchStart={(e) => { e.preventDefault(); startRecording(); }}
                   onTouchEnd={(e) => { e.preventDefault(); stopRecordingAndSend(); }}
                   disabled={sending}
-                  className="p-3.5 bg-white dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-full transition-all duration-300 shadow-sm border border-slate-200/50 dark:border-slate-700/50 cursor-pointer hover:shadow-md active:scale-110"
+                  className="p-2 sm:p-3.5 bg-white dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-full transition-all duration-300 shadow-sm border border-slate-200/50 dark:border-slate-700/50 cursor-pointer hover:shadow-md active:scale-110 flex-shrink-0"
                 >
-                  <MicrophoneIcon className="w-5 h-5" />
+                  <MicrophoneIcon className="w-4 sm:w-5 h-4 sm:h-5" />
                 </button>
               )}
             </>
           ) : (
-            <div className="flex-1 flex items-center gap-3 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-2xl px-5 py-3 border border-indigo-200/50 dark:border-indigo-800/50 shadow-lg shadow-indigo-500/10 dark:shadow-indigo-900/20 animate-pulse">
-              <div className="flex items-center gap-2 flex-1">
-                <div className="w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
-                <span className="text-sm font-bold text-indigo-700 dark:text-indigo-300 tracking-wider">
+            <div className="flex-1 flex flex-col sm:flex-row items-center gap-2 sm:gap-3 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-xl sm:rounded-2xl px-3 sm:px-5 py-2 sm:py-3 border border-indigo-200/50 dark:border-indigo-800/50 shadow-lg shadow-indigo-500/10 dark:shadow-indigo-900/20 animate-pulse">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="w-2.5 sm:w-3 h-2.5 sm:h-3 bg-red-500 rounded-full animate-ping flex-shrink-0"></div>
+                <span className="text-xs sm:text-sm font-bold text-indigo-700 dark:text-indigo-300 tracking-wider truncate">
                   Grabando: {formatDuration(recordingDuration)}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <button
                   onClick={cancelRecording}
-                  className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-all duration-300 shadow-sm"
+                  className="p-1.5 sm:p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-all duration-300 shadow-sm"
                 >
-                  <XMarkIcon className="w-6 h-6" />
+                  <XMarkIcon className="w-4 sm:w-6 h-4 sm:h-6" />
                 </button>
                 <button
                   onClick={stopRecordingAndSend}
-                  className="p-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-full shadow-lg shadow-indigo-500/40 hover:shadow-xl active:scale-95 transition-all duration-200"
+                  className="p-2 sm:p-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-full shadow-lg shadow-indigo-500/40 hover:shadow-xl active:scale-95 transition-all duration-200"
                 >
-                  <PaperAirplaneIcon className="w-5 h-5 transform rotate-90" />
+                  <PaperAirplaneIcon className="w-4 sm:w-5 h-4 sm:h-5 transform rotate-90" />
                 </button>
               </div>
             </div>
