@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import Image from 'next/image';
 import { toast } from 'sonner';
 import axios from 'axios';
 import Sidebard from '../../components/dashboard/index';
@@ -24,7 +23,9 @@ import {
   BoltIcon,
   StarIcon,
   CheckCircleIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  XMarkIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
 
 interface WorkspaceStruture {
@@ -58,6 +59,31 @@ interface ResourceUsage {
   };
 }
 
+const planData = {
+  basic: {
+    name: 'Basic',
+    price: 'S/49',
+    memory: '512MB',
+    cpu: '0.5 vCPU',
+    features: ['5 workflows', '100 executions/mes', 'Soporte email']
+  },
+  premium: {
+    name: 'Premium',
+    price: 'S/99',
+    memory: '1GB',
+    cpu: '1 vCPU',
+    features: ['50 workflows', '500 executions/mes', 'Soporte prioritario'],
+    popular: true
+  },
+  enterprise: {
+    name: 'Enterprise',
+    price: 'S/299',
+    memory: '2GB',
+    cpu: '2 vCPU',
+    features: ['Workflows ilimitados', 'Executions ilimitadas', 'Account Manager']
+  }
+};
+
 function DashboardContent() {
   const { session, status } = useAuth();
   const router = useRouter();
@@ -74,14 +100,11 @@ function DashboardContent() {
   const [userPlan, setUserPlan] = useState<string>('free');
   const [planLimits, setPlanLimits] = useState<any>(null);
   const [selectedPlanForInstance, setSelectedPlanForInstance] = useState<string>('');
-
+  const [modalStep, setModalStep] = useState<number>(1);
   const [showFields, setShowFields] = useState<{ [key: string]: boolean }>({});
 
   const toggleShow = (key: string) => {
-    setShowFields(prev => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
+    setShowFields(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const username = session?.user?.user_metadata?.username || session?.user?.email?.split('@')[0] || 'Usuario';
@@ -90,13 +113,10 @@ function DashboardContent() {
     if (!session?.access_token) return;
     try {
       const { data } = await axios.get(`/api/suite?token=${session.access_token}`, {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
+        headers: { Authorization: `Bearer ${session.access_token}` },
       });
 
       if (!data || !Array.isArray(data) || data.length === 0 || !data[0].suites) {
-        console.warn('No workspaces found or invalid structure');
         setWorkspaceStruture([]);
         return;
       }
@@ -120,9 +140,8 @@ function DashboardContent() {
         }
       }
     } catch (err: any) {
-      console.error('[fetchWorkspaces] Error:', err);
       setError(err.message || 'Error al cargar las sesiones.');
-      toast.error('No se pudieron cargar las instancias de Suite');
+      toast.error('No se pudieron cargar las instancias');
     }
   };
 
@@ -140,7 +159,6 @@ function DashboardContent() {
       };
       setPlanLimits(limits[plan as keyof typeof limits] || limits.free);
     } catch (err) {
-      console.error('Error fetching user plan:', err);
       setUserPlan('free');
     }
   };
@@ -152,7 +170,6 @@ function DashboardContent() {
       setProducts(data);
       setError(null);
     } catch (err: any) {
-      console.error('[fetchProducts] Error:', err);
       setError(err.message || 'Error al cargar los productos.');
     } finally {
       setLoadingProducts(false);
@@ -163,8 +180,6 @@ function DashboardContent() {
     if (!workspace.name) return;
 
     try {
-      console.log(`Checking status for ${workspace.name}...`);
-
       const response = await axios.post('/api/suite/status', {
         name_service: workspace.name,
       }, {
@@ -175,54 +190,23 @@ function DashboardContent() {
       const statusData = response.data;
 
       if (statusData.instance_ready && statusData.n8n_ready) {
-        toast.success(`¡${workspace.name} está listo y funcionando! 🎉`);
+        toast.success(`${workspace.name} esta listo!`);
         fetchWorkspaces();
       } else if (statusData.status === 'running' && !statusData.n8n_ready) {
-        toast.info(`${workspace.name}: Contenedor activo, N8N inicializando base de datos. ${statusData.note || 'Intenta de nuevo en unos minutos.'}`, {
-          duration: 6000
-        });
+        toast.info(`${workspace.name}: Inicializando base de datos...`, { duration: 6000 });
       } else if (statusData.status === 'initializing') {
-        toast.info(`${workspace.name}: ${statusData.message || 'Aún se está inicializando...'}`, {
-          duration: 5000
-        });
-      } else if (statusData.status === 'starting') {
-        toast.info(`${workspace.name}: Contenedor activo, esperando que N8N esté listo...`, {
-          duration: 4000
-        });
-      } else if (statusData.status === 'dns_error') {
-        toast.error(`${workspace.name}: Error de DNS. ${statusData.note || 'Verificar configuración de Easypanel.'}`, {
-          duration: 8000
-        });
-      } else if (statusData.status === 'backend_unavailable') {
-        toast.warning(`${workspace.name}: No se pudo verificar con backend. ${statusData.message || ''}`, {
-          duration: 6000
-        });
+        toast.info(`${workspace.name}: ${statusData.message || 'Inicializando...'}`, { duration: 5000 });
       } else {
-        toast.info(`${workspace.name}: ${statusData.message || 'Estado desconocido'}`, {
-          duration: 4000
-        });
+        toast.info(`${workspace.name}: ${statusData.message || 'Verificando estado...'}`, { duration: 4000 });
       }
-
     } catch (error: any) {
-      console.error(`Status check error:`, error);
-
       const errorMessage = error.response?.data?.error || error.message || 'Error desconocido';
-
-      if (error.response?.status === 404) {
-        toast.error(`${workspace.name}: Instancia no encontrada`);
-      } else if (error.response?.status === 403) {
-        toast.error(`${workspace.name}: ${error.response.data.message || 'API Key requerida'}`);
-      } else if (error.code === 'ECONNABORTED') {
-        toast.warning(`${workspace.name}: Verificación tomó demasiado tiempo. Intenta de nuevo.`);
-      } else {
-        toast.error(`${workspace.name}: Error al verificar estado - ${errorMessage}`);
-      }
+      toast.error(`Error al verificar ${workspace.name}: ${errorMessage}`);
     }
   };
 
   const fetchResourceUsage = async () => {
     if (!selectedWorkspace?.name) {
-      console.warn('No workspace selected');
       setResourceUsage(null);
       return;
     }
@@ -247,17 +231,9 @@ function DashboardContent() {
             out: data.network.out,
           },
         });
-      } else {
-        console.warn('Invalid response structure:', res.data);
-        toast.error('Respuesta inválida del servidor');
       }
     } catch (error: any) {
-      console.error('Error al cargar uso de recursos:', {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-      });
-      toast.error(error.response?.data?.error || 'Error al cargar el uso de recursos');
+      toast.error(error.response?.data?.error || 'Error al cargar recursos');
     }
   };
 
@@ -271,20 +247,14 @@ function DashboardContent() {
     }
   }, [status]);
 
-  // Auto-check status for initializing instances
   useEffect(() => {
     if (workspace.length === 0) return;
-
     const initializingInstances = workspace.filter(ws => ws.credencials?.status === 'initializing');
-
     if (initializingInstances.length === 0) return;
 
-    // Check status every 30 seconds for initializing instances
     const interval = setInterval(() => {
-      initializingInstances.forEach(instance => {
-        checkInstanceStatus(instance);
-      });
-    }, 30000); // 30 seconds
+      initializingInstances.forEach(instance => checkInstanceStatus(instance));
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [workspace]);
@@ -299,55 +269,9 @@ function DashboardContent() {
 
   useEffect(() => {
     if (isModalOpen) {
-      const previousActiveElement = document.activeElement as HTMLElement;
-
-      setTimeout(() => {
-        const firstInput = document.querySelector<HTMLInputElement>('input[type="text"]');
-        if (firstInput) {
-          firstInput.focus();
-        }
-      }, 100);
-
-      const handleEscape = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-          handleCloseModal();
-        }
-      };
-
-      const handleTabKey = (e: KeyboardEvent) => {
-        if (e.key === 'Tab') {
-          const modal = document.querySelector('[role="dialog"]');
-          if (!modal) return;
-
-          const focusableElements = modal.querySelectorAll<HTMLElement>(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-          );
-          const firstElement = focusableElements[0];
-          const lastElement = focusableElements[focusableElements.length - 1];
-
-          if (e.shiftKey && document.activeElement === firstElement) {
-            e.preventDefault();
-            lastElement.focus();
-          } else if (!e.shiftKey && document.activeElement === lastElement) {
-            e.preventDefault();
-            firstElement.focus();
-          }
-        }
-      };
-
-      document.addEventListener('keydown', handleEscape);
-      document.addEventListener('keydown', handleTabKey);
-
       document.body.style.overflow = 'hidden';
-
       return () => {
-        document.removeEventListener('keydown', handleEscape);
-        document.removeEventListener('keydown', handleTabKey);
         document.body.style.overflow = 'unset';
-
-        if (previousActiveElement) {
-          previousActiveElement.focus();
-        }
       };
     }
   }, [isModalOpen]);
@@ -355,92 +279,86 @@ function DashboardContent() {
   const createNewWorkSpace = async (productName: string, fields: ProductField) => {
     try {
       setIsLoading(true);
-
       const serviceName = fields.service_name || fields.Service_Name || '';
 
       if (!serviceName) {
-        toast.error('Por favor ingresa un nombre para el servicio');
+        toast.error('Ingresa un nombre para el servicio');
         setIsLoading(false);
         return;
       }
 
       if (/[A-Z]/.test(serviceName)) {
-        toast.error('El nombre del servicio no debe contener mayúsculas');
+        toast.error('El nombre no debe contener mayusculas');
         setIsLoading(false);
         return;
       }
 
       if (serviceName.trim() === 'n8n_free_treal') {
-        toast.error('El nombre "n8n_free_treal" está reservado por el sistema');
+        toast.error('Nombre reservado por el sistema');
         setIsLoading(false);
         return;
       }
 
       if (serviceName.length < 3) {
-        toast.error('El nombre del servicio debe tener al menos 3 caracteres');
+        toast.error('Minimo 3 caracteres');
         setIsLoading(false);
         return;
       }
 
       if (planLimits && workspace.length >= planLimits.instances) {
-        toast.error(`Has alcanzado el límite de ${planLimits.instances} instancia(s) para tu plan ${userPlan}`);
+        toast.error(`Limite de ${planLimits.instances} instancia(s) alcanzado`);
         setIsLoading(false);
         return;
       }
 
-      toast.loading('Creando instancia de n8n...', { id: 'creating' });
+      toast.loading('Creando instancia...', { id: 'creating' });
 
-      // send session access token if needed for backend validation
-      await axios.post(
-        '/api/suite/create-n8n',
-        {
-          service_name: serviceName,
-          product_name: productName,
-          plan: selectedPlanForInstance
-        },
-        { headers: { 'Content-Type': 'application/json' } }
-      );
+      await axios.post('/api/suite/create-n8n', {
+        service_name: serviceName,
+        product_name: productName,
+        plan: selectedPlanForInstance
+      }, { headers: { 'Content-Type': 'application/json' } });
 
-      toast.success('Instancia N8N creada exitosamente. El contenedor se está configurando.', {
+      toast.success('Instancia creada exitosamente', {
         id: 'creating',
         duration: 8000,
-        description: 'N8N inicializará su base de datos (puede tomar varios minutos). El sistema verificará automáticamente cada 30 segundos.'
+        description: 'El contenedor se esta configurando. Verificacion automatica cada 30s.'
       });
 
       fetchWorkspaces();
       handleCloseModal();
     } catch (error: any) {
-      console.error('Error al crear nueva instancia:', error.response?.data || error.message);
-
       const errorData = error.response?.data;
       const isTimeoutError = errorData?.error_type === 'TIMEOUT';
       const suiteWasCreated = errorData?.suite_created === true;
 
       if (isTimeoutError && suiteWasCreated) {
-        toast.success('Instancia creada exitosamente. El contenedor se está configurando.', {
+        toast.success('Instancia creada. Configurando contenedor...', {
           id: 'creating',
-          duration: 8000,
-          description: 'Puede tomar unos minutos adicionales. Use el botón de verificación para comprobar el progreso.'
+          duration: 8000
         });
         fetchWorkspaces();
       } else {
-        toast.error(errorData?.error || errorData?.message || 'Error al crear nueva instancia', { id: 'creating' });
+        toast.error(errorData?.error || 'Error al crear instancia', { id: 'creating' });
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleOpenModal = (product: Product) => {
-    setSelectedProduct(product);
-    const initialValues: ProductField = {};
-    product.fields.forEach((field) => {
-      Object.entries(field).forEach(([key, value]) => {
-        initialValues[key] = value;
+  const handleOpenModal = (product?: Product) => {
+    if (product) {
+      setSelectedProduct(product);
+      const initialValues: ProductField = {};
+      product.fields.forEach((field) => {
+        Object.entries(field).forEach(([key, value]) => {
+          initialValues[key] = value;
+        });
       });
-    });
-    setFormValues(initialValues);
+      setFormValues(initialValues);
+    }
     setSelectedPlanForInstance('');
+    setModalStep(1);
     setIsModalOpen(true);
   };
 
@@ -449,41 +367,48 @@ function DashboardContent() {
     setSelectedProduct(null);
     setFormValues({});
     setSelectedPlanForInstance('');
+    setModalStep(1);
   };
 
   const handleConfirm = () => {
     if (!selectedPlanForInstance) {
-      toast.error('Por favor selecciona un plan primero');
+      toast.error('Selecciona un plan primero');
       return;
     }
-    if (selectedProduct) {
-      createNewWorkSpace(selectedProduct.name, formValues);
-      handleCloseModal();
-    } else {
-      toast.error('Por favor selecciona un producto.');
+    if (!selectedProduct) {
+      toast.error('Selecciona un producto primero');
+      return;
     }
+    createNewWorkSpace(selectedProduct.name, formValues);
   };
 
   const handleInputChange = (key: string, value: string) => {
     setFormValues((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleNextStep = () => {
+    if (modalStep === 1 && !selectedPlanForInstance) {
+      toast.error('Selecciona un plan');
+      return;
+    }
+    if (modalStep === 2 && !selectedProduct) {
+      toast.error('Selecciona un producto');
+      return;
+    }
+    setModalStep(prev => prev + 1);
+  };
+
   const init = async () => {
     if (!selectedWorkspace || isLoading) return;
-
     setIsLoading(true);
     try {
       await axios.post('/api/suite/init', {
         token: session?.access_token,
         name_service: selectedWorkspace?.name,
-      }, {
-        headers: { 'Content-Type': 'application/json' },
-      });
+      }, { headers: { 'Content-Type': 'application/json' } });
 
-      toast.success(`${selectedWorkspace?.name} iniciada con éxito`);
-
+      toast.success(`${selectedWorkspace?.name} iniciada`);
       setSelectedWorkspace(prev => prev ? { ...prev, activo: true } : null);
-
       setWorkspaceStruture(prev =>
         prev.map(ws =>
           ws.documentId === selectedWorkspace.documentId
@@ -491,10 +416,9 @@ function DashboardContent() {
             : ws
         )
       );
-
       fetchWorkspaces();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error al inicializar una suite');
+      toast.error(err.response?.data?.message || 'Error al iniciar');
     } finally {
       setIsLoading(false);
     }
@@ -502,20 +426,15 @@ function DashboardContent() {
 
   const pause = async () => {
     if (!selectedWorkspace || isLoading) return;
-
     setIsLoading(true);
     try {
       await axios.post('/api/suite/pause', {
         token: session?.access_token,
         name_service: selectedWorkspace?.name,
-      }, {
-        headers: { 'Content-Type': 'application/json' },
-      });
+      }, { headers: { 'Content-Type': 'application/json' } });
 
-      toast.success(`${selectedWorkspace?.name} pausada con éxito`);
-
+      toast.success(`${selectedWorkspace?.name} pausada`);
       setSelectedWorkspace(prev => prev ? { ...prev, activo: false } : null);
-
       setWorkspaceStruture(prev =>
         prev.map(ws =>
           ws.documentId === selectedWorkspace.documentId
@@ -523,10 +442,9 @@ function DashboardContent() {
             : ws
         )
       );
-
       fetchWorkspaces();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error al pausar una suite');
+      toast.error(err.response?.data?.message || 'Error al pausar');
     } finally {
       setIsLoading(false);
     }
@@ -534,119 +452,110 @@ function DashboardContent() {
 
   const dele = async () => {
     if (!selectedWorkspace || isLoading) return;
-
     setIsLoading(true);
     try {
       await axios.post('/api/suite/delete', {
         token: session?.access_token,
         name_service: selectedWorkspace?.name,
-      }, {
-        headers: { 'Content-Type': 'application/json' },
-      });
+      }, { headers: { 'Content-Type': 'application/json' } });
 
-      toast.success(`${selectedWorkspace?.name} eliminada con éxito`);
-
+      toast.success(`${selectedWorkspace?.name} eliminada`);
       setWorkspaceStruture(prev =>
         prev.filter(ws => ws.documentId !== selectedWorkspace.documentId)
       );
       setSelectedWorkspace(null);
-
       fetchWorkspaces();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error al eliminar una suite');
+      toast.error(err.response?.data?.message || 'Error al eliminar');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-transparent">
+    <div className="flex min-h-screen bg-zinc-950">
+      <Head>
+        <title>Suite - BLXK Connect</title>
+      </Head>
 
       {/* Left Sidebar */}
-      <div className="w-80 p-6 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold mb-1 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Connect BLXK</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Suite Management</p>
+      <div className="w-72 lg:w-80 p-4 lg:p-6 bg-zinc-900 border-r border-zinc-800 flex flex-col">
+        <div className="mb-6">
+          <h1 className="text-xl font-bold text-white mb-1">Connect Suite</h1>
+          <p className="text-xs text-zinc-500">Gestiona tus instancias</p>
         </div>
 
-        <div className="mb-8">
-          <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-800/30">
-            <p className="text-xs font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1">Bienvenido</p>
-            <p className="text-lg font-bold text-slate-800 dark:text-white truncate">{username} 👋</p>
+        <div className="mb-6">
+          <div className="p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
+            <p className="text-[10px] font-medium text-emerald-400 uppercase tracking-wider mb-1">Bienvenido</p>
+            <p className="text-sm font-semibold text-white truncate">{username}</p>
           </div>
         </div>
 
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-            Tus Instancias
-          </h2>
+          <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Tus Instancias</h2>
           <button
-            onClick={() => setIsModalOpen(true)}
-            className="p-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-800/50 transition-colors"
-            title="Crear nueva instancia"
+            onClick={() => handleOpenModal()}
+            className="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg hover:bg-emerald-500/20 transition-colors"
+            title="Nueva instancia"
           >
-            <PlusIcon className="w-5 h-5" />
+            <PlusIcon className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar">
           {error && (
-            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-              <p className="text-red-600 dark:text-red-400 text-xs">{error}</p>
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+              <p className="text-red-400 text-xs">{error}</p>
             </div>
           )}
 
           {workspace.length > 0 ? (
-            workspace.map((workspaces) => (
+            workspace.map((ws) => (
               <button
-                key={workspaces.documentId}
-                onClick={() => setSelectedWorkspace(workspaces)}
-                className={`w-full group flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 ${selectedWorkspace?.documentId === workspaces.documentId
-                  ? 'bg-white dark:bg-slate-800 border-2 border-indigo-500 shadow-lg shadow-indigo-500/10'
-                  : 'bg-white dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md'
-                  }`}
+                key={ws.documentId}
+                onClick={() => setSelectedWorkspace(ws)}
+                className={`w-full group flex items-center gap-3 p-3 rounded-xl text-left transition-all ${
+                  selectedWorkspace?.documentId === ws.documentId
+                    ? 'bg-zinc-800 border border-emerald-500/50'
+                    : 'bg-zinc-800/30 border border-transparent hover:bg-zinc-800/50 hover:border-zinc-700'
+                }`}
               >
-                <div className="relative flex-shrink-0">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${workspaces.activo
-                    ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
-                    : workspaces.credencials?.status === 'initializing'
-                      ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400'
-                      : 'bg-slate-100 dark:bg-slate-700 text-slate-400'
-                    }`}>
-                    <CubeIcon className="w-6 h-6" />
-                  </div>
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+                  ws.activo
+                    ? 'bg-emerald-500/20 text-emerald-400'
+                    : ws.credencials?.status === 'initializing'
+                      ? 'bg-amber-500/20 text-amber-400'
+                      : 'bg-zinc-700 text-zinc-500'
+                }`}>
+                  <CubeIcon className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`font-semibold truncate ${selectedWorkspace?.documentId === workspaces.documentId
-                    ? 'text-indigo-600 dark:text-indigo-400'
-                    : 'text-slate-700 dark:text-slate-200'
-                    }`}>
-                    {workspaces.name || 'Sin nombre'}
+                  <p className={`text-sm font-medium truncate ${
+                    selectedWorkspace?.documentId === ws.documentId ? 'text-white' : 'text-zinc-300'
+                  }`}>
+                    {ws.name || 'Sin nombre'}
                   </p>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${workspaces.activo
-                      ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
-                      : workspaces.credencials?.status === 'initializing'
-                        ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-                        : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                      }`}>
-                      {workspaces.activo
-                        ? 'Activo'
-                        : workspaces.credencials?.status === 'initializing'
-                          ? 'Iniciando'
-                          : 'Inactivo'
-                      }
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                      ws.activo
+                        ? 'bg-emerald-500/20 text-emerald-400'
+                        : ws.credencials?.status === 'initializing'
+                          ? 'bg-amber-500/20 text-amber-400'
+                          : 'bg-red-500/20 text-red-400'
+                    }`}>
+                      {ws.activo ? 'Activo' : ws.credencials?.status === 'initializing' ? 'Iniciando' : 'Inactivo'}
                     </span>
-                    {workspaces.credencials?.status === 'initializing' && (
+                    {ws.credencials?.status === 'initializing' && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          checkInstanceStatus(workspaces);
+                          checkInstanceStatus(ws);
                         }}
-                        className="p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors animate-pulse"
-                        title="Verificar estado - N8N inicializando"
+                        className="p-0.5 hover:bg-zinc-700 rounded transition-colors"
+                        title="Verificar estado"
                       >
-                        <ArrowPathIcon className="w-3 h-3 animate-spin" />
+                        <ArrowPathIcon className="w-3 h-3 text-amber-400 animate-spin" />
                       </button>
                     )}
                   </div>
@@ -654,25 +563,31 @@ function DashboardContent() {
               </button>
             ))
           ) : (
-            <div className="text-center py-8 px-4 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
-              <SparklesIcon className="w-8 h-8 mx-auto mb-2 text-slate-400" />
-              <p className="text-sm text-slate-500">No tienes instancias</p>
+            <div className="text-center py-8 px-4 border border-dashed border-zinc-700 rounded-xl">
+              <SparklesIcon className="w-8 h-8 mx-auto mb-2 text-zinc-600" />
+              <p className="text-sm text-zinc-500">No tienes instancias</p>
+              <button
+                onClick={() => handleOpenModal()}
+                className="mt-3 text-xs text-emerald-400 hover:text-emerald-300 font-medium"
+              >
+                Crear primera instancia
+              </button>
             </div>
           )}
         </div>
       </div>
 
       {/* Right Content Area */}
-      <div className="flex-1 p-8 overflow-y-auto">
+      <div className="flex-1 p-6 lg:p-8 overflow-y-auto">
         {selectedWorkspace ? (
           <div className="max-w-5xl mx-auto animate-fadeIn">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
               <div>
-                <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-3">
+                <h2 className="text-2xl font-bold text-white mb-1 flex items-center gap-3">
                   {selectedWorkspace.name}
                   {selectedWorkspace.activo && (
-                    <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded-full uppercase tracking-wide">
+                    <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs font-medium rounded-full">
                       Activo
                     </span>
                   )}
@@ -682,93 +597,99 @@ function DashboardContent() {
                     href={selectedWorkspace.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline text-sm font-medium"
+                    className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 text-sm"
                   >
                     {selectedWorkspace.url}
-                    <ArrowTopRightOnSquareIcon className="w-4 h-4" />
+                    <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5" />
                   </a>
                 )}
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 {selectedWorkspace.activo ? (
                   <button
                     onClick={pause}
                     disabled={isLoading}
-                    className="flex items-center gap-2 px-4 py-2 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-xl hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors font-medium disabled:opacity-50"
+                    className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-400 rounded-lg hover:bg-amber-500/20 transition-colors text-sm font-medium disabled:opacity-50"
                   >
-                    <StopIcon className="w-5 h-5" />
+                    <StopIcon className="w-4 h-4" />
                     {isLoading ? 'Pausando...' : 'Pausar'}
                   </button>
                 ) : (
                   <button
                     onClick={init}
                     disabled={isLoading}
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-xl hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors font-medium disabled:opacity-50"
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-400 rounded-lg hover:bg-emerald-500/20 transition-colors text-sm font-medium disabled:opacity-50"
                   >
-                    <PlayIcon className="w-5 h-5" />
+                    <PlayIcon className="w-4 h-4" />
                     {isLoading ? 'Iniciando...' : 'Iniciar'}
                   </button>
                 )}
                 <button
                   onClick={dele}
                   disabled={isLoading}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-xl hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors font-medium disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors text-sm font-medium disabled:opacity-50"
                 >
-                  <TrashIcon className="w-5 h-5" />
+                  <TrashIcon className="w-4 h-4" />
                   {isLoading ? 'Eliminando...' : 'Eliminar'}
                 </button>
               </div>
             </div>
 
             {/* Resource Usage */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-white dark:bg-[#1e293b] p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+              <div className="bg-zinc-900 p-5 rounded-xl border border-zinc-800">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
-                    <CpuChipIcon className="w-6 h-6" />
+                  <div className="p-2 bg-blue-500/10 text-blue-400 rounded-lg">
+                    <CpuChipIcon className="w-5 h-5" />
                   </div>
-                  <h3 className="font-bold text-slate-700 dark:text-slate-200">CPU</h3>
+                  <h3 className="font-medium text-zinc-300">CPU</h3>
                 </div>
-                <div className="text-3xl font-bold text-slate-800 dark:text-white mb-1">
+                <div className="text-2xl font-bold text-white mb-2">
                   {resourceUsage?.cpu || 0}%
                 </div>
-                <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2">
-                  <div className="bg-blue-500 h-2 rounded-full transition-all duration-500" style={{ width: `${resourceUsage?.cpu || 0}%` }}></div>
+                <div className="w-full bg-zinc-800 rounded-full h-1.5">
+                  <div 
+                    className="bg-blue-500 h-1.5 rounded-full transition-all duration-500" 
+                    style={{ width: `${resourceUsage?.cpu || 0}%` }}
+                  ></div>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-[#1e293b] p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+              <div className="bg-zinc-900 p-5 rounded-xl border border-zinc-800">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg">
-                    <ServerIcon className="w-6 h-6" />
+                  <div className="p-2 bg-purple-500/10 text-purple-400 rounded-lg">
+                    <ServerIcon className="w-5 h-5" />
                   </div>
-                  <h3 className="font-bold text-slate-700 dark:text-slate-200">Memoria</h3>
+                  <h3 className="font-medium text-zinc-300">Memoria</h3>
                 </div>
-                <div className="text-3xl font-bold text-slate-800 dark:text-white mb-1">
+                <div className="text-2xl font-bold text-white mb-2">
                   {resourceUsage ? `${resourceUsage.memory.usage.toFixed(0)}MB` : '0MB'}
                 </div>
-                <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2 mb-1">
-                  <div className="bg-purple-500 h-2 rounded-full transition-all duration-500" style={{ width: `${resourceUsage?.memory.percent || 0}%` }}></div>
+                <div className="w-full bg-zinc-800 rounded-full h-1.5 mb-1">
+                  <div 
+                    className="bg-purple-500 h-1.5 rounded-full transition-all duration-500" 
+                    style={{ width: `${resourceUsage?.memory.percent || 0}%` }}
+                  ></div>
                 </div>
-                <p className="text-xs text-slate-500">{resourceUsage?.memory.percent || 0}% utilizado</p>
+                <p className="text-xs text-zinc-500">{resourceUsage?.memory.percent || 0}% usado</p>
               </div>
 
-              <div className="bg-white dark:bg-[#1e293b] p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+              <div className="bg-zinc-900 p-5 rounded-xl border border-zinc-800">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-lg">
-                    <SignalIcon className="w-6 h-6" />
+                  <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg">
+                    <SignalIcon className="w-5 h-5" />
                   </div>
-                  <h3 className="font-bold text-slate-700 dark:text-slate-200">Red</h3>
+                  <h3 className="font-medium text-zinc-300">Red</h3>
                 </div>
                 <div className="flex justify-between items-end">
                   <div>
-                    <p className="text-xs text-slate-500 uppercase">Entrada</p>
-                    <p className="text-lg font-bold text-slate-800 dark:text-white">{resourceUsage?.network.in || 0} KB</p>
+                    <p className="text-[10px] text-zinc-500 uppercase">Entrada</p>
+                    <p className="text-lg font-bold text-white">{resourceUsage?.network.in || 0} KB</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs text-slate-500 uppercase">Salida</p>
-                    <p className="text-lg font-bold text-slate-800 dark:text-white">{resourceUsage?.network.out || 0} KB</p>
+                    <p className="text-[10px] text-zinc-500 uppercase">Salida</p>
+                    <p className="text-lg font-bold text-white">{resourceUsage?.network.out || 0} KB</p>
                   </div>
                 </div>
               </div>
@@ -776,17 +697,17 @@ function DashboardContent() {
 
             {/* Credentials */}
             {selectedWorkspace.credencials && (
-              <div className="bg-white dark:bg-[#1e293b] rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
-                <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
-                  <h3 className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">
-                    <ClipboardIcon className="w-5 h-5 text-slate-500" />
+              <div className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
+                <div className="p-5 border-b border-zinc-800">
+                  <h3 className="font-semibold text-white flex items-center gap-2">
+                    <ClipboardIcon className="w-4 h-4 text-zinc-500" />
                     Credenciales de Acceso
                   </h3>
                 </div>
-                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                   {Object.entries(selectedWorkspace.credencials).map(([key, value]) => (
-                    <div key={key} className="group">
-                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                    <div key={key}>
+                      <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-2">
                         {key.replace(/_/g, ' ')}
                       </label>
                       <div className="relative">
@@ -794,29 +715,23 @@ function DashboardContent() {
                           type={showFields[key] ? 'text' : 'password'}
                           value={value}
                           readOnly
-                          className="w-full pl-4 pr-20 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                          className="w-full pl-3 pr-16 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-300 font-mono text-sm focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                         />
                         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                           <button
                             onClick={() => toggleShow(key)}
-                            className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
-                            title={showFields[key] ? 'Ocultar' : 'Mostrar'}
+                            className="p-1.5 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-700 rounded transition-colors"
                           >
-                            {showFields[key] ? (
-                              <EyeSlashIcon className="w-4 h-4" />
-                            ) : (
-                              <EyeIcon className="w-4 h-4" />
-                            )}
+                            {showFields[key] ? <EyeSlashIcon className="w-3.5 h-3.5" /> : <EyeIcon className="w-3.5 h-3.5" />}
                           </button>
                           <button
                             onClick={() => {
                               navigator.clipboard.writeText(value);
-                              toast.success('Copiado al portapapeles');
+                              toast.success('Copiado');
                             }}
-                            className="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
-                            title="Copiar"
+                            className="p-1.5 text-zinc-500 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors"
                           >
-                            <ClipboardIcon className="w-4 h-4" />
+                            <ClipboardIcon className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
@@ -828,18 +743,18 @@ function DashboardContent() {
           </div>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-center animate-fadeIn">
-            <div className="w-24 h-24 bg-indigo-50 dark:bg-indigo-900/20 rounded-full flex items-center justify-center mb-6">
-              <RocketLaunchIcon className="w-12 h-12 text-indigo-400" />
+            <div className="w-20 h-20 bg-zinc-800 rounded-2xl flex items-center justify-center mb-6">
+              <RocketLaunchIcon className="w-10 h-10 text-zinc-600" />
             </div>
-            <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">
+            <h2 className="text-xl font-bold text-white mb-2">
               Selecciona una instancia
             </h2>
-            <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-8">
-              Elige una instancia del menú lateral para ver sus detalles, métricas y gestionar su estado.
+            <p className="text-zinc-500 max-w-md mx-auto mb-6 text-sm">
+              Elige una instancia del menu lateral para ver sus detalles y metricas.
             </p>
             <button
-              onClick={() => setIsModalOpen(true)}
-              className="px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md transition-all font-medium"
+              onClick={() => handleOpenModal()}
+              className="px-5 py-2.5 bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-xl hover:bg-zinc-700 transition-all text-sm font-medium"
             >
               Crear Nueva Instancia
             </button>
@@ -847,153 +762,215 @@ function DashboardContent() {
         )}
       </div>
 
-      {/* Modal de Creación */}
+      {/* Creation Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn" role="dialog" aria-modal="true">
-          <div className="bg-white dark:bg-[#1e293b] rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-100 dark:border-slate-800 animate-scaleIn">
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn"
+          onClick={handleCloseModal}
+        >
+          <div 
+            className="bg-zinc-900 rounded-2xl w-full max-w-2xl overflow-hidden border border-zinc-800 shadow-2xl animate-scaleIn"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-5 border-b border-zinc-800 flex justify-between items-center">
               <div>
-                <h3 className="text-xl font-bold text-slate-800 dark:text-white">Nueva Instancia</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Configura tu nuevo servicio</p>
+                <h3 className="text-lg font-bold text-white">Nueva Instancia</h3>
+                <p className="text-xs text-zinc-500 mt-0.5">Paso {modalStep} de 3</p>
               </div>
               <button
                 onClick={handleCloseModal}
-                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <XMarkIcon className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
-              <div className="space-y-8">
-                {/* Plan Selection */}
-                <div>
-                  <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <BoltIcon className="w-4 h-4" />
-                    Selecciona un Plan
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {['basic', 'premium', 'enterprise'].map((plan) => (
+            {/* Progress Bar */}
+            <div className="h-1 bg-zinc-800">
+              <div 
+                className="h-full bg-emerald-500 transition-all duration-300"
+                style={{ width: `${(modalStep / 3) * 100}%` }}
+              ></div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+              {/* Step 1: Plan Selection */}
+              {modalStep === 1 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <BoltIcon className="w-5 h-5 text-emerald-400" />
+                    <h4 className="text-sm font-semibold text-white">Selecciona un Plan</h4>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {Object.entries(planData).map(([key, plan]) => (
                       <button
-                        key={plan}
-                        onClick={() => setSelectedPlanForInstance(plan)}
-                        className={`relative p-4 rounded-2xl border-2 text-left transition-all duration-200 ${selectedPlanForInstance === plan
-                          ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
-                          : 'border-slate-100 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-800 bg-white dark:bg-slate-800/50'
-                          }`}
+                        key={key}
+                        onClick={() => setSelectedPlanForInstance(key)}
+                        className={`relative p-4 rounded-xl border text-left transition-all ${
+                          selectedPlanForInstance === key
+                            ? 'border-emerald-500 bg-emerald-500/10'
+                            : 'border-zinc-700 bg-zinc-800/50 hover:border-zinc-600'
+                        }`}
                       >
-                        {selectedPlanForInstance === plan && (
-                          <div className="absolute -top-2 -right-2 bg-indigo-500 text-white p-1 rounded-full shadow-sm">
-                            <CheckCircleIcon className="w-4 h-4" />
+                        {plan.popular && (
+                          <span className="absolute -top-2 right-3 px-2 py-0.5 bg-emerald-500 text-zinc-950 text-[10px] font-bold rounded-full">
+                            Popular
+                          </span>
+                        )}
+                        {selectedPlanForInstance === key && (
+                          <div className="absolute top-3 right-3">
+                            <CheckCircleIcon className="w-5 h-5 text-emerald-400" />
                           </div>
                         )}
-                        <div className="mb-2">
-                          {plan === 'basic' && <StarIcon className="w-6 h-6 text-slate-400" />}
-                          {plan === 'premium' && <SparklesIcon className="w-6 h-6 text-indigo-500" />}
-                          {plan === 'enterprise' && <RocketLaunchIcon className="w-6 h-6 text-purple-500" />}
+                        <div className="mb-3">
+                          {key === 'basic' && <StarIcon className="w-6 h-6 text-zinc-500" />}
+                          {key === 'premium' && <SparklesIcon className="w-6 h-6 text-emerald-400" />}
+                          {key === 'enterprise' && <RocketLaunchIcon className="w-6 h-6 text-purple-400" />}
                         </div>
-                        <p className="font-bold text-slate-800 dark:text-white capitalize mb-1">{plan}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {plan === 'basic' && 'Para iniciantes'}
-                          {plan === 'premium' && 'Para profesionales'}
-                          {plan === 'enterprise' && 'Para grandes equipos'}
-                        </p>
+                        <p className="font-bold text-white mb-1">{plan.name}</p>
+                        <p className="text-lg font-bold text-emerald-400 mb-2">{plan.price}<span className="text-xs text-zinc-500">/mes</span></p>
+                        <div className="space-y-1">
+                          <p className="text-[10px] text-zinc-500">{plan.memory} RAM | {plan.cpu}</p>
+                        </div>
                       </button>
                     ))}
                   </div>
                 </div>
+              )}
 
-                {/* Products */}
-                <div>
-                  <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <CubeIcon className="w-4 h-4" />
-                    Productos Disponibles
-                  </h4>
+              {/* Step 2: Product Selection */}
+              {modalStep === 2 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <CubeIcon className="w-5 h-5 text-emerald-400" />
+                    <h4 className="text-sm font-semibold text-white">Selecciona un Producto</h4>
+                  </div>
                   {loadingProducts ? (
                     <div className="flex justify-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                      <div className="animate-spin rounded-full h-8 w-8 border-2 border-zinc-700 border-t-emerald-500"></div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {products.map((product) => (
                         <button
                           key={product.name}
-                          onClick={() => handleOpenModal(product)}
-                          className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 ${selectedProduct?.name === product.name
-                            ? 'border-indigo-500 ring-2 ring-indigo-500/20'
-                            : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-lg'
-                            }`}
+                          onClick={() => {
+                            setSelectedProduct(product);
+                            const initialValues: ProductField = {};
+                            product.fields.forEach((field) => {
+                              Object.entries(field).forEach(([key, value]) => {
+                                initialValues[key] = value;
+                              });
+                            });
+                            setFormValues(initialValues);
+                          }}
+                          className={`relative p-4 rounded-xl border text-left transition-all ${
+                            selectedProduct?.name === product.name
+                              ? 'border-emerald-500 bg-emerald-500/10'
+                              : 'border-zinc-700 bg-zinc-800/50 hover:border-zinc-600'
+                          }`}
                         >
-                          <div className="aspect-video relative bg-slate-100 dark:bg-slate-800">
-                            <div className="absolute inset-0 flex items-center justify-center text-slate-300 dark:text-slate-600">
-                              <CubeIcon className="w-12 h-12" />
+                          {selectedProduct?.name === product.name && (
+                            <div className="absolute top-3 right-3">
+                              <CheckCircleIcon className="w-5 h-5 text-emerald-400" />
                             </div>
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                              <p className="text-white font-medium">Seleccionar</p>
-                            </div>
+                          )}
+                          <div className="w-10 h-10 bg-zinc-700 rounded-lg flex items-center justify-center mb-3">
+                            <CubeIcon className="w-5 h-5 text-zinc-400" />
                           </div>
-                          <div className="p-4 bg-white dark:bg-slate-800">
-                            <h3 className="font-bold text-slate-800 dark:text-white">{product.name}</h3>
-                          </div>
+                          <p className="font-bold text-white">{product.name}</p>
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
+              )}
 
-                {/* Form Fields */}
-                {selectedProduct && (
-                  <div className="animate-fadeIn">
-                    <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                      <ClipboardIcon className="w-4 h-4" />
-                      Configuración
-                    </h4>
-                    <div className="space-y-4">
-                      {selectedProduct.fields.map((field, index) => (
-                        <div key={index}>
-                          {Object.keys(field).map((key) => {
-                            if (key === 'service_name' || key === 'Service_Name') return (
-                              <div key={key}>
-                                <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
-                                  Nombre del Servicio <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                  type="text"
-                                  value={formValues[key] || ''}
-                                  onChange={(e) => handleInputChange(key, e.target.value)}
-                                  className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
-                                  placeholder="ej: mi-instancia-n8n"
-                                />
-                                <p className="text-xs text-slate-400 mt-2">
-                                  Solo minúsculas, números y guiones bajos. Mínimo 3 caracteres.
-                                </p>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ))}
+              {/* Step 3: Configuration */}
+              {modalStep === 3 && selectedProduct && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <ClipboardIcon className="w-5 h-5 text-emerald-400" />
+                    <h4 className="text-sm font-semibold text-white">Configuracion</h4>
+                  </div>
+
+                  {/* Summary */}
+                  <div className="p-4 bg-zinc-800/50 rounded-xl border border-zinc-700 mb-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-zinc-400">Plan seleccionado</span>
+                      <span className="text-white font-medium capitalize">{selectedPlanForInstance}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm mt-2">
+                      <span className="text-zinc-400">Producto</span>
+                      <span className="text-white font-medium">{selectedProduct.name}</span>
                     </div>
                   </div>
-                )}
-              </div>
+
+                  {selectedProduct.fields.map((field, index) => (
+                    <div key={index}>
+                      {Object.keys(field).map((key) => {
+                        if (key === 'service_name' || key === 'Service_Name') return (
+                          <div key={key}>
+                            <label className="block text-sm font-medium text-zinc-300 mb-2">
+                              Nombre del Servicio <span className="text-red-400">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={formValues[key] || ''}
+                              onChange={(e) => handleInputChange(key, e.target.value)}
+                              className="w-full px-4 py-3 rounded-xl bg-zinc-800 border border-zinc-700 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all text-white placeholder:text-zinc-500"
+                              placeholder="ej: mi-instancia-n8n"
+                            />
+                            <p className="text-xs text-zinc-500 mt-2">
+                              Solo minusculas, numeros y guiones. Minimo 3 caracteres.
+                            </p>
+                          </div>
+                        );
+                        return null;
+                      })}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex justify-end gap-3">
-              <button
-                onClick={handleCloseModal}
-                className="px-6 py-3 rounded-xl font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleConfirm}
-                disabled={isLoading || !selectedPlanForInstance}
-                className="px-8 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:-translate-y-0.5"
-              >
-                {isLoading ? 'Creando...' : 'Crear Instancia'}
-              </button>
+            {/* Modal Footer */}
+            <div className="p-5 border-t border-zinc-800 flex justify-between gap-3">
+              {modalStep > 1 ? (
+                <button
+                  onClick={() => setModalStep(prev => prev - 1)}
+                  className="px-5 py-2.5 rounded-xl font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                >
+                  Atras
+                </button>
+              ) : (
+                <button
+                  onClick={handleCloseModal}
+                  className="px-5 py-2.5 rounded-xl font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                >
+                  Cancelar
+                </button>
+              )}
+              
+              {modalStep < 3 ? (
+                <button
+                  onClick={handleNextStep}
+                  className="px-6 py-2.5 rounded-xl font-semibold text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-all flex items-center gap-2"
+                >
+                  Continuar
+                  <ChevronRightIcon className="w-4 h-4" />
+                </button>
+              ) : (
+                <button
+                  onClick={handleConfirm}
+                  disabled={isLoading}
+                  className="px-6 py-2.5 rounded-xl font-semibold text-zinc-950 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  {isLoading ? 'Creando...' : 'Crear Instancia'}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -1010,8 +987,6 @@ export default function Dashboard() {
   );
 }
 
-
-// Force SSR to avoid static generation errors
 export async function getServerSideProps() {
   return { props: {} };
 }

@@ -1,156 +1,201 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import { CheckCircleIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, SparklesIcon, RocketLaunchIcon, BuildingOffice2Icon } from '@heroicons/react/24/outline';
 import IzipayModal from '../payment/IzipayModal';
+
+const plans = [
+  {
+    name: 'Free',
+    price: 0,
+    priceDisplay: 'S/0',
+    period: 'Por siempre',
+    description: 'Perfecto para probar la plataforma',
+    features: [
+      '1 instancia de WhatsApp',
+      '100 mensajes/mes',
+      'Respuestas automaticas basicas',
+      'Soporte por email',
+    ],
+    cta: 'Comenzar Gratis',
+    highlighted: false,
+    icon: SparklesIcon,
+  },
+  {
+    name: 'Pro',
+    price: 99,
+    priceDisplay: 'S/99',
+    period: 'Por mes',
+    description: 'Para negocios en crecimiento',
+    features: [
+      '5 instancias de WhatsApp',
+      '10,000 mensajes/mes',
+      'IA conversacional con GPT-4',
+      'Automatizacion N8N ilimitada',
+      'Analytics avanzado',
+      'Soporte prioritario 24/7',
+    ],
+    cta: 'Comenzar con Pro',
+    highlighted: true,
+    icon: RocketLaunchIcon,
+  },
+  {
+    name: 'Enterprise',
+    price: 0,
+    priceDisplay: 'Custom',
+    period: 'Contactar ventas',
+    description: 'Para grandes organizaciones',
+    features: [
+      'Instancias ilimitadas',
+      'Mensajes ilimitados',
+      'White Label completo',
+      'Infraestructura dedicada',
+      'SLA 99.99%',
+      'Account Manager dedicado',
+    ],
+    cta: 'Contactar Ventas',
+    highlighted: false,
+    icon: BuildingOffice2Icon,
+  },
+];
 
 export default function PricingSection() {
   const router = useRouter();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<any>(null);
-  const plans = [
-    {
-      name: 'Free',
-      price: 0,
-      priceDisplay: 'S/0',
-      period: 'Por siempre',
-      features: ['1 instancia de WhatsApp', '100 mensajes/mes', 'Respuestas automáticas básicas', 'Soporte por email'],
-      cta: 'Comenzar Gratis',
-      highlighted: false
-    },
-    {
-      name: 'Pro',
-      price: 99,
-      priceDisplay: 'S/99',
-      period: 'Por mes',
-      features: ['5 instancias de WhatsApp', '10,000 mensajes/mes', 'IA conversacional con GPT-4', 'Automatización N8N ilimitada', 'Analytics avanzado', 'Soporte prioritario 24/7'],
-      cta: 'Pagar Ahora',
-      highlighted: true
-    },
-    {
-      name: 'Enterprise',
-      price: 0,
-      priceDisplay: 'Custom',
-      period: 'Contactar ventas',
-      features: ['Instancias ilimitadas', 'Mensajes ilimitados', 'White Label completo', 'Infraestructura dedicada', 'SLA 99.99%', 'Account Manager dedicado'],
-      cta: 'Contactar Ventas',
-      highlighted: false
-    }
-  ];
+  const [selectedPlan, setSelectedPlan] = useState<typeof plans[0] | null>(null);
 
-  const handlePlanClick = (plan: any) => {
+  const handlePlanClick = (plan: typeof plans[0]) => {
     if (plan.name === 'Enterprise') {
       window.open('mailto:sales@blxkstudio.com');
     } else if (plan.name === 'Free') {
       router.push('/login');
     } else {
-      // Abrir modal de pago para planes de pago
       setSelectedPlan(plan);
       setIsPaymentModalOpen(true);
     }
   };
 
   return (
-    <section id="pricing" className="relative py-24 px-4 sm:px-6 lg:px-8 bg-black overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px]"></div>
-      </div>
+    <section id="pricing" className="relative py-24 px-4 sm:px-6 lg:px-8 bg-zinc-950">
+      {/* Background */}
+      <div className="absolute inset-0 bg-grid-pattern opacity-30"></div>
 
-      <div className="max-w-7xl mx-auto relative z-10">
+      <div className="max-w-6xl mx-auto relative z-10">
+        {/* Header */}
         <div className="text-center mb-16">
-          <h2 className="text-5xl md:text-6xl font-bold text-white mb-6">
+          <div className="inline-flex items-center px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-full mb-6">
+            <span className="text-xs font-medium text-zinc-400">Precios simples y transparentes</span>
+          </div>
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
             Planes para cualquier escala
           </h2>
-          <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            Comienza gratis, escala cuando crezcas. Cancela cuando quieras, sin contratos forzados.
+          <p className="text-lg text-zinc-400 max-w-2xl mx-auto">
+            Comienza gratis, escala cuando crezcas. Sin contratos forzados.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {plans.map((plan, index) => (
-            <div
-              key={index}
-              className={`relative rounded-2xl transition-all duration-300 ${plan.highlighted
-                ? 'md:scale-105 md:z-10'
-                : ''
+        {/* Pricing Cards */}
+        <div className="grid md:grid-cols-3 gap-6">
+          {plans.map((plan, index) => {
+            const Icon = plan.icon;
+            return (
+              <div
+                key={index}
+                className={`relative rounded-2xl transition-all duration-300 ${
+                  plan.highlighted ? 'md:-mt-4 md:mb-4' : ''
                 }`}
-            >
-              {plan.highlighted && (
-                <>
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-6 py-1 rounded-full text-sm font-bold">
-                    ⭐ MÁS POPULAR
+              >
+                {plan.highlighted && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
+                    <span className="bg-emerald-500 text-zinc-950 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                      Popular
+                    </span>
                   </div>
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-2xl blur-xl"></div>
-                </>
-              )}
+                )}
 
-              <div className={`relative bg-gradient-to-br ${
-                plan.highlighted
-                  ? 'from-white/15 to-white/5 border-2 border-emerald-500/50'
-                  : 'from-white/10 to-white/5 border border-white/20'
-              } backdrop-blur-sm rounded-2xl p-8 hover:border-emerald-500/50 transition-all`}>
-                
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold text-white mb-3">
-                    {plan.name}
-                  </h3>
-                  <div className={`text-6xl font-bold mb-2 ${plan.highlighted ? 'text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400' : 'text-white'}`}>
-                    {plan.priceDisplay}
+                <div className={`h-full rounded-2xl p-6 lg:p-8 transition-all ${
+                  plan.highlighted
+                    ? 'bg-zinc-900 border-2 border-emerald-500/50 shadow-xl shadow-emerald-500/10'
+                    : 'bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700'
+                }`}>
+                  {/* Plan Header */}
+                  <div className="mb-6">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
+                      plan.highlighted ? 'bg-emerald-500/20 text-emerald-400' : 'bg-zinc-800 text-zinc-400'
+                    }`}>
+                      <Icon className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-1">{plan.name}</h3>
+                    <p className="text-sm text-zinc-500">{plan.description}</p>
                   </div>
-                  <div className="text-gray-400">
-                    {plan.period}
-                  </div>
-                </div>
 
-                <ul className="space-y-4 mb-8">
-                  {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-start">
-                      <CheckCircleIcon className="h-5 w-5 mr-3 mt-0.5 flex-shrink-0 text-emerald-400" />
-                      <span className="text-gray-300 text-sm">
-                        {feature}
+                  {/* Price */}
+                  <div className="mb-6">
+                    <div className="flex items-baseline gap-1">
+                      <span className={`text-4xl font-bold ${
+                        plan.highlighted ? 'text-emerald-400' : 'text-white'
+                      }`}>
+                        {plan.priceDisplay}
                       </span>
-                    </li>
-                  ))}
-                </ul>
+                      {plan.price > 0 && (
+                        <span className="text-zinc-500 text-sm">/mes</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-zinc-600 mt-1">{plan.period}</p>
+                  </div>
 
-                <button
-                  onClick={() => handlePlanClick(plan)}
-                  className={`w-full py-3 rounded-xl transition font-semibold ${plan.highlighted
-                    ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white hover:shadow-lg hover:shadow-emerald-500/50'
-                    : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
+                  {/* Features */}
+                  <ul className="space-y-3 mb-8">
+                    {plan.features.map((feature, i) => (
+                      <li key={i} className="flex items-start gap-3">
+                        <CheckIcon className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+                          plan.highlighted ? 'text-emerald-400' : 'text-zinc-600'
+                        }`} />
+                        <span className="text-sm text-zinc-300">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* CTA Button */}
+                  <button
+                    onClick={() => handlePlanClick(plan)}
+                    className={`w-full py-3 rounded-xl font-semibold text-sm transition-all ${
+                      plan.highlighted
+                        ? 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-lg shadow-emerald-500/20'
+                        : 'bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700'
                     }`}
-                >
-                  {plan.cta}
-                </button>
+                  >
+                    {plan.cta}
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        {/* Additional Info */}
-        <div className="mt-16 pt-16 border-t border-white/10">
-          <div className="grid md:grid-cols-3 gap-8 text-center">
-            <div>
-              <div className="text-3xl font-bold text-emerald-400 mb-2">✓</div>
-              <p className="text-white font-semibold mb-1">Sin tarjeta requerida</p>
-              <p className="text-gray-400 text-sm">Comienza gratis al instante</p>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-emerald-400 mb-2">✓</div>
-              <p className="text-white font-semibold mb-1">Cancela cuando quieras</p>
-              <p className="text-gray-400 text-sm">Sin penalizaciones ni contratos</p>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-emerald-400 mb-2">✓</div>
-              <p className="text-white font-semibold mb-1">Soporte 24/7 en Español</p>
-              <p className="text-gray-400 text-sm">Equipo experto siempre disponible</p>
-            </div>
+        {/* Trust Badges */}
+        <div className="mt-16 pt-12 border-t border-zinc-800">
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              { icon: '1', title: 'Sin tarjeta requerida', desc: 'Comienza gratis al instante' },
+              { icon: '2', title: 'Cancela cuando quieras', desc: 'Sin penalizaciones ni contratos' },
+              { icon: '3', title: 'Soporte en Espanol', desc: 'Equipo experto 24/7' },
+            ].map((item, index) => (
+              <div key={index} className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 font-bold text-sm flex-shrink-0">
+                  {item.icon}
+                </div>
+                <div>
+                  <h4 className="text-white font-semibold mb-1">{item.title}</h4>
+                  <p className="text-sm text-zinc-500">{item.desc}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Modal de pago */}
+      {/* Payment Modal */}
       {selectedPlan && (
         <IzipayModal
           isOpen={isPaymentModalOpen}
