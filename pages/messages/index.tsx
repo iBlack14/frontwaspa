@@ -194,51 +194,53 @@ function MessagesContent() {
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-b from-white/50 to-slate-50/50 dark:from-slate-900/30 dark:to-slate-950/30">
-      {/* Header Premium */}
-      <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 px-6 py-4 shadow-sm">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+      {/* Header Premium Responsive */}
+      <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 px-3 sm:px-4 md:px-6 py-3 sm:py-4 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+          {/* Logo y título */}
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <div className="w-9 sm:w-10 h-9 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 sm:w-6 h-5 sm:h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" />
               </svg>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Connect BLXK</h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Mensajería profesional</p>
+            <div className="min-w-0 flex-1 sm:flex-none">
+              <h1 className="text-lg sm:text-2xl font-bold text-slate-800 dark:text-white truncate">Connect BLXK</h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Mensajería profesional</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          {/* Controles */}
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-end flex-wrap">
             {/* Instance Selector */}
             <div className="relative group">
               <select
                 value={selectedInstance || ''}
                 onChange={(e) => setSelectedInstance(e.target.value)}
-                className="px-4 py-2.5 border border-slate-200/50 dark:border-slate-700/50 rounded-xl bg-white dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50 transition-all duration-300 shadow-sm appearance-none pr-10 cursor-pointer"
+                className="px-2.5 sm:px-4 py-2 sm:py-2.5 border border-slate-200/50 dark:border-slate-700/50 rounded-lg sm:rounded-xl bg-white dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50 transition-all duration-300 shadow-sm appearance-none pr-8 sm:pr-10 cursor-pointer max-w-xs sm:max-w-none"
               >
                 {instances
                   .filter((i) => i.state === 'Connected')
                   .map((instance) => (
                     <option key={instance.document_id} value={instance.document_id}>
-                      {instance.profile_name || instance.phone_number || instance.document_id}
+                      {instance.profile_name || instance.phone_number || instance.document_id.substring(0, 8)}
                     </option>
                   ))}
               </select>
-              <svg className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="pointer-events-none absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
               </svg>
             </div>
 
             {/* Quick Actions */}
-            <button className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700/60 transition-all duration-300 shadow-sm border border-slate-200/50 dark:border-slate-700/50">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <button className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700/60 transition-all duration-300 shadow-sm border border-slate-200/50 dark:border-slate-700/50 flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 sm:w-5 h-4 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 4.5h3m-3 3h3" />
               </svg>
             </button>
             
-            <button className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700/60 transition-all duration-300 shadow-sm border border-slate-200/50 dark:border-slate-700/50">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <button className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700/60 transition-all duration-300 shadow-sm border border-slate-200/50 dark:border-slate-700/50 flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 sm:w-5 h-4 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 11-3 0m3 0H3m0 0h21m0 0v1.6a2.25 2.25 0 01-2.25 2.25H2.25A2.25 2.25 0 010 7.6V6" />
               </svg>
             </button>
@@ -248,7 +250,7 @@ function MessagesContent() {
 
       <div className="flex-1 flex overflow-hidden gap-0">
         {/* Chat List Sidebar */}
-        <div className="w-[32%] md:w-[28%] lg:w-[25%] min-w-[280px] border-r border-slate-200/50 dark:border-slate-800/50 overflow-hidden bg-white/30 dark:bg-slate-900/20 backdrop-blur-sm">
+        <div className="w-full sm:w-[45%] md:w-[35%] lg:w-[28%] xl:w-[25%] min-w-[280px] border-r border-slate-200/50 dark:border-slate-800/50 overflow-hidden bg-white/30 dark:bg-slate-900/20 backdrop-blur-sm max-h-[calc(100vh-120px)]">
           <ChatList
             chats={chats}
             selectedChat={selectedChat}
@@ -258,7 +260,7 @@ function MessagesContent() {
         </div>
 
         {/* Chat Window */}
-        <div className="flex-1 bg-gradient-to-br from-white/40 via-slate-50/30 to-slate-100/20 dark:from-slate-900/10 dark:via-slate-900/5 dark:to-slate-950/10">
+        <div className="hidden sm:flex flex-1 bg-gradient-to-br from-white/40 via-slate-50/30 to-slate-100/20 dark:from-slate-900/10 dark:via-slate-900/5 dark:to-slate-950/10 max-h-[calc(100vh-120px)]">
           {selectedChat ? (
             <ChatWindow
               chat={selectedChat}
