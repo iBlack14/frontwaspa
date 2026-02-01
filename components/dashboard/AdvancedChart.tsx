@@ -5,9 +5,9 @@
  * y controles interactivos.
  */
 
-import React, { useState } from 'react';
-import dynamic from 'next/dynamic';
-import { motion } from 'framer-motion';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import {
   ChartBarIcon,
   ArrowTrendingUpIcon,
@@ -15,17 +15,30 @@ import {
   EyeIcon,
   AdjustmentsHorizontalIcon
 } from '@heroicons/react/24/outline';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from 'chart.js';
 
-// Importar el componente de gráfico de forma dinámica (solo cliente)
-const ChartComponent = dynamic(() => import('@/src/components/ChartComponent'), {
-  ssr: false,
-  loading: () => (
-    <div className="flex flex-col items-center justify-center h-full">
-      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500 mb-2"></div>
-      <p className="text-xs text-slate-500">Cargando visualización...</p>
-    </div>
-  )
-});
+// Registrar componentes de Chart.js
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 interface AdvancedChartProps {
   data: any;
@@ -209,7 +222,7 @@ export const AdvancedChart: React.FC<AdvancedChartProps> = ({
       <div className="h-[400px] w-full relative">
         {historyData.length > 0 ? (
           <div className="h-full w-full">
-            <ChartComponent data={data} options={options} />
+            <Line data={data} options={options} />
           </div>
         ) : (
           <div className="h-full w-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 rounded-2xl border border-dashed border-slate-200 dark:border-slate-600">

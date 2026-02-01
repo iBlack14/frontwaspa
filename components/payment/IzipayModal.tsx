@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, CheckIcon, ShieldCheckIcon, LockClosedIcon, CreditCardIcon, ArrowLeftIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
 interface IzipayModalProps {
   isOpen: boolean;
@@ -18,6 +18,12 @@ declare global {
   }
 }
 
+const steps = [
+  { id: 1, name: 'Email', description: 'Tu correo' },
+  { id: 2, name: 'Pago', description: 'Datos de tarjeta' },
+  { id: 3, name: 'Listo', description: 'Confirmacion' },
+];
+
 export default function IzipayModal({ isOpen, onClose, plan, userEmail: initialEmail }: IzipayModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -27,32 +33,41 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail: initialE
   const [email, setEmail] = useState(initialEmail || '');
   const [emailError, setEmailError] = useState('');
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [step, setStep] = useState(1);
+  const [emailFocused, setEmailFocused] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       loadIzipayScript();
-      // Solo crear token si ya tenemos email
+      setStep(1);
+      setShowPaymentForm(false);
+      setPaymentSuccess(false);
+      setError('');
       if (initialEmail) {
-        setShowPaymentForm(true);
-        createPaymentToken();
+        setEmail(initialEmail);
       }
     }
-  }, [isOpen]);
+  }, [isOpen, initialEmail]);
 
   const handleContinue = () => {
-    // Validar email
     if (!email || !email.includes('@') || !email.includes('.')) {
-      setEmailError('Por favor ingresa un correo válido');
+      setEmailError('Ingresa un correo valido');
       return;
     }
     
     setEmailError('');
+    setStep(2);
     setShowPaymentForm(true);
     createPaymentToken();
   };
 
+  const handleBack = () => {
+    setStep(1);
+    setShowPaymentForm(false);
+    setError('');
+  };
+
   const loadIzipayScript = () => {
-    // Cargar el CSS de Izipay si no está cargado
     if (!document.getElementById('izipay-css')) {
       const link = document.createElement('link');
       link.id = 'izipay-css';
@@ -61,7 +76,6 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail: initialE
       document.head.appendChild(link);
     }
 
-    // Cargar el script de Izipay si no está cargado
     if (document.getElementById('izipay-script')) {
       return;
     }
@@ -70,9 +84,6 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail: initialE
     script.id = 'izipay-script';
     script.src = process.env.NEXT_PUBLIC_IZIPAY_JS_URL || 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js';
     script.async = true;
-    script.onload = () => {
-      console.log('[Izipay] Script loaded successfully');
-    };
     document.body.appendChild(script);
   };
 
@@ -82,13 +93,6 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail: initialE
       setError('');
 
       const orderId = `ORDER-${Date.now()}`;
-      
-      console.log('[Izipay] Creating payment token with:', {
-        amount: plan.price,
-        currency: 'PEN',
-        orderId,
-        customerEmail: email
-      });
       
       const response = await fetch('/api/payment/create-token', {
         method: 'POST',
@@ -104,23 +108,18 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail: initialE
       });
 
       const data = await response.json();
-      
-      console.log('[Izipay] Token response:', data);
 
       if (!response.ok) {
-        console.error('[Izipay] Token creation failed:', data);
         throw new Error(data.error || data.details || 'Error al crear el token de pago');
       }
 
       setFormToken(data.formToken);
       
-      // Inicializar el formulario de Izipay
       setTimeout(() => {
         initializeIzipayForm(data.formToken);
       }, 500);
 
     } catch (err: any) {
-      console.error('[Izipay] Error:', err);
       setError(err.message || 'Error al inicializar el pago');
       setLoading(false);
     }
@@ -128,7 +127,6 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail: initialE
 
   const initializeIzipayForm = (token: string) => {
     if (!window.KR) {
-      console.error('[Izipay] KR object not found');
       setError('Error al cargar el formulario de pago');
       setLoading(false);
       return;
@@ -140,64 +138,49 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail: initialE
       formToken: token,
       'kr-public-key': publicKey,
       'kr-language': 'es-ES',
-      'kr-placeholder-pan': 'Número de tarjeta',
+      'kr-placeholder-pan': 'Numero de tarjeta',
       'kr-placeholder-expiry': 'MM/AA',
       'kr-placeholder-security-code': 'CVV',
       'kr-hide-debug-toolbar': true,
     });
 
-    // Personalizar estilos del formulario
     window.KR.setFormConfig({
       'kr-theme': 'material',
       'kr-card-form-expanded': true,
     });
 
     window.KR.onSubmit(async (paymentData: any) => {
-      console.log('[Izipay] Payment submitted:', paymentData);
       setProcessing(true);
       
       try {
-        // Aquí puedes procesar la respuesta del pago
         if (paymentData.clientAnswer.orderStatus === 'PAID') {
-          console.log('[Izipay] Payment successful!');
           setPaymentSuccess(true);
           setProcessing(false);
+          setStep(3);
           
-          // Redirigir después de 3 segundos
           setTimeout(() => {
-            // Verificar si el usuario está autenticado
             window.location.href = '/login?payment=success';
           }, 3000);
         } else {
-          console.log('[Izipay] Payment not completed:', paymentData.clientAnswer.orderStatus);
-          setError('El pago no se completó. Por favor, intenta de nuevo.');
+          setError('El pago no se completo. Intenta de nuevo.');
           setProcessing(false);
         }
       } catch (err) {
-        console.error('[Izipay] Error processing payment:', err);
         setError('Error al procesar el pago');
         setProcessing(false);
       }
       
-      return false; // Prevenir el submit por defecto
+      return false;
     });
 
     window.KR.onError((error: any) => {
-      console.error('[Izipay] Payment error:', error);
       const errorMessage = error?.detailedErrorMessage || error?.errorMessage || 'Error desconocido';
-      setError(`Error al procesar el pago: ${errorMessage}`);
+      setError(`Error: ${errorMessage}`);
       setProcessing(false);
     });
 
-    // Evento cuando el pago es exitoso
     window.KR.onFormReady(() => {
-      console.log('[Izipay] Form ready');
       setLoading(false);
-    });
-
-    // Evento cuando el pago es procesado
-    window.KR.onFormCreated(() => {
-      console.log('[Izipay] Form created');
     });
 
     setLoading(false);
@@ -207,327 +190,697 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail: initialE
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        {/* Overlay */}
+      <div className="flex items-center justify-center min-h-screen px-4 py-8">
+        {/* Overlay with blur */}
         <div 
-          className="fixed inset-0 transition-opacity bg-black bg-opacity-50 backdrop-blur-sm"
+          className="fixed inset-0 bg-black/70 backdrop-blur-md transition-opacity"
           onClick={onClose}
         />
 
         {/* Modal */}
-        <div className="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+        <div className="relative bg-gradient-to-b from-zinc-900 to-zinc-950 rounded-3xl w-full max-w-md overflow-hidden border border-zinc-800/50 shadow-2xl shadow-black/50 animate-scaleIn">
+          
+          {/* Decorative gradient */}
+          <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-emerald-500/10 to-transparent pointer-events-none" />
+          
           {/* Header */}
-          <div className="bg-gradient-to-r from-emerald-500 to-teal-500 px-8 py-6 relative">
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 text-white hover:bg-white/20 rounded-full p-2 transition"
-            >
-              <XMarkIcon className="h-6 w-6" />
-            </button>
-            <div className="flex items-center space-x-4">
-              <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
-                <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
+          <div className="relative p-6 pb-4">
+            {/* Close & Back buttons */}
+            <div className="flex items-center justify-between mb-4">
+              {step === 2 && !processing && !paymentSuccess ? (
+                <button
+                  onClick={handleBack}
+                  className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-xl transition-all duration-200"
+                >
+                  <ArrowLeftIcon className="h-5 w-5" />
+                </button>
+              ) : (
+                <div className="w-9" />
+              )}
+              <button
+                onClick={onClose}
+                className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-xl transition-all duration-200"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+            
+            {/* Plan Info */}
+            <div className="flex items-center gap-4 mb-6">
+              <div className="relative">
+                <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                  <CreditCardIcon className="h-7 w-7 text-white" />
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
+                  <SparklesIcon className="h-3 w-3 text-white" />
+                </div>
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-white">
+                <h3 className="text-xl font-bold text-white">
                   Plan {plan.name}
                 </h3>
-                <p className="text-white/90 text-lg font-semibold mt-1">
-                  {plan.price === 0 ? 'Gratis' : `S/ ${plan.price} ${plan.period}`}
+                <p className="text-emerald-400 font-bold text-lg">
+                  {plan.price === 0 ? 'Gratis' : `S/ ${plan.price}`}
+                  {plan.price > 0 && <span className="text-sm font-normal text-zinc-400 ml-1">{plan.period}</span>}
                 </p>
+              </div>
+            </div>
+
+            {/* Progress Steps - Modern Design */}
+            <div className="relative">
+              {/* Progress Bar Background */}
+              <div className="absolute top-5 left-0 right-0 h-0.5 bg-zinc-800" />
+              {/* Progress Bar Fill */}
+              <div 
+                className="absolute top-5 left-0 h-0.5 bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500 ease-out"
+                style={{ width: `${((step - 1) / 2) * 100}%` }}
+              />
+              
+              {/* Step Indicators */}
+              <div className="relative flex justify-between">
+                {steps.map((s, index) => (
+                  <div key={s.id} className="flex flex-col items-center">
+                    <div 
+                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
+                        s.id < step 
+                          ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' 
+                          : s.id === step 
+                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 ring-4 ring-emerald-500/20' 
+                            : 'bg-zinc-800 text-zinc-500'
+                      }`}
+                    >
+                      {s.id < step ? (
+                        <CheckIcon className="h-5 w-5" />
+                      ) : (
+                        <span className="text-sm font-bold">{s.id}</span>
+                      )}
+                    </div>
+                    <span className={`text-xs font-medium mt-2 transition-colors ${
+                      s.id <= step ? 'text-emerald-400' : 'text-zinc-500'
+                    }`}>
+                      {s.name}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
 
+          {/* Divider */}
+          <div className="h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent mx-6" />
+
           {/* Body */}
-          <div className="px-8 py-8 bg-gray-50">
-            {/* Modal de éxito */}
+          <div className="p-6 pt-5">
+            {/* Success State */}
             {paymentSuccess && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-2xl">
-                  <div className="text-center">
-                    {/* Icono de éxito animado */}
-                    <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-emerald-100 mb-6">
-                      <svg className="h-12 w-12 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    
-                    <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                      ¡Pago exitoso!
-                    </h3>
-                    
-                    <p className="text-gray-600 mb-2">
-                      Tu pago ha sido procesado correctamente.
-                    </p>
-                    
-                    <p className="text-sm text-gray-500 mb-6">
-                      Recibirás un correo de confirmación en breve.
-                    </p>
-                    
-                    <div className="bg-emerald-50 rounded-lg p-4 mb-6">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Plan:</span>
-                        <span className="font-semibold text-gray-900">{plan.name}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm mt-2">
-                        <span className="text-gray-600">Total:</span>
-                        <span className="font-bold text-emerald-600">S/ {plan.price}</span>
-                      </div>
-                    </div>
-                    
-                    <p className="text-sm text-gray-500">
-                      Redirigiendo al inicio de sesión...
-                    </p>
-                    
-                    {/* Barra de progreso */}
-                    <div className="mt-4 w-full bg-gray-200 rounded-full h-1.5">
-                      <div className="bg-emerald-600 h-1.5 rounded-full animate-progress" style={{animation: 'progress 3s linear'}}></div>
-                    </div>
+              <div className="text-center py-6 animate-fadeIn">
+                <div className="relative mx-auto w-20 h-20 mb-6">
+                  <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping" />
+                  <div className="relative w-full h-full bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/40">
+                    <CheckIcon className="h-10 w-10 text-white" />
                   </div>
+                </div>
+                
+                <h3 className="text-2xl font-bold text-white mb-2">
+                  Pago exitoso
+                </h3>
+                
+                <p className="text-zinc-400 mb-6">
+                  Tu suscripcion ha sido activada correctamente.
+                </p>
+                
+                <div className="bg-zinc-800/50 rounded-2xl p-5 mb-6 border border-zinc-700/50">
+                  <div className="flex items-center justify-between text-sm mb-3">
+                    <span className="text-zinc-400">Plan adquirido</span>
+                    <span className="font-bold text-white">{plan.name}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm mb-3">
+                    <span className="text-zinc-400">Email</span>
+                    <span className="text-white truncate ml-4">{email}</span>
+                  </div>
+                  <div className="h-px bg-zinc-700/50 my-3" />
+                  <div className="flex items-center justify-between">
+                    <span className="text-zinc-400">Total pagado</span>
+                    <span className="font-bold text-emerald-400 text-xl">S/ {plan.price}</span>
+                  </div>
+                </div>
+                
+                <p className="text-sm text-zinc-500 mb-4">
+                  Redirigiendo al inicio de sesion...
+                </p>
+                
+                <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+                  <div className="bg-gradient-to-r from-emerald-500 to-emerald-400 h-full rounded-full animate-progressBar"></div>
                 </div>
               </div>
             )}
             
+            {/* Processing State */}
             {processing && !paymentSuccess && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-xl p-8 max-w-sm mx-4">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-emerald-500 mx-auto"></div>
-                    <h3 className="mt-4 text-xl font-bold text-gray-900">Procesando pago...</h3>
-                    <p className="mt-2 text-gray-600">Por favor espera, no cierres esta ventana</p>
-                  </div>
+              <div className="text-center py-12 animate-fadeIn">
+                <div className="relative mx-auto w-16 h-16 mb-6">
+                  <div className="absolute inset-0 rounded-full border-2 border-zinc-700" />
+                  <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-emerald-500 animate-spin" />
+                  <div className="absolute inset-2 rounded-full border-2 border-transparent border-t-emerald-400 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Procesando pago...</h3>
+                <p className="text-sm text-zinc-400">Por favor, no cierres esta ventana</p>
+                <div className="flex items-center justify-center gap-2 mt-4 text-xs text-zinc-500">
+                  <LockClosedIcon className="w-3 h-3" />
+                  <span>Transaccion segura en proceso</span>
                 </div>
               </div>
             )}
             
-            {loading && (
-              <div className="text-center py-12">
-                <div className="inline-flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-emerald-500"></div>
+            {/* Loading State */}
+            {loading && !processing && (
+              <div className="text-center py-12 animate-fadeIn">
+                <div className="relative mx-auto w-12 h-12 mb-6">
+                  <div className="absolute inset-0 rounded-full border-2 border-zinc-700" />
+                  <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-emerald-500 animate-spin" />
                 </div>
-                <p className="mt-6 text-gray-600 font-medium text-lg">
+                <p className="text-zinc-400 text-sm">
                   Preparando formulario de pago seguro...
                 </p>
-                <p className="mt-2 text-gray-500 text-sm">
-                  Esto solo tomará un momento
-                </p>
               </div>
             )}
 
+            {/* Error State */}
             {error && (
-              <div className="bg-red-50 border-l-4 border-red-500 rounded-lg p-6 mb-6">
-                <div className="flex items-start">
-                  <svg className="h-6 w-6 text-red-500 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div>
-                    <h4 className="text-red-800 font-semibold mb-1">Error al procesar el pago</h4>
-                    <p className="text-red-700 text-sm">{error}</p>
+              <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 mb-5 animate-shake">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-red-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <XMarkIcon className="w-5 h-5 text-red-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-red-400 font-semibold text-sm mb-1">Hubo un error</h4>
+                    <p className="text-red-300/80 text-sm">{error}</p>
                   </div>
                 </div>
-              </div>
-            )}
-
-            {!loading && !error && !showPaymentForm && (
-              <div>
-                {/* Campo de correo electrónico */}
-                <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-                  <div className="flex items-center mb-4">
-                    <div className="bg-emerald-100 rounded-full p-2 mr-3">
-                      <svg className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <h4 className="text-gray-900 font-semibold text-lg">Correo electrónico</h4>
-                  </div>
-                  <p className="text-gray-600 text-sm mb-4">
-                    Te enviaremos tus credenciales de acceso a este correo después del pago.
-                  </p>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      setEmailError('');
-                    }}
-                    placeholder="tu@correo.com"
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all text-base ${
-                      emailError ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {emailError && (
-                    <p className="text-red-600 text-sm mt-2 flex items-center">
-                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                      {emailError}
-                    </p>
-                  )}
-                </div>
-
-                {/* Información del plan */}
-                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-200 p-6 mb-6">
-                  <h4 className="text-gray-900 font-semibold text-lg mb-4">Resumen de tu compra</h4>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Plan seleccionado</span>
-                      <span className="text-gray-900 font-semibold">{plan.name}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Periodo</span>
-                      <span className="text-gray-900 font-medium">{plan.period}</span>
-                    </div>
-                    <div className="border-t border-emerald-200 pt-3 mt-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-900 font-semibold text-lg">Total</span>
-                        <span className="text-emerald-600 font-bold text-2xl">S/ {plan.price}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Botón continuar */}
                 <button
-                  onClick={handleContinue}
-                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-4 rounded-lg font-semibold text-lg hover:from-emerald-600 hover:to-teal-600 transition-all shadow-lg hover:shadow-xl"
+                  onClick={() => {
+                    setError('');
+                    if (step === 2) createPaymentToken();
+                  }}
+                  className="w-full mt-4 py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl text-sm font-medium transition-colors"
                 >
-                  Continuar al pago
+                  Intentar de nuevo
                 </button>
               </div>
             )}
 
-            {!loading && !error && showPaymentForm && (
-              <div>
-                {/* Email confirmado */}
-                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-6">
-                  <div className="flex items-center">
-                    <svg className="h-5 w-5 text-emerald-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-emerald-800 font-medium text-sm">{email}</span>
-                  </div>
-                </div>
-
-                {/* Información del plan */}
-                <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-                  <h4 className="text-gray-900 font-semibold text-lg mb-4">Resumen de tu compra</h4>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Plan seleccionado</span>
-                      <span className="text-gray-900 font-semibold">{plan.name}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Periodo</span>
-                      <span className="text-gray-900 font-medium">{plan.period}</span>
-                    </div>
-                    <div className="border-t border-gray-200 pt-3 mt-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-900 font-semibold text-lg">Total</span>
-                        <span className="text-emerald-600 font-bold text-2xl">S/ {plan.price}</span>
+            {/* Step 1: Email */}
+            {!loading && !error && !showPaymentForm && !paymentSuccess && (
+              <div className="animate-fadeIn">
+                <div className="mb-5">
+                  <label className="block text-sm font-semibold text-white mb-2.5">
+                    Correo electronico
+                  </label>
+                  <div className={`relative rounded-2xl transition-all duration-300 ${
+                    emailFocused ? 'ring-2 ring-emerald-500/50' : ''
+                  }`}>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setEmailError('');
+                      }}
+                      onFocus={() => setEmailFocused(true)}
+                      onBlur={() => setEmailFocused(false)}
+                      placeholder="tu@correo.com"
+                      className={`w-full px-4 py-4 bg-zinc-800/80 border-2 rounded-2xl focus:border-emerald-500 outline-none transition-all text-white placeholder:text-zinc-500 ${
+                        emailError ? 'border-red-500' : emailFocused ? 'border-emerald-500' : 'border-zinc-700/50'
+                      }`}
+                    />
+                    {email && email.includes('@') && (
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                        <CheckIcon className="w-5 h-5 text-emerald-400" />
                       </div>
+                    )}
+                  </div>
+                  {emailError && (
+                    <p className="text-red-400 text-xs mt-2 flex items-center gap-1">
+                      <XMarkIcon className="w-3 h-3" />
+                      {emailError}
+                    </p>
+                  )}
+                  <p className="text-zinc-500 text-xs mt-2.5">
+                    Te enviaremos tus credenciales de acceso a este correo.
+                  </p>
+                </div>
+
+                {/* Order Summary */}
+                <div className="bg-zinc-800/50 rounded-2xl p-5 mb-5 border border-zinc-700/50">
+                  <h4 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                    <SparklesIcon className="w-4 h-4 text-emerald-400" />
+                    Resumen de compra
+                  </h4>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-zinc-400">Plan seleccionado</span>
+                      <span className="text-white font-semibold bg-zinc-700/50 px-3 py-1 rounded-lg">{plan.name}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-zinc-400">Periodo</span>
+                      <span className="text-zinc-300">{plan.period}</span>
+                    </div>
+                    <div className="h-px bg-zinc-700/50 my-1" />
+                    <div className="flex justify-between items-center pt-1">
+                      <span className="text-white font-semibold">Total a pagar</span>
+                      <span className="text-emerald-400 font-bold text-2xl">S/ {plan.price}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Formulario de Izipay */}
-                <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-                  <h4 className="text-gray-900 font-semibold text-lg mb-4">Información de pago</h4>
+                <button
+                  onClick={handleContinue}
+                  disabled={!email}
+                  className={`w-full py-4 rounded-2xl font-bold text-lg transition-all duration-300 ${
+                    email 
+                      ? 'bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-400 hover:to-emerald-300 text-zinc-950 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/40 hover:scale-[1.02] active:scale-[0.98]' 
+                      : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                  }`}
+                >
+                  Continuar al pago
+                </button>
+
+                {/* Security Note */}
+                <div className="flex items-center justify-center gap-2 mt-4 text-xs text-zinc-500">
+                  <ShieldCheckIcon className="w-4 h-4 text-emerald-500/70" />
+                  <span>Tus datos estan protegidos con encriptacion SSL</span>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Payment Form */}
+            {!loading && !error && showPaymentForm && !paymentSuccess && !processing && (
+              <div className="animate-fadeIn">
+                {/* Email Confirmed Badge */}
+                <div className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 mb-5">
+                  <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <CheckIcon className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-emerald-400/80 font-medium">Email confirmado</p>
+                    <p className="text-emerald-300 font-semibold truncate">{email}</p>
+                  </div>
+                </div>
+
+                {/* Total Amount Card */}
+                <div className="bg-gradient-to-br from-zinc-800/80 to-zinc-800/40 rounded-2xl p-5 mb-5 border border-zinc-700/50">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-zinc-400 text-sm mb-1">Total a pagar</p>
+                      <p className="text-white text-3xl font-bold">
+                        S/ {plan.price}
+                      </p>
+                    </div>
+                    <div className="w-14 h-14 bg-emerald-500/20 rounded-2xl flex items-center justify-center">
+                      <CreditCardIcon className="w-7 h-7 text-emerald-400" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Form Container */}
+                <div className="bg-zinc-800/30 rounded-2xl p-5 mb-5 border border-zinc-700/50">
+                  <h4 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                    <LockClosedIcon className="w-4 h-4 text-emerald-400" />
+                    Datos de pago seguros
+                  </h4>
                   <div className="izipay-form-container">
                     <div className="kr-embedded" kr-form-token={formToken}>
-                      {/* El formulario se renderizará aquí */}
+                      {/* Izipay form renders here */}
                     </div>
+                  </div>
+                </div>
+
+                {/* Security Badges */}
+                <div className="flex items-center justify-center gap-6 text-xs text-zinc-500">
+                  <div className="flex items-center gap-1.5">
+                    <ShieldCheckIcon className="w-4 h-4 text-emerald-500" />
+                    <span>Pago 100% seguro</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <LockClosedIcon className="w-4 h-4 text-emerald-500" />
+                    <span>Encriptado SSL</span>
                   </div>
                 </div>
                 
-                <style jsx>{`
-                  @keyframes progress {
-                    from {
-                      width: 0%;
-                    }
-                    to {
-                      width: 100%;
-                    }
-                  }
-                  
-                  .izipay-form-container :global(.kr-embedded) {
-                    font-family: inherit;
-                  }
-                  
-                  .izipay-form-container :global(.kr-pan),
-                  .izipay-form-container :global(.kr-expiry),
-                  .izipay-form-container :global(.kr-security-code) {
-                    border: 1px solid #e5e7eb !important;
-                    border-radius: 0.5rem !important;
-                    padding: 0.75rem !important;
-                    font-size: 1rem !important;
-                    margin-bottom: 1rem !important;
-                    background-color: white !important;
-                  }
-                  
-                  .izipay-form-container :global(.kr-pan:focus),
-                  .izipay-form-container :global(.kr-expiry:focus),
-                  .izipay-form-container :global(.kr-security-code:focus) {
-                    border-color: #10b981 !important;
-                    outline: none !important;
-                    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
-                  }
-                  
-                  .izipay-form-container :global(.kr-form-error) {
-                    color: #ef4444 !important;
-                    font-size: 0.875rem !important;
-                    margin-top: 0.25rem !important;
-                  }
-                  
-                  .izipay-form-container :global(button[type="submit"]) {
-                    background: linear-gradient(to right, #10b981, #14b8a6) !important;
-                    color: white !important;
-                    font-weight: 600 !important;
-                    padding: 0.875rem 2rem !important;
-                    border-radius: 0.75rem !important;
-                    border: none !important;
-                    width: 100% !important;
-                    font-size: 1.125rem !important;
-                    cursor: pointer !important;
-                    transition: all 0.2s !important;
-                  }
-                  
-                  .izipay-form-container :global(button[type="submit"]:hover) {
-                    transform: translateY(-1px) !important;
-                    box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3) !important;
-                  }
-                  
-                  .izipay-form-container :global(button[type="submit"]:active) {
-                    transform: translateY(0) !important;
-                  }
-                  
-                  .izipay-form-container :global(label) {
-                    color: #374151 !important;
-                    font-weight: 500 !important;
-                    margin-bottom: 0.5rem !important;
-                    display: block !important;
-                  }
-                `}</style>
-
-                {/* Información de seguridad */}
-                <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-6">
-                  <div className="flex items-start space-x-3">
-                    <svg className="h-6 w-6 text-emerald-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                {/* Accepted Cards */}
+                <div className="flex items-center justify-center gap-3 mt-4 opacity-50">
+                  <div className="bg-white rounded px-2 py-1">
+                    <svg className="h-4 w-auto" viewBox="0 0 38 24" fill="none">
+                      <path fill="#1A1F71" d="M15.5 7.5h-1.8L12 16.5h1.8l.6-2.3h2.2l.6 2.3h1.8L17.3 7.5h-1.8zm-1.1 5l.6-2.5.6 2.5h-1.2z"/>
+                      <path fill="#FF5F00" d="M24 8.5a3.9 3.9 0 00-3 1.4 3.9 3.9 0 00-3-1.4 4 4 0 00-4 4 4 4 0 004 4 3.9 3.9 0 003-1.4 3.9 3.9 0 003 1.4 4 4 0 004-4 4 4 0 00-4-4z"/>
                     </svg>
-                    <div>
-                      <h5 className="text-gray-900 font-semibold mb-1">Pago 100% seguro</h5>
-                      <p className="text-gray-600 text-sm">
-                        Tu información está protegida con encriptación de nivel bancario. Powered by <span className="font-semibold">Izipay</span>
-                      </p>
-                    </div>
+                  </div>
+                  <div className="bg-white rounded px-2 py-1">
+                    <svg className="h-4 w-auto" viewBox="0 0 38 24" fill="none">
+                      <rect width="38" height="24" rx="4" fill="#006FCF"/>
+                      <text x="5" y="16" fill="white" fontSize="8" fontWeight="bold">VISA</text>
+                    </svg>
                   </div>
                 </div>
               </div>
             )}
           </div>
+
+          {/* Custom Styles for Izipay */}
+          <style jsx global>{`
+            @keyframes progressBar {
+              from { width: 0%; }
+              to { width: 100%; }
+            }
+            
+            @keyframes shake {
+              0%, 100% { transform: translateX(0); }
+              25% { transform: translateX(-4px); }
+              75% { transform: translateX(4px); }
+            }
+            
+            .animate-progressBar {
+              animation: progressBar 3s linear forwards;
+            }
+            
+            .animate-shake {
+              animation: shake 0.3s ease-in-out;
+            }
+            
+            .animate-scaleIn {
+              animation: scaleIn 0.3s ease-out;
+            }
+            
+            @keyframes scaleIn {
+              from {
+                opacity: 0;
+                transform: scale(0.95);
+              }
+              to {
+                opacity: 1;
+                transform: scale(1);
+              }
+            }
+            
+            .animate-fadeIn {
+              animation: fadeIn 0.3s ease-out;
+            }
+            
+            @keyframes fadeIn {
+              from { opacity: 0; transform: translateY(10px); }
+              to { opacity: 1; transform: translateY(0); }
+            }
+            
+            /* ============================================
+               IZIPAY FORM CUSTOM STYLES - DARK THEME
+               Ultra-specific selectors to override defaults
+            ============================================ */
+            
+            /* Reset all Izipay elements */
+            .izipay-form-container,
+            .izipay-form-container * {
+              font-family: inherit !important;
+              box-sizing: border-box !important;
+            }
+            
+            .izipay-form-container .kr-embedded,
+            .izipay-form-container .kr-smart-form,
+            .izipay-form-container .kr-embedded-wrapper,
+            .izipay-form-container .kr-smart-form-wrapper {
+              background: transparent !important;
+              padding: 0 !important;
+              margin: 0 !important;
+            }
+            
+            /* ============================================
+               INPUT FIELDS - Dark Theme Styling
+            ============================================ */
+            
+            /* All input types */
+            .izipay-form-container input[type="text"],
+            .izipay-form-container input[type="tel"],
+            .izipay-form-container input[type="number"],
+            .izipay-form-container input[type="email"],
+            .izipay-form-container input,
+            .izipay-form-container .kr-input-field,
+            .izipay-form-container .kr-pan input,
+            .izipay-form-container .kr-expiry input,
+            .izipay-form-container .kr-security-code input,
+            .izipay-form-container .kr-card-holder-name input,
+            .izipay-form-container .kr-identity-document-number input {
+              background-color: #18181b !important;
+              border: 2px solid #3f3f46 !important;
+              border-radius: 0.875rem !important;
+              padding: 0.875rem 1rem !important;
+              font-size: 0.9375rem !important;
+              color: #fafafa !important;
+              transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+              width: 100% !important;
+              height: auto !important;
+              min-height: 52px !important;
+              line-height: 1.5 !important;
+            }
+            
+            /* Focus states */
+            .izipay-form-container input:focus,
+            .izipay-form-container input:focus-visible,
+            .izipay-form-container .kr-input-field:focus,
+            .izipay-form-container .kr-pan input:focus,
+            .izipay-form-container .kr-expiry input:focus,
+            .izipay-form-container .kr-security-code input:focus {
+              border-color: #10b981 !important;
+              box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2), 0 0 20px rgba(16, 185, 129, 0.1) !important;
+              outline: none !important;
+              background-color: #1f1f23 !important;
+            }
+            
+            /* Placeholder text */
+            .izipay-form-container input::placeholder,
+            .izipay-form-container input::-webkit-input-placeholder {
+              color: #71717a !important;
+              opacity: 1 !important;
+            }
+            
+            /* ============================================
+               SELECT / DROPDOWN FIELDS
+            ============================================ */
+            
+            .izipay-form-container select,
+            .izipay-form-container .kr-installment-number select,
+            .izipay-form-container .kr-first-installment-delay select {
+              background-color: #18181b !important;
+              border: 2px solid #3f3f46 !important;
+              border-radius: 0.875rem !important;
+              padding: 0.875rem 2.5rem 0.875rem 1rem !important;
+              font-size: 0.9375rem !important;
+              color: #fafafa !important;
+              transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+              width: 100% !important;
+              min-height: 52px !important;
+              cursor: pointer !important;
+              appearance: none !important;
+              -webkit-appearance: none !important;
+              -moz-appearance: none !important;
+              background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2371717a' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+              background-position: right 0.875rem center !important;
+              background-repeat: no-repeat !important;
+              background-size: 1.25rem !important;
+            }
+            
+            .izipay-form-container select:focus {
+              border-color: #10b981 !important;
+              box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+              outline: none !important;
+            }
+            
+            .izipay-form-container select option {
+              background-color: #18181b !important;
+              color: #fafafa !important;
+              padding: 0.5rem !important;
+            }
+            
+            /* ============================================
+               FIELD WRAPPERS AND CONTAINERS
+            ============================================ */
+            
+            .izipay-form-container .kr-pan,
+            .izipay-form-container .kr-expiry,
+            .izipay-form-container .kr-security-code,
+            .izipay-form-container .kr-installment-number,
+            .izipay-form-container .kr-first-installment-delay,
+            .izipay-form-container .kr-identity-document-number,
+            .izipay-form-container .kr-card-holder-name,
+            .izipay-form-container .kr-field {
+              background: transparent !important;
+              border: none !important;
+              padding: 0 !important;
+              margin-bottom: 1rem !important;
+            }
+            
+            /* ============================================
+               LABELS
+            ============================================ */
+            
+            .izipay-form-container label,
+            .izipay-form-container .kr-label,
+            .izipay-form-container .kr-field-label {
+              color: #a1a1aa !important;
+              font-size: 0.8125rem !important;
+              font-weight: 500 !important;
+              margin-bottom: 0.5rem !important;
+              display: block !important;
+              letter-spacing: 0.01em !important;
+            }
+            
+            /* ============================================
+               ICONS
+            ============================================ */
+            
+            .izipay-form-container .kr-icon,
+            .izipay-form-container .kr-field-icon,
+            .izipay-form-container .kr-icon-wrapper,
+            .izipay-form-container svg {
+              color: #71717a !important;
+              fill: #71717a !important;
+            }
+            
+            .izipay-form-container .kr-brand-icon,
+            .izipay-form-container .kr-card-icon {
+              filter: brightness(0.8) !important;
+              opacity: 0.8 !important;
+            }
+            
+            /* Help/tooltip buttons */
+            .izipay-form-container .kr-help-button,
+            .izipay-form-container .kr-help-icon {
+              color: #71717a !important;
+              background-color: #27272a !important;
+              border-radius: 50% !important;
+              width: 20px !important;
+              height: 20px !important;
+            }
+            
+            /* ============================================
+               PAY BUTTON - Primary CTA
+            ============================================ */
+            
+            .izipay-form-container .kr-payment-button,
+            .izipay-form-container button[type="submit"],
+            .izipay-form-container .kr-form-submit-btn {
+              background: linear-gradient(135deg, #10b981 0%, #34d399 100%) !important;
+              border-radius: 0.875rem !important;
+              font-weight: 700 !important;
+              font-size: 1rem !important;
+              padding: 1rem 1.5rem !important;
+              border: none !important;
+              color: #09090b !important;
+              width: 100% !important;
+              margin-top: 0.5rem !important;
+              cursor: pointer !important;
+              transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+              box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35) !important;
+              text-transform: none !important;
+              letter-spacing: 0 !important;
+              min-height: 52px !important;
+            }
+            
+            .izipay-form-container .kr-payment-button:hover,
+            .izipay-form-container button[type="submit"]:hover {
+              background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
+              transform: translateY(-2px) !important;
+              box-shadow: 0 8px 25px rgba(16, 185, 129, 0.45) !important;
+            }
+            
+            .izipay-form-container .kr-payment-button:active,
+            .izipay-form-container button[type="submit"]:active {
+              transform: translateY(0) !important;
+              box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35) !important;
+            }
+            
+            .izipay-form-container .kr-payment-button:disabled,
+            .izipay-form-container button[type="submit"]:disabled {
+              background: #3f3f46 !important;
+              color: #71717a !important;
+              cursor: not-allowed !important;
+              box-shadow: none !important;
+              transform: none !important;
+            }
+            
+            /* ============================================
+               ERROR STATES
+            ============================================ */
+            
+            .izipay-form-container .kr-field-error,
+            .izipay-form-container .kr-form-error,
+            .izipay-form-container .kr-error-message {
+              color: #f87171 !important;
+              font-size: 0.75rem !important;
+              margin-top: 0.375rem !important;
+              display: flex !important;
+              align-items: center !important;
+              gap: 0.25rem !important;
+            }
+            
+            .izipay-form-container input.kr-error,
+            .izipay-form-container .kr-pan.kr-error input,
+            .izipay-form-container .kr-expiry.kr-error input,
+            .izipay-form-container .kr-security-code.kr-error input {
+              border-color: #ef4444 !important;
+              background-color: rgba(239, 68, 68, 0.05) !important;
+            }
+            
+            .izipay-form-container input.kr-error:focus {
+              box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+            }
+            
+            /* ============================================
+               VALID STATES
+            ============================================ */
+            
+            .izipay-form-container input.kr-valid,
+            .izipay-form-container .kr-pan.kr-valid input,
+            .izipay-form-container .kr-expiry.kr-valid input,
+            .izipay-form-container .kr-security-code.kr-valid input {
+              border-color: #10b981 !important;
+            }
+            
+            /* ============================================
+               LOADING/SPINNER
+            ============================================ */
+            
+            .izipay-form-container .kr-spinner,
+            .izipay-form-container .kr-loading {
+              border-color: #3f3f46 !important;
+              border-top-color: #10b981 !important;
+            }
+            
+            /* ============================================
+               IFRAME CONTENT (if applicable)
+            ============================================ */
+            
+            .izipay-form-container iframe {
+              border: none !important;
+              background: transparent !important;
+              border-radius: 0.875rem !important;
+            }
+            
+            /* ============================================
+               RESPONSIVE ADJUSTMENTS
+            ============================================ */
+            
+            @media (max-width: 480px) {
+              .izipay-form-container input,
+              .izipay-form-container select {
+                font-size: 1rem !important;
+                padding: 1rem !important;
+              }
+              
+              .izipay-form-container .kr-payment-button {
+                font-size: 1rem !important;
+                padding: 1rem !important;
+              }
+            }
+          `}</style>
         </div>
       </div>
     </div>
