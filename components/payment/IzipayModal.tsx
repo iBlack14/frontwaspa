@@ -591,16 +591,118 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail: initialE
               to { opacity: 1; transform: translateY(0); }
             }
             
-            /* Izipay Form Custom Styles - Dark Theme */
-            .izipay-form-container .kr-embedded {
+            /* ============================================
+               IZIPAY FORM CUSTOM STYLES - DARK THEME
+               Ultra-specific selectors to override defaults
+            ============================================ */
+            
+            /* Reset all Izipay elements */
+            .izipay-form-container,
+            .izipay-form-container * {
               font-family: inherit !important;
+              box-sizing: border-box !important;
             }
             
-            .izipay-form-container .kr-embedded * {
-              font-family: inherit !important;
+            .izipay-form-container .kr-embedded,
+            .izipay-form-container .kr-smart-form,
+            .izipay-form-container .kr-embedded-wrapper,
+            .izipay-form-container .kr-smart-form-wrapper {
+              background: transparent !important;
+              padding: 0 !important;
+              margin: 0 !important;
             }
             
-            /* Input fields styling */
+            /* ============================================
+               INPUT FIELDS - Dark Theme Styling
+            ============================================ */
+            
+            /* All input types */
+            .izipay-form-container input[type="text"],
+            .izipay-form-container input[type="tel"],
+            .izipay-form-container input[type="number"],
+            .izipay-form-container input[type="email"],
+            .izipay-form-container input,
+            .izipay-form-container .kr-input-field,
+            .izipay-form-container .kr-pan input,
+            .izipay-form-container .kr-expiry input,
+            .izipay-form-container .kr-security-code input,
+            .izipay-form-container .kr-card-holder-name input,
+            .izipay-form-container .kr-identity-document-number input {
+              background-color: #18181b !important;
+              border: 2px solid #3f3f46 !important;
+              border-radius: 0.875rem !important;
+              padding: 0.875rem 1rem !important;
+              font-size: 0.9375rem !important;
+              color: #fafafa !important;
+              transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+              width: 100% !important;
+              height: auto !important;
+              min-height: 52px !important;
+              line-height: 1.5 !important;
+            }
+            
+            /* Focus states */
+            .izipay-form-container input:focus,
+            .izipay-form-container input:focus-visible,
+            .izipay-form-container .kr-input-field:focus,
+            .izipay-form-container .kr-pan input:focus,
+            .izipay-form-container .kr-expiry input:focus,
+            .izipay-form-container .kr-security-code input:focus {
+              border-color: #10b981 !important;
+              box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2), 0 0 20px rgba(16, 185, 129, 0.1) !important;
+              outline: none !important;
+              background-color: #1f1f23 !important;
+            }
+            
+            /* Placeholder text */
+            .izipay-form-container input::placeholder,
+            .izipay-form-container input::-webkit-input-placeholder {
+              color: #71717a !important;
+              opacity: 1 !important;
+            }
+            
+            /* ============================================
+               SELECT / DROPDOWN FIELDS
+            ============================================ */
+            
+            .izipay-form-container select,
+            .izipay-form-container .kr-installment-number select,
+            .izipay-form-container .kr-first-installment-delay select {
+              background-color: #18181b !important;
+              border: 2px solid #3f3f46 !important;
+              border-radius: 0.875rem !important;
+              padding: 0.875rem 2.5rem 0.875rem 1rem !important;
+              font-size: 0.9375rem !important;
+              color: #fafafa !important;
+              transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+              width: 100% !important;
+              min-height: 52px !important;
+              cursor: pointer !important;
+              appearance: none !important;
+              -webkit-appearance: none !important;
+              -moz-appearance: none !important;
+              background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2371717a' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+              background-position: right 0.875rem center !important;
+              background-repeat: no-repeat !important;
+              background-size: 1.25rem !important;
+            }
+            
+            .izipay-form-container select:focus {
+              border-color: #10b981 !important;
+              box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+              outline: none !important;
+            }
+            
+            .izipay-form-container select option {
+              background-color: #18181b !important;
+              color: #fafafa !important;
+              padding: 0.5rem !important;
+            }
+            
+            /* ============================================
+               FIELD WRAPPERS AND CONTAINERS
+            ============================================ */
+            
             .izipay-form-container .kr-pan,
             .izipay-form-container .kr-expiry,
             .izipay-form-container .kr-security-code,
@@ -608,124 +710,175 @@ export default function IzipayModal({ isOpen, onClose, plan, userEmail: initialE
             .izipay-form-container .kr-first-installment-delay,
             .izipay-form-container .kr-identity-document-number,
             .izipay-form-container .kr-card-holder-name,
-            .izipay-form-container .kr-field,
-            .izipay-form-container input,
-            .izipay-form-container select {
-              background-color: #27272a !important;
-              border: 2px solid #3f3f46 !important;
-              border-radius: 1rem !important;
-              padding: 1rem !important;
-              font-size: 0.95rem !important;
-              margin-bottom: 0.875rem !important;
-              color: #ffffff !important;
-              transition: all 0.2s ease !important;
+            .izipay-form-container .kr-field {
+              background: transparent !important;
+              border: none !important;
+              padding: 0 !important;
+              margin-bottom: 1rem !important;
             }
             
-            .izipay-form-container .kr-pan:focus,
-            .izipay-form-container .kr-expiry:focus,
-            .izipay-form-container .kr-security-code:focus,
-            .izipay-form-container .kr-installment-number:focus,
-            .izipay-form-container .kr-first-installment-delay:focus,
-            .izipay-form-container .kr-identity-document-number:focus,
-            .izipay-form-container .kr-card-holder-name:focus,
-            .izipay-form-container .kr-field:focus,
-            .izipay-form-container input:focus,
-            .izipay-form-container select:focus {
-              border-color: #10b981 !important;
-              box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15) !important;
-              outline: none !important;
-            }
+            /* ============================================
+               LABELS
+            ============================================ */
             
-            /* Placeholder text */
-            .izipay-form-container input::placeholder {
-              color: #71717a !important;
-            }
-            
-            /* Labels */
-            .izipay-form-container .kr-field-label,
-            .izipay-form-container label {
+            .izipay-form-container label,
+            .izipay-form-container .kr-label,
+            .izipay-form-container .kr-field-label {
               color: #a1a1aa !important;
-              font-size: 0.75rem !important;
-              font-weight: 600 !important;
-              text-transform: uppercase !important;
-              letter-spacing: 0.05em !important;
+              font-size: 0.8125rem !important;
+              font-weight: 500 !important;
               margin-bottom: 0.5rem !important;
               display: block !important;
+              letter-spacing: 0.01em !important;
             }
             
-            /* Icons */
+            /* ============================================
+               ICONS
+            ============================================ */
+            
             .izipay-form-container .kr-icon,
-            .izipay-form-container .kr-field-icon {
+            .izipay-form-container .kr-field-icon,
+            .izipay-form-container .kr-icon-wrapper,
+            .izipay-form-container svg {
               color: #71717a !important;
+              fill: #71717a !important;
             }
             
-            /* Pay button - Primary CTA */
+            .izipay-form-container .kr-brand-icon,
+            .izipay-form-container .kr-card-icon {
+              filter: brightness(0.8) !important;
+              opacity: 0.8 !important;
+            }
+            
+            /* Help/tooltip buttons */
+            .izipay-form-container .kr-help-button,
+            .izipay-form-container .kr-help-icon {
+              color: #71717a !important;
+              background-color: #27272a !important;
+              border-radius: 50% !important;
+              width: 20px !important;
+              height: 20px !important;
+            }
+            
+            /* ============================================
+               PAY BUTTON - Primary CTA
+            ============================================ */
+            
             .izipay-form-container .kr-payment-button,
-            .izipay-form-container button[type="submit"] {
+            .izipay-form-container button[type="submit"],
+            .izipay-form-container .kr-form-submit-btn {
               background: linear-gradient(135deg, #10b981 0%, #34d399 100%) !important;
-              border-radius: 1rem !important;
+              border-radius: 0.875rem !important;
               font-weight: 700 !important;
               font-size: 1rem !important;
               padding: 1rem 1.5rem !important;
               border: none !important;
               color: #09090b !important;
               width: 100% !important;
-              margin-top: 0.75rem !important;
+              margin-top: 0.5rem !important;
               cursor: pointer !important;
-              transition: all 0.2s ease !important;
+              transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
               box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35) !important;
+              text-transform: none !important;
+              letter-spacing: 0 !important;
+              min-height: 52px !important;
             }
             
             .izipay-form-container .kr-payment-button:hover,
             .izipay-form-container button[type="submit"]:hover {
               background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
-              transform: translateY(-1px) !important;
-              box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45) !important;
+              transform: translateY(-2px) !important;
+              box-shadow: 0 8px 25px rgba(16, 185, 129, 0.45) !important;
             }
             
             .izipay-form-container .kr-payment-button:active,
             .izipay-form-container button[type="submit"]:active {
               transform: translateY(0) !important;
+              box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35) !important;
             }
             
-            /* Select dropdowns */
-            .izipay-form-container select {
-              appearance: none !important;
-              background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2371717a' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
-              background-position: right 0.75rem center !important;
-              background-repeat: no-repeat !important;
-              background-size: 1.25rem !important;
-              padding-right: 2.5rem !important;
+            .izipay-form-container .kr-payment-button:disabled,
+            .izipay-form-container button[type="submit"]:disabled {
+              background: #3f3f46 !important;
+              color: #71717a !important;
+              cursor: not-allowed !important;
+              box-shadow: none !important;
+              transform: none !important;
             }
             
-            /* Error states */
+            /* ============================================
+               ERROR STATES
+            ============================================ */
+            
             .izipay-form-container .kr-field-error,
-            .izipay-form-container .kr-form-error {
+            .izipay-form-container .kr-form-error,
+            .izipay-form-container .kr-error-message {
               color: #f87171 !important;
               font-size: 0.75rem !important;
-              margin-top: 0.25rem !important;
+              margin-top: 0.375rem !important;
+              display: flex !important;
+              align-items: center !important;
+              gap: 0.25rem !important;
             }
             
-            .izipay-form-container .kr-pan.kr-error,
-            .izipay-form-container .kr-expiry.kr-error,
-            .izipay-form-container .kr-security-code.kr-error {
+            .izipay-form-container input.kr-error,
+            .izipay-form-container .kr-pan.kr-error input,
+            .izipay-form-container .kr-expiry.kr-error input,
+            .izipay-form-container .kr-security-code.kr-error input {
               border-color: #ef4444 !important;
+              background-color: rgba(239, 68, 68, 0.05) !important;
             }
             
-            /* Card brand icons */
-            .izipay-form-container .kr-brand-icon {
-              filter: brightness(0) invert(0.7) !important;
+            .izipay-form-container input.kr-error:focus {
+              box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
             }
             
-            /* Help tooltips */
-            .izipay-form-container .kr-help-button {
-              color: #71717a !important;
+            /* ============================================
+               VALID STATES
+            ============================================ */
+            
+            .izipay-form-container input.kr-valid,
+            .izipay-form-container .kr-pan.kr-valid input,
+            .izipay-form-container .kr-expiry.kr-valid input,
+            .izipay-form-container .kr-security-code.kr-valid input {
+              border-color: #10b981 !important;
             }
             
-            /* Form wrapper */
-            .izipay-form-container .kr-smart-form,
-            .izipay-form-container .kr-embedded-wrapper {
+            /* ============================================
+               LOADING/SPINNER
+            ============================================ */
+            
+            .izipay-form-container .kr-spinner,
+            .izipay-form-container .kr-loading {
+              border-color: #3f3f46 !important;
+              border-top-color: #10b981 !important;
+            }
+            
+            /* ============================================
+               IFRAME CONTENT (if applicable)
+            ============================================ */
+            
+            .izipay-form-container iframe {
+              border: none !important;
               background: transparent !important;
+              border-radius: 0.875rem !important;
+            }
+            
+            /* ============================================
+               RESPONSIVE ADJUSTMENTS
+            ============================================ */
+            
+            @media (max-width: 480px) {
+              .izipay-form-container input,
+              .izipay-form-container select {
+                font-size: 1rem !important;
+                padding: 1rem !important;
+              }
+              
+              .izipay-form-container .kr-payment-button {
+                font-size: 1rem !important;
+                padding: 1rem !important;
+              }
             }
           `}</style>
         </div>

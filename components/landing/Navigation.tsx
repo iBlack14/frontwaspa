@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
-import BLXKLogo from './BLXKLogo';
+import Logo, { LogoModern } from '../brand/Logo';
 
 export default function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -26,7 +26,7 @@ export default function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <BLXKLogo variant="compact" />
+          <LogoModern size="md" theme="dark" />
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-1">
