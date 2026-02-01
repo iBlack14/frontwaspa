@@ -69,6 +69,23 @@ module.exports = {
             medium: 'rgba(255, 255, 255, 0.1)',
             dark: 'rgba(0, 0, 0, 0.2)',
           },
+
+          // Temas coherentes día/noche
+          light: {
+            bg: '#FFFFFF',
+            surface: '#F8FAFC',
+            border: '#E2E8F0',
+            text: '#0F172A',
+            'text-secondary': '#64748B',
+          },
+          
+          dark: {
+            bg: '#0F172A',
+            surface: '#1E293B',
+            border: '#334155',
+            text: '#F1F5F9',
+            'text-secondary': '#CBD5E1',
+          },
         },
 
         // Colores de estado
@@ -76,6 +93,10 @@ module.exports = {
         warning: '#F59E0B',
         error: '#EF4444',
         info: '#3B82F6',
+        
+        // Alias para compatibilidad
+        'light-bg': '#FFFFFF',
+        'dark-bg': '#0F172A',
       },
 
       // ────────────────────────────────────────────────────────
