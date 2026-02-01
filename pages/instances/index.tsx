@@ -375,7 +375,7 @@ function DashboardContent() {
                           </span>
                           {session.is_active && session.state === 'Connected' && (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 shadow-sm">
-                              <BoltIcon className="w-3.5 h-3.5" />
+                              <SignalIcon className="w-3.5 h-3.5" />
                               Activo
                             </span>
                           )}
