@@ -6,7 +6,7 @@ import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import BLXKLogo from '@/components/landing/BLXKLogo';
-import { Toaster, toast } from 'sonner';
+import { toast } from 'sonner';
 
 export default function Register() {
   const [username, setUsername] = useState<string>('');
@@ -83,8 +83,6 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center relative overflow-hidden px-4">
-      <Toaster richColors position="top-right" expand={true} closeButton />
-      
       {/* Background Grid */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px]"></div>

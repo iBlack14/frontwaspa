@@ -59,7 +59,16 @@ interface ResourceUsage {
   };
 }
 
-const planData = {
+interface Plan {
+  name: string;
+  price: string;
+  memory: string;
+  cpu: string;
+  features: string[];
+  popular?: boolean;
+}
+
+const planData: Record<string, Plan> = {
   basic: {
     name: 'Basic',
     price: 'S/49',

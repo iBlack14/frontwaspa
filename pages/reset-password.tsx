@@ -2,7 +2,7 @@ import { useState, FormEvent } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import axios from 'axios';
-import { Toaster, toast } from 'sonner';
+import { toast } from 'sonner';
 import { useRouter } from 'next/router';
 import wazone from '../public/logo/wallpaper-wazone.webp';
 import fondo from '../public/img/fondo.webp';
@@ -43,7 +43,6 @@ export default function ResetPassword() {
         backgroundImage: `url(${fondo.src})`,
       }}
     >
-      <Toaster richColors position="top-right" expand={true} closeButton />
       <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black opacity-70"></div>
 
       <div className="bg-opacity-90 shadow-2xl shadow-black w-full max-w-5xl flex flex-col lg:flex-row animate-fadeIn">
